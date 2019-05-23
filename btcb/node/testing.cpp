@@ -156,7 +156,7 @@ btcb::account btcb::system::account (btcb::transaction const & transaction_a, si
 	return btcb::account (result);
 }
 
-void btcb::system::deadline_set (std::chrono::duration<double, std::btcb> const & delta_a)
+void btcb::system::deadline_set (std::chrono::duration<double, std::nano> const & delta_a)
 {
 	deadline = std::chrono::steady_clock::now () + delta_a * deadline_scaling_factor;
 }

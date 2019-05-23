@@ -39,7 +39,7 @@ public:
 	 */
 	std::error_code poll (const std::chrono::nanoseconds & sleep_time = std::chrono::milliseconds (50));
 	void stop ();
-	void deadline_set (const std::chrono::duration<double, std::btcb> & delta);
+	void deadline_set (const std::chrono::duration<double, std::nano> & delta);
 	std::shared_ptr<btcb::node> add_node (btcb::node_config const &, bool = false, btcb::transport::transport_type = btcb::transport::transport_type::tcp);
 	boost::asio::io_context io_ctx;
 	btcb::alarm alarm{ io_ctx };
