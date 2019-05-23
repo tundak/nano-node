@@ -5,20 +5,20 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <cstdint>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/logger_mt.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/logger_mt.hpp>
 
 #define FATAL_LOG_PREFIX "FATAL ERROR: "
 
-namespace nano
+namespace btcb
 {
 class logging final
 {
 public:
-	nano::error serialize_json (nano::jsonconfig &) const;
-	nano::error deserialize_json (bool &, nano::jsonconfig &);
-	bool upgrade_json (unsigned, nano::jsonconfig &);
+	btcb::error serialize_json (btcb::jsonconfig &) const;
+	btcb::error deserialize_json (bool &, btcb::jsonconfig &);
+	bool upgrade_json (unsigned, btcb::jsonconfig &);
 	bool ledger_logging () const;
 	bool ledger_duplicate_logging () const;
 	bool vote_logging () const;

@@ -1,4 +1,4 @@
-#include <nano/node/openclwork.hpp>
+#include <btcb/node/openclwork.hpp>
 
 #include <dlfcn.h>
 

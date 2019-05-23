@@ -90,7 +90,7 @@ add_library (node
 target_link_libraries (node
 	rpc
 	secure
-	nano_lib
+	btcb_lib
 	libminiupnpc-static
 	argon2
 	lmdb
@@ -107,6 +107,6 @@ target_link_libraries (node
 
 target_compile_definitions(node
 	PRIVATE
-		-DNANO_VERSION_MAJOR=${CPACK_PACKAGE_VERSION_MAJOR}
-		-DNANO_VERSION_MINOR=${CPACK_PACKAGE_VERSION_MINOR}
-		-DNANO_VERSION_PATCH=${CPACK_PACKAGE_VERSION_PATCH})
+		-DBTCB_VERSION_MAJOR=${CPACK_PACKAGE_VERSION_MAJOR}
+		-DBTCB_VERSION_MINOR=${CPACK_PACKAGE_VERSION_MINOR}
+		-DBTCB_VERSION_PATCH=${CPACK_PACKAGE_VERSION_PATCH})

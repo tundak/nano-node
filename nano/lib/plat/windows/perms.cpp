@@ -1,13 +1,13 @@
 #include <boost/filesystem.hpp>
 #include <cassert>
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 
 #include <io.h>
 #include <processthreadsapi.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-void nano::set_umask ()
+void btcb::set_umask ()
 {
 	int oldMode;
 
@@ -15,27 +15,27 @@ void nano::set_umask ()
 	assert (result == 0);
 }
 
-void nano::set_secure_perm_directory (boost::filesystem::path const & path)
+void btcb::set_secure_perm_directory (boost::filesystem::path const & path)
 {
 	boost::filesystem::permissions (path, boost::filesystem::owner_all);
 }
 
-void nano::set_secure_perm_directory (boost::filesystem::path const & path, boost::system::error_code & ec)
+void btcb::set_secure_perm_directory (boost::filesystem::path const & path, boost::system::error_code & ec)
 {
 	boost::filesystem::permissions (path, boost::filesystem::owner_all, ec);
 }
 
-void nano::set_secure_perm_file (boost::filesystem::path const & path)
+void btcb::set_secure_perm_file (boost::filesystem::path const & path)
 {
 	boost::filesystem::permissions (path, boost::filesystem::owner_read | boost::filesystem::owner_write);
 }
 
-void nano::set_secure_perm_file (boost::filesystem::path const & path, boost::system::error_code & ec)
+void btcb::set_secure_perm_file (boost::filesystem::path const & path, boost::system::error_code & ec)
 {
 	boost::filesystem::permissions (path, boost::filesystem::owner_read | boost::filesystem::owner_write, ec);
 }
 
-bool nano::is_windows_elevated ()
+bool btcb::is_windows_elevated ()
 {
 	bool is_elevated = false;
 	HANDLE h_token = nullptr;

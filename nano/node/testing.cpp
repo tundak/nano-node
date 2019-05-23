@@ -1,19 +1,19 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <cstdlib>
-#include <nano/core_test/testutil.hpp>
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/node/common.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/node/transport/udp.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/node/transport/udp.hpp>
 
-std::string nano::error_system_messages::message (int ev) const
+std::string btcb::error_system_messages::message (int ev) const
 {
-	switch (static_cast<nano::error_system> (ev))
+	switch (static_cast<btcb::error_system> (ev))
 	{
-		case nano::error_system::generic:
+		case btcb::error_system::generic:
 			return "Unknown error";
-		case nano::error_system::deadline_expired:
+		case btcb::error_system::deadline_expired:
 			return "Deadline expired";
 	}
 
@@ -21,14 +21,14 @@ std::string nano::error_system_messages::message (int ev) const
 }
 
 /** Returns the node added. */
-std::shared_ptr<nano::node> nano::system::add_node (nano::node_config const & node_config_a, bool delay_frontier_confirmation_height_updating_a, nano::transport::transport_type type_a)
+std::shared_ptr<btcb::node> btcb::system::add_node (btcb::node_config const & node_config_a, bool delay_frontier_confirmation_height_updating_a, btcb::transport::transport_type type_a)
 {
-	nano::node_init init;
-	auto node (std::make_shared<nano::node> (init, io_ctx, nano::unique_path (), alarm, node_config_a, work, node_flags (), delay_frontier_confirmation_height_updating_a));
+	btcb::node_init init;
+	auto node (std::make_shared<btcb::node> (init, io_ctx, btcb::unique_path (), alarm, node_config_a, work, node_flags (), delay_frontier_confirmation_height_updating_a));
 	assert (!init.error ());
 	node->start ();
-	nano::uint256_union wallet;
-	nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+	btcb::uint256_union wallet;
+	btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 	node->wallets.create (wallet);
 	nodes.reserve (nodes.size () + 1);
 	nodes.push_back (node);
@@ -45,14 +45,14 @@ std::shared_ptr<nano::node> nano::system::add_node (nano::node_config const & no
 			auto starting2 (node2->network.size ());
 			size_t starting_listener2 (node2->bootstrap.realtime_count);
 			decltype (starting2) new2;
-			if (type_a == nano::transport::transport_type::tcp)
+			if (type_a == btcb::transport::transport_type::tcp)
 			{
 				(*j)->network.merge_peer ((*i)->network.endpoint ());
 			}
 			else
 			{
 				// UDP connection
-				auto channel (std::make_shared<nano::transport::channel_udp> ((*j)->network.udp_channels, (*i)->network.endpoint ()));
+				auto channel (std::make_shared<btcb::transport::channel_udp> ((*j)->network.udp_channels, (*i)->network.endpoint ()));
 				(*j)->network.send_keepalive (channel);
 			}
 			do
@@ -61,7 +61,7 @@ std::shared_ptr<nano::node> nano::system::add_node (nano::node_config const & no
 				new1 = node1->network.size ();
 				new2 = node2->network.size ();
 			} while (new1 == starting1 || new2 == starting2);
-			if (type_a == nano::transport::transport_type::tcp)
+			if (type_a == btcb::transport::transport_type::tcp)
 			{
 				// Wait for initial connection finish
 				decltype (starting_listener1) new_listener1;
@@ -75,7 +75,7 @@ std::shared_ptr<nano::node> nano::system::add_node (nano::node_config const & no
 			}
 		}
 		auto iterations1 (0);
-		while (std::any_of (begin, nodes.end (), [](std::shared_ptr<nano::node> const & node_a) { return node_a->bootstrap_initiator.in_progress (); }))
+		while (std::any_of (begin, nodes.end (), [](std::shared_ptr<btcb::node> const & node_a) { return node_a->bootstrap_initiator.in_progress (); }))
 		{
 			poll ();
 			++iterations1;
@@ -96,28 +96,28 @@ std::shared_ptr<nano::node> nano::system::add_node (nano::node_config const & no
 	return node;
 }
 
-nano::system::system ()
+btcb::system::system ()
 {
 	auto scale_str = std::getenv ("DEADLINE_SCALE_FACTOR");
 	if (scale_str)
 	{
 		deadline_scaling_factor = std::stod (scale_str);
 	}
-	logging.init (nano::unique_path ());
+	logging.init (btcb::unique_path ());
 }
 
-nano::system::system (uint16_t port_a, uint16_t count_a, nano::transport::transport_type type_a) :
+btcb::system::system (uint16_t port_a, uint16_t count_a, btcb::transport::transport_type type_a) :
 system ()
 {
 	nodes.reserve (count_a);
 	for (uint16_t i (0); i < count_a; ++i)
 	{
-		nano::node_config config (port_a + i, logging);
-		nano::system::add_node (config, false, type_a);
+		btcb::node_config config (port_a + i, logging);
+		btcb::system::add_node (config, false, type_a);
 	}
 }
 
-nano::system::~system ()
+btcb::system::~system ()
 {
 	for (auto & i : nodes)
 	{
@@ -133,12 +133,12 @@ nano::system::~system ()
 	// retain the files.
 	if (std::getenv ("TEST_KEEP_TMPDIRS") == nullptr)
 	{
-		nano::remove_temporary_directories ();
+		btcb::remove_temporary_directories ();
 	}
 #endif
 }
 
-std::shared_ptr<nano::wallet> nano::system::wallet (size_t index_a)
+std::shared_ptr<btcb::wallet> btcb::system::wallet (size_t index_a)
 {
 	assert (nodes.size () > index_a);
 	auto size (nodes[index_a]->wallets.items.size ());
@@ -146,29 +146,29 @@ std::shared_ptr<nano::wallet> nano::system::wallet (size_t index_a)
 	return nodes[index_a]->wallets.items.begin ()->second;
 }
 
-nano::account nano::system::account (nano::transaction const & transaction_a, size_t index_a)
+btcb::account btcb::system::account (btcb::transaction const & transaction_a, size_t index_a)
 {
 	auto wallet_l (wallet (index_a));
 	auto keys (wallet_l->store.begin (transaction_a));
 	assert (keys != wallet_l->store.end ());
 	auto result (keys->first);
 	assert (++keys == wallet_l->store.end ());
-	return nano::account (result);
+	return btcb::account (result);
 }
 
-void nano::system::deadline_set (std::chrono::duration<double, std::nano> const & delta_a)
+void btcb::system::deadline_set (std::chrono::duration<double, std::btcb> const & delta_a)
 {
 	deadline = std::chrono::steady_clock::now () + delta_a * deadline_scaling_factor;
 }
 
-std::error_code nano::system::poll (std::chrono::nanoseconds const & wait_time)
+std::error_code btcb::system::poll (std::chrono::nanoseconds const & wait_time)
 {
 	std::error_code ec;
 	io_ctx.run_one_for (wait_time);
 
 	if (std::chrono::steady_clock::now () > deadline)
 	{
-		ec = nano::error_system::deadline_expired;
+		ec = btcb::error_system::deadline_expired;
 		stop ();
 	}
 	return ec;
@@ -179,7 +179,7 @@ namespace
 class traffic_generator : public std::enable_shared_from_this<traffic_generator>
 {
 public:
-	traffic_generator (uint32_t count_a, uint32_t wait_a, std::shared_ptr<nano::node> node_a, nano::system & system_a) :
+	traffic_generator (uint32_t count_a, uint32_t wait_a, std::shared_ptr<btcb::node> node_a, btcb::system & system_a) :
 	count (count_a),
 	wait (wait_a),
 	node (node_a),
@@ -197,15 +197,15 @@ public:
 			node->alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (wait), [this_l]() { this_l->run (); });
 		}
 	}
-	std::vector<nano::account> accounts;
+	std::vector<btcb::account> accounts;
 	uint32_t count;
 	uint32_t wait;
-	std::shared_ptr<nano::node> node;
-	nano::system & system;
+	std::shared_ptr<btcb::node> node;
+	btcb::system & system;
 };
 }
 
-void nano::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a)
+void btcb::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a)
 {
 	for (size_t i (0), n (nodes.size ()); i != n; ++i)
 	{
@@ -213,7 +213,7 @@ void nano::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a)
 	}
 }
 
-void nano::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a, size_t index_a)
+void btcb::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a, size_t index_a)
 {
 	assert (nodes.size () > index_a);
 	assert (count_a > 0);
@@ -221,18 +221,18 @@ void nano::system::generate_usage_traffic (uint32_t count_a, uint32_t wait_a, si
 	generate->run ();
 }
 
-void nano::system::generate_rollback (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_rollback (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
 	auto transaction (node_a.store.tx_begin_write ());
 	assert (std::numeric_limits<CryptoPP::word32>::max () > accounts_a.size ());
 	auto index (random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (accounts_a.size () - 1)));
 	auto account (accounts_a[index]);
-	nano::account_info info;
+	btcb::account_info info;
 	auto error (node_a.store.account_get (transaction, account, info));
 	if (!error)
 	{
 		auto hash (info.open_block);
-		nano::genesis genesis;
+		btcb::genesis genesis;
 		if (hash != genesis.hash ())
 		{
 			accounts_a[index] = accounts_a[accounts_a.size () - 1];
@@ -243,28 +243,28 @@ void nano::system::generate_rollback (nano::node & node_a, std::vector<nano::acc
 	}
 }
 
-void nano::system::generate_receive (nano::node & node_a)
+void btcb::system::generate_receive (btcb::node & node_a)
 {
-	std::shared_ptr<nano::block> send_block;
+	std::shared_ptr<btcb::block> send_block;
 	{
 		auto transaction (node_a.store.tx_begin_read ());
-		nano::uint256_union random_block;
+		btcb::uint256_union random_block;
 		random_pool::generate_block (random_block.bytes.data (), sizeof (random_block.bytes));
-		auto i (node_a.store.pending_begin (transaction, nano::pending_key (random_block, 0)));
+		auto i (node_a.store.pending_begin (transaction, btcb::pending_key (random_block, 0)));
 		if (i != node_a.store.pending_end ())
 		{
-			nano::pending_key send_hash (i->first);
+			btcb::pending_key send_hash (i->first);
 			send_block = node_a.store.block_get (transaction, send_hash.hash);
 		}
 	}
 	if (send_block != nullptr)
 	{
-		auto receive_error (wallet (0)->receive_sync (send_block, nano::genesis_account, std::numeric_limits<nano::uint128_t>::max ()));
+		auto receive_error (wallet (0)->receive_sync (send_block, btcb::genesis_account, std::numeric_limits<btcb::uint128_t>::max ()));
 		(void)receive_error;
 	}
 }
 
-void nano::system::generate_activity (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_activity (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
 	auto what (random_pool::generate_byte ());
 	if (what < 0x1)
@@ -293,7 +293,7 @@ void nano::system::generate_activity (nano::node & node_a, std::vector<nano::acc
 	}
 }
 
-nano::account nano::system::get_random_account (std::vector<nano::account> & accounts_a)
+btcb::account btcb::system::get_random_account (std::vector<btcb::account> & accounts_a)
 {
 	assert (std::numeric_limits<CryptoPP::word32>::max () > accounts_a.size ());
 	auto index (random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (accounts_a.size () - 1)));
@@ -301,33 +301,33 @@ nano::account nano::system::get_random_account (std::vector<nano::account> & acc
 	return result;
 }
 
-nano::uint128_t nano::system::get_random_amount (nano::transaction const & transaction_a, nano::node & node_a, nano::account const & account_a)
+btcb::uint128_t btcb::system::get_random_amount (btcb::transaction const & transaction_a, btcb::node & node_a, btcb::account const & account_a)
 {
-	nano::uint128_t balance (node_a.ledger.account_balance (transaction_a, account_a));
+	btcb::uint128_t balance (node_a.ledger.account_balance (transaction_a, account_a));
 	std::string balance_text (balance.convert_to<std::string> ());
-	nano::uint128_union random_amount;
-	nano::random_pool::generate_block (random_amount.bytes.data (), sizeof (random_amount.bytes));
-	auto result (((nano::uint256_t{ random_amount.number () } * balance) / nano::uint256_t{ std::numeric_limits<nano::uint128_t>::max () }).convert_to<nano::uint128_t> ());
+	btcb::uint128_union random_amount;
+	btcb::random_pool::generate_block (random_amount.bytes.data (), sizeof (random_amount.bytes));
+	auto result (((btcb::uint256_t{ random_amount.number () } * balance) / btcb::uint256_t{ std::numeric_limits<btcb::uint128_t>::max () }).convert_to<btcb::uint128_t> ());
 	std::string text (result.convert_to<std::string> ());
 	return result;
 }
 
-void nano::system::generate_send_existing (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_send_existing (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
-	nano::uint128_t amount;
-	nano::account destination;
-	nano::account source;
+	btcb::uint128_t amount;
+	btcb::account destination;
+	btcb::account source;
 	{
-		nano::account account;
+		btcb::account account;
 		random_pool::generate_block (account.bytes.data (), sizeof (account.bytes));
 		auto transaction (node_a.store.tx_begin_read ());
-		nano::store_iterator<nano::account, nano::account_info> entry (node_a.store.latest_begin (transaction, account));
+		btcb::store_iterator<btcb::account, btcb::account_info> entry (node_a.store.latest_begin (transaction, account));
 		if (entry == node_a.store.latest_end ())
 		{
 			entry = node_a.store.latest_begin (transaction);
 		}
 		assert (entry != node_a.store.latest_end ());
-		destination = nano::account (entry->first);
+		destination = btcb::account (entry->first);
 		source = get_random_account (accounts_a);
 		amount = get_random_amount (transaction, node_a, source);
 	}
@@ -338,34 +338,34 @@ void nano::system::generate_send_existing (nano::node & node_a, std::vector<nano
 	}
 }
 
-void nano::system::generate_change_known (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_change_known (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
-	nano::account source (get_random_account (accounts_a));
+	btcb::account source (get_random_account (accounts_a));
 	if (!node_a.latest (source).is_zero ())
 	{
-		nano::account destination (get_random_account (accounts_a));
+		btcb::account destination (get_random_account (accounts_a));
 		auto change_error (wallet (0)->change_sync (source, destination));
 		assert (!change_error);
 	}
 }
 
-void nano::system::generate_change_unknown (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_change_unknown (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
-	nano::account source (get_random_account (accounts_a));
+	btcb::account source (get_random_account (accounts_a));
 	if (!node_a.latest (source).is_zero ())
 	{
-		nano::keypair key;
-		nano::account destination (key.pub);
+		btcb::keypair key;
+		btcb::account destination (key.pub);
 		auto change_error (wallet (0)->change_sync (source, destination));
 		assert (!change_error);
 	}
 }
 
-void nano::system::generate_send_new (nano::node & node_a, std::vector<nano::account> & accounts_a)
+void btcb::system::generate_send_new (btcb::node & node_a, std::vector<btcb::account> & accounts_a)
 {
 	assert (node_a.wallets.items.size () == 1);
-	nano::uint128_t amount;
-	nano::account source;
+	btcb::uint128_t amount;
+	btcb::account source;
 	{
 		auto transaction (node_a.store.tx_begin_read ());
 		source = get_random_account (accounts_a);
@@ -380,11 +380,11 @@ void nano::system::generate_send_new (nano::node & node_a, std::vector<nano::acc
 	}
 }
 
-void nano::system::generate_mass_activity (uint32_t count_a, nano::node & node_a)
+void btcb::system::generate_mass_activity (uint32_t count_a, btcb::node & node_a)
 {
-	std::vector<nano::account> accounts;
-	wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
-	accounts.push_back (nano::test_genesis_key.pub);
+	std::vector<btcb::account> accounts;
+	wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
+	accounts.push_back (btcb::test_genesis_key.pub);
 	auto previous (std::chrono::steady_clock::now ());
 	for (uint32_t i (0); i < count_a; ++i)
 	{
@@ -407,7 +407,7 @@ void nano::system::generate_mass_activity (uint32_t count_a, nano::node & node_a
 	}
 }
 
-void nano::system::stop ()
+void btcb::system::stop ()
 {
 	for (auto i : nodes)
 	{
@@ -416,7 +416,7 @@ void nano::system::stop ()
 	work.stop ();
 }
 
-nano::landing_store::landing_store (nano::account const & source_a, nano::account const & destination_a, uint64_t start_a, uint64_t last_a) :
+btcb::landing_store::landing_store (btcb::account const & source_a, btcb::account const & destination_a, uint64_t start_a, uint64_t last_a) :
 source (source_a),
 destination (destination_a),
 start (start_a),
@@ -424,12 +424,12 @@ last (last_a)
 {
 }
 
-nano::landing_store::landing_store (bool & error_a, std::istream & stream_a)
+btcb::landing_store::landing_store (bool & error_a, std::istream & stream_a)
 {
 	error_a = deserialize (stream_a);
 }
 
-bool nano::landing_store::deserialize (std::istream & stream_a)
+bool btcb::landing_store::deserialize (std::istream & stream_a)
 {
 	bool result;
 	try
@@ -462,7 +462,7 @@ bool nano::landing_store::deserialize (std::istream & stream_a)
 	return result;
 }
 
-void nano::landing_store::serialize (std::ostream & stream_a) const
+void btcb::landing_store::serialize (std::ostream & stream_a) const
 {
 	boost::property_tree::ptree tree;
 	tree.put ("source", source.to_account ());
@@ -472,12 +472,12 @@ void nano::landing_store::serialize (std::ostream & stream_a) const
 	boost::property_tree::write_json (stream_a, tree);
 }
 
-bool nano::landing_store::operator== (nano::landing_store const & other_a) const
+bool btcb::landing_store::operator== (btcb::landing_store const & other_a) const
 {
 	return source == other_a.source && destination == other_a.destination && start == other_a.start && last == other_a.last;
 }
 
-nano::landing::landing (nano::node & node_a, std::shared_ptr<nano::wallet> wallet_a, nano::landing_store & store_a, boost::filesystem::path const & path_a) :
+btcb::landing::landing (btcb::node & node_a, std::shared_ptr<btcb::wallet> wallet_a, btcb::landing_store & store_a, boost::filesystem::path const & path_a) :
 path (path_a),
 store (store_a),
 wallet (wallet_a),
@@ -485,7 +485,7 @@ node (node_a)
 {
 }
 
-void nano::landing::write_store ()
+void btcb::landing::write_store ()
 {
 	std::ofstream store_file;
 	store_file.open (path.string ());
@@ -501,45 +501,45 @@ void nano::landing::write_store ()
 	}
 }
 
-nano::uint128_t nano::landing::distribution_amount (uint64_t interval)
+btcb::uint128_t btcb::landing::distribution_amount (uint64_t interval)
 {
 	// Halving period ~= Exponent of 2 in seconds approximately 1 year = 2^25 = 33554432
 	// Interval = Exponent of 2 in seconds approximately 1 minute = 2^10 = 64
 	uint64_t intervals_per_period (1 << (25 - interval_exponent));
-	nano::uint128_t result;
+	btcb::uint128_t result;
 	if (interval < intervals_per_period * 1)
 	{
 		// Total supply / 2^halving period / intervals per period
 		// 2^128 / 2^1 / (2^25 / 2^10)
-		result = nano::uint128_t (1) << (127 - (25 - interval_exponent)); // 50%
+		result = btcb::uint128_t (1) << (127 - (25 - interval_exponent)); // 50%
 	}
 	else if (interval < intervals_per_period * 2)
 	{
-		result = nano::uint128_t (1) << (126 - (25 - interval_exponent)); // 25%
+		result = btcb::uint128_t (1) << (126 - (25 - interval_exponent)); // 25%
 	}
 	else if (interval < intervals_per_period * 3)
 	{
-		result = nano::uint128_t (1) << (125 - (25 - interval_exponent)); // 13%
+		result = btcb::uint128_t (1) << (125 - (25 - interval_exponent)); // 13%
 	}
 	else if (interval < intervals_per_period * 4)
 	{
-		result = nano::uint128_t (1) << (124 - (25 - interval_exponent)); // 6.3%
+		result = btcb::uint128_t (1) << (124 - (25 - interval_exponent)); // 6.3%
 	}
 	else if (interval < intervals_per_period * 5)
 	{
-		result = nano::uint128_t (1) << (123 - (25 - interval_exponent)); // 3.1%
+		result = btcb::uint128_t (1) << (123 - (25 - interval_exponent)); // 3.1%
 	}
 	else if (interval < intervals_per_period * 6)
 	{
-		result = nano::uint128_t (1) << (122 - (25 - interval_exponent)); // 1.6%
+		result = btcb::uint128_t (1) << (122 - (25 - interval_exponent)); // 1.6%
 	}
 	else if (interval < intervals_per_period * 7)
 	{
-		result = nano::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8%
+		result = btcb::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8%
 	}
 	else if (interval < intervals_per_period * 8)
 	{
-		result = nano::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8*
+		result = btcb::uint128_t (1) << (121 - (25 - interval_exponent)); // 0.8*
 	}
 	else
 	{
@@ -548,10 +548,10 @@ nano::uint128_t nano::landing::distribution_amount (uint64_t interval)
 	return result;
 }
 
-void nano::landing::distribute_one ()
+void btcb::landing::distribute_one ()
 {
-	auto now (nano::seconds_since_epoch ());
-	nano::block_hash last (1);
+	auto now (btcb::seconds_since_epoch ());
+	btcb::block_hash last (1);
 	while (!last.is_zero () && store.last + distribution_interval.count () < now)
 	{
 		auto amount (distribution_amount ((store.last - store.start) >> interval_exponent));
@@ -569,28 +569,28 @@ void nano::landing::distribute_one ()
 	}
 }
 
-void nano::landing::distribute_ongoing ()
+void btcb::landing::distribute_ongoing ()
 {
 	distribute_one ();
 	node.logger.always_log ("Waiting for next distribution cycle");
 	node.alarm.add (std::chrono::steady_clock::now () + sleep_seconds, [this]() { distribute_ongoing (); });
 }
 
-std::chrono::seconds constexpr nano::landing::distribution_interval;
-std::chrono::seconds constexpr nano::landing::sleep_seconds;
+std::chrono::seconds constexpr btcb::landing::distribution_interval;
+std::chrono::seconds constexpr btcb::landing::sleep_seconds;
 
-namespace nano
+namespace btcb
 {
 void cleanup_test_directories_on_exit ()
 {
 	// Makes sure everything is cleaned up
-	nano::logging::release_file_sink ();
+	btcb::logging::release_file_sink ();
 	// Clean up tmp directories created by the tests. Since it's sometimes useful to
 	// see log files after test failures, an environment variable is supported to
 	// retain the files.
 	if (std::getenv ("TEST_KEEP_TMPDIRS") == nullptr)
 	{
-		nano::remove_temporary_directories ();
+		btcb::remove_temporary_directories ();
 	}
 }
 }

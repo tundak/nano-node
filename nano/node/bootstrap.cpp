@@ -1,10 +1,10 @@
-#include <nano/node/bootstrap.hpp>
+#include <btcb/node/bootstrap.hpp>
 
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/node/common.hpp>
-#include <nano/node/node.hpp>
-#include <nano/node/transport/tcp.hpp>
-#include <nano/node/transport/udp.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/transport/tcp.hpp>
+#include <btcb/node/transport/udp.hpp>
 
 #include <algorithm>
 #include <boost/log/trivial.hpp>
@@ -19,9 +19,9 @@ constexpr double bootstrap_minimum_termination_time_sec = 30.0;
 constexpr unsigned bootstrap_max_new_connections = 10;
 constexpr unsigned bulk_push_cost_limit = 200;
 
-size_t constexpr nano::frontier_req_client::size_frontier;
+size_t constexpr btcb::frontier_req_client::size_frontier;
 
-nano::bootstrap_client::bootstrap_client (std::shared_ptr<nano::node> node_a, std::shared_ptr<nano::bootstrap_attempt> attempt_a, std::shared_ptr<nano::transport::channel_tcp> channel_a) :
+btcb::bootstrap_client::bootstrap_client (std::shared_ptr<btcb::node> node_a, std::shared_ptr<btcb::bootstrap_attempt> attempt_a, std::shared_ptr<btcb::transport::channel_tcp> channel_a) :
 node (node_a),
 attempt (attempt_a),
 channel (channel_a),
@@ -35,23 +35,23 @@ hard_stop (false)
 	receive_buffer->resize (256);
 }
 
-nano::bootstrap_client::~bootstrap_client ()
+btcb::bootstrap_client::~bootstrap_client ()
 {
 	--attempt->connections;
 }
 
-double nano::bootstrap_client::block_rate () const
+double btcb::bootstrap_client::block_rate () const
 {
 	auto elapsed = std::max (elapsed_seconds (), bootstrap_minimum_elapsed_seconds_blockrate);
 	return static_cast<double> (block_count.load () / elapsed);
 }
 
-double nano::bootstrap_client::elapsed_seconds () const
+double btcb::bootstrap_client::elapsed_seconds () const
 {
 	return std::chrono::duration_cast<std::chrono::duration<double>> (std::chrono::steady_clock::now () - start_time).count ();
 }
 
-void nano::bootstrap_client::stop (bool force)
+void btcb::bootstrap_client::stop (bool force)
 {
 	pending_stop = true;
 	if (force)
@@ -60,9 +60,9 @@ void nano::bootstrap_client::stop (bool force)
 	}
 }
 
-void nano::frontier_req_client::run ()
+void btcb::frontier_req_client::run ()
 {
-	nano::frontier_req request;
+	btcb::frontier_req request;
 	request.start.clear ();
 	request.age = std::numeric_limits<decltype (request.age)>::max ();
 	request.count = std::numeric_limits<decltype (request.count)>::max ();
@@ -82,12 +82,12 @@ void nano::frontier_req_client::run ()
 	});
 }
 
-std::shared_ptr<nano::bootstrap_client> nano::bootstrap_client::shared ()
+std::shared_ptr<btcb::bootstrap_client> btcb::bootstrap_client::shared ()
 {
 	return shared_from_this ();
 }
 
-nano::frontier_req_client::frontier_req_client (std::shared_ptr<nano::bootstrap_client> connection_a) :
+btcb::frontier_req_client::frontier_req_client (std::shared_ptr<btcb::bootstrap_client> connection_a) :
 connection (connection_a),
 current (0),
 count (0),
@@ -97,17 +97,17 @@ bulk_push_cost (0)
 	next (transaction);
 }
 
-nano::frontier_req_client::~frontier_req_client ()
+btcb::frontier_req_client::~frontier_req_client ()
 {
 }
 
-void nano::frontier_req_client::receive_frontier ()
+void btcb::frontier_req_client::receive_frontier ()
 {
 	auto this_l (shared_from_this ());
-	connection->channel->socket->async_read (connection->receive_buffer, nano::frontier_req_client::size_frontier, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->channel->socket->async_read (connection->receive_buffer, btcb::frontier_req_client::size_frontier, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		// An issue with asio is that sometimes, instead of reporting a bad file descriptor during disconnect,
 		// we simply get a size of 0.
-		if (size_a == nano::frontier_req_client::size_frontier)
+		if (size_a == btcb::frontier_req_client::size_frontier)
 		{
 			this_l->received_frontier (ec, size_a);
 		}
@@ -115,13 +115,13 @@ void nano::frontier_req_client::receive_frontier ()
 		{
 			if (this_l->connection->node->config.logging.network_message_logging ())
 			{
-				this_l->connection->node->logger.try_log (boost::str (boost::format ("Invalid size: expected %1%, got %2%") % nano::frontier_req_client::size_frontier % size_a));
+				this_l->connection->node->logger.try_log (boost::str (boost::format ("Invalid size: expected %1%, got %2%") % btcb::frontier_req_client::size_frontier % size_a));
 			}
 		}
 	});
 }
 
-void nano::frontier_req_client::unsynced (nano::block_hash const & head, nano::block_hash const & end)
+void btcb::frontier_req_client::unsynced (btcb::block_hash const & head, btcb::block_hash const & end)
 {
 	if (bulk_push_cost < bulk_push_cost_limit)
 	{
@@ -137,18 +137,18 @@ void nano::frontier_req_client::unsynced (nano::block_hash const & head, nano::b
 	}
 }
 
-void nano::frontier_req_client::received_frontier (boost::system::error_code const & ec, size_t size_a)
+void btcb::frontier_req_client::received_frontier (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
-		assert (size_a == nano::frontier_req_client::size_frontier);
-		nano::account account;
-		nano::bufferstream account_stream (connection->receive_buffer->data (), sizeof (account));
-		auto error1 (nano::try_read (account_stream, account));
+		assert (size_a == btcb::frontier_req_client::size_frontier);
+		btcb::account account;
+		btcb::bufferstream account_stream (connection->receive_buffer->data (), sizeof (account));
+		auto error1 (btcb::try_read (account_stream, account));
 		assert (!error1);
-		nano::block_hash latest;
-		nano::bufferstream latest_stream (connection->receive_buffer->data () + sizeof (account), sizeof (latest));
-		auto error2 (nano::try_read (latest_stream, latest));
+		btcb::block_hash latest;
+		btcb::bufferstream latest_stream (connection->receive_buffer->data () + sizeof (account), sizeof (latest));
+		auto error2 (btcb::try_read (latest_stream, latest));
 		assert (!error2);
 		if (count == 0)
 		{
@@ -195,7 +195,7 @@ void nano::frontier_req_client::received_frontier (boost::system::error_code con
 						}
 						else
 						{
-							connection->attempt->add_pull (nano::pull_info (account, latest, frontier));
+							connection->attempt->add_pull (btcb::pull_info (account, latest, frontier));
 							// Either we're behind or there's a fork we differ on
 							// Either way, bulk pushing will probably not be effective
 							bulk_push_cost += 5;
@@ -206,12 +206,12 @@ void nano::frontier_req_client::received_frontier (boost::system::error_code con
 				else
 				{
 					assert (account < current);
-					connection->attempt->add_pull (nano::pull_info (account, latest, nano::block_hash (0)));
+					connection->attempt->add_pull (btcb::pull_info (account, latest, btcb::block_hash (0)));
 				}
 			}
 			else
 			{
-				connection->attempt->add_pull (nano::pull_info (account, latest, nano::block_hash (0)));
+				connection->attempt->add_pull (btcb::pull_info (account, latest, btcb::block_hash (0)));
 			}
 			receive_frontier ();
 		}
@@ -248,7 +248,7 @@ void nano::frontier_req_client::received_frontier (boost::system::error_code con
 	}
 }
 
-void nano::frontier_req_client::next (nano::transaction const & transaction_a)
+void btcb::frontier_req_client::next (btcb::transaction const & transaction_a)
 {
 	// Filling accounts deque to prevent often read transactions
 	if (accounts.empty ())
@@ -256,14 +256,14 @@ void nano::frontier_req_client::next (nano::transaction const & transaction_a)
 		size_t max_size (128);
 		for (auto i (connection->node->store.latest_begin (transaction_a, current.number () + 1)), n (connection->node->store.latest_end ()); i != n && accounts.size () != max_size; ++i)
 		{
-			nano::account_info info (i->second);
-			accounts.push_back (std::make_pair (nano::account (i->first), info.head));
+			btcb::account_info info (i->second);
+			accounts.push_back (std::make_pair (btcb::account (i->first), info.head));
 		}
 		/* If loop breaks before max_size, then latest_end () is reached
 		Add empty record to finish frontier_req_server */
 		if (accounts.size () != max_size)
 		{
-			accounts.push_back (std::make_pair (nano::account (0), nano::block_hash (0)));
+			accounts.push_back (std::make_pair (btcb::account (0), btcb::block_hash (0)));
 		}
 	}
 	// Retrieving accounts from deque
@@ -273,7 +273,7 @@ void nano::frontier_req_client::next (nano::transaction const & transaction_a)
 	frontier = account_pair.second;
 }
 
-nano::bulk_pull_client::bulk_pull_client (std::shared_ptr<nano::bootstrap_client> connection_a, nano::pull_info const & pull_a) :
+btcb::bulk_pull_client::bulk_pull_client (std::shared_ptr<btcb::bootstrap_client> connection_a, btcb::pull_info const & pull_a) :
 connection (connection_a),
 known_account (0),
 pull (pull_a),
@@ -284,13 +284,13 @@ unexpected_count (0)
 	connection->attempt->condition.notify_all ();
 }
 
-nano::bulk_pull_client::~bulk_pull_client ()
+btcb::bulk_pull_client::~bulk_pull_client ()
 {
 	// If received end block is not expected end block
 	if (expected != pull.end)
 	{
 		pull.head = expected;
-		if (connection->attempt->mode != nano::bootstrap_mode::legacy)
+		if (connection->attempt->mode != btcb::bootstrap_mode::legacy)
 		{
 			pull.account = expected;
 		}
@@ -312,10 +312,10 @@ nano::bulk_pull_client::~bulk_pull_client ()
 	connection->attempt->condition.notify_all ();
 }
 
-void nano::bulk_pull_client::request ()
+void btcb::bulk_pull_client::request ()
 {
 	expected = pull.head;
-	nano::bulk_pull req;
+	btcb::bulk_pull req;
 	req.start = (pull.head == pull.head_original) ? pull.account : pull.head; // Account for new pulls, head for cached pulls
 	req.end = pull.end;
 	req.count = pull.count;
@@ -343,12 +343,12 @@ void nano::bulk_pull_client::request ()
 			{
 				this_l->connection->node->logger.try_log (boost::str (boost::format ("Error sending bulk pull request to %1%: to %2%") % ec.message () % this_l->connection->channel->to_string ()));
 			}
-			this_l->connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_request_failure, nano::stat::dir::in);
+			this_l->connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_request_failure, btcb::stat::dir::in);
 		}
 	});
 }
 
-void nano::bulk_pull_client::receive_block ()
+void btcb::bulk_pull_client::receive_block ()
 {
 	auto this_l (shared_from_this ());
 	connection->channel->socket->async_read (connection->receive_buffer, 1, [this_l](boost::system::error_code const & ec, size_t size_a) {
@@ -362,53 +362,53 @@ void nano::bulk_pull_client::receive_block ()
 			{
 				this_l->connection->node->logger.try_log (boost::str (boost::format ("Error receiving block type: %1%") % ec.message ()));
 			}
-			this_l->connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_receive_block_failure, nano::stat::dir::in);
+			this_l->connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_receive_block_failure, btcb::stat::dir::in);
 		}
 	});
 }
 
-void nano::bulk_pull_client::received_type ()
+void btcb::bulk_pull_client::received_type ()
 {
 	auto this_l (shared_from_this ());
-	nano::block_type type (static_cast<nano::block_type> (connection->receive_buffer->data ()[0]));
+	btcb::block_type type (static_cast<btcb::block_type> (connection->receive_buffer->data ()[0]));
 	switch (type)
 	{
-		case nano::block_type::send:
+		case btcb::block_type::send:
 		{
-			connection->channel->socket->async_read (connection->receive_buffer, nano::send_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->channel->socket->async_read (connection->receive_buffer, btcb::send_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::receive:
+		case btcb::block_type::receive:
 		{
-			connection->channel->socket->async_read (connection->receive_buffer, nano::receive_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->channel->socket->async_read (connection->receive_buffer, btcb::receive_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::open:
+		case btcb::block_type::open:
 		{
-			connection->channel->socket->async_read (connection->receive_buffer, nano::open_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->channel->socket->async_read (connection->receive_buffer, btcb::open_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::change:
+		case btcb::block_type::change:
 		{
-			connection->channel->socket->async_read (connection->receive_buffer, nano::change_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->channel->socket->async_read (connection->receive_buffer, btcb::change_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::state:
+		case btcb::block_type::state:
 		{
-			connection->channel->socket->async_read (connection->receive_buffer, nano::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->channel->socket->async_read (connection->receive_buffer, btcb::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::not_a_block:
+		case btcb::block_type::not_a_block:
 		{
 			// Avoid re-using slow peers, or peers that sent the wrong blocks.
 			if (!connection->pending_stop && expected == pull.end)
@@ -428,13 +428,13 @@ void nano::bulk_pull_client::received_type ()
 	}
 }
 
-void nano::bulk_pull_client::received_block (boost::system::error_code const & ec, size_t size_a, nano::block_type type_a)
+void btcb::bulk_pull_client::received_block (boost::system::error_code const & ec, size_t size_a, btcb::block_type type_a)
 {
 	if (!ec)
 	{
-		nano::bufferstream stream (connection->receive_buffer->data (), size_a);
-		std::shared_ptr<nano::block> block (nano::deserialize_block (stream, type_a));
-		if (block != nullptr && !nano::work_validate (*block))
+		btcb::bufferstream stream (connection->receive_buffer->data (), size_a);
+		std::shared_ptr<btcb::block> block (btcb::deserialize_block (stream, type_a));
+		if (block != nullptr && !btcb::work_validate (*block))
 		{
 			auto hash (block->hash ());
 			if (connection->node->config.logging.bulk_pull_logging ())
@@ -470,7 +470,7 @@ void nano::bulk_pull_client::received_block (boost::system::error_code const & e
 				/* Process block in lazy pull if not stopped
 				Stop usual pull request with unexpected block & more than 16k blocks processed
 				to prevent spam */
-				if (connection->attempt->mode != nano::bootstrap_mode::legacy || unexpected_count < 16384)
+				if (connection->attempt->mode != btcb::bootstrap_mode::legacy || unexpected_count < 16384)
 				{
 					receive_block ();
 				}
@@ -491,7 +491,7 @@ void nano::bulk_pull_client::received_block (boost::system::error_code const & e
 			{
 				connection->node->logger.try_log ("Error deserializing block received from pull request");
 			}
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_deserialize_receive_block, nano::stat::dir::in);
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_deserialize_receive_block, btcb::stat::dir::in);
 		}
 	}
 	else
@@ -500,22 +500,22 @@ void nano::bulk_pull_client::received_block (boost::system::error_code const & e
 		{
 			connection->node->logger.try_log (boost::str (boost::format ("Error bulk receiving block: %1%") % ec.message ()));
 		}
-		connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_receive_block_failure, nano::stat::dir::in);
+		connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_receive_block_failure, btcb::stat::dir::in);
 	}
 }
 
-nano::bulk_push_client::bulk_push_client (std::shared_ptr<nano::bootstrap_client> const & connection_a) :
+btcb::bulk_push_client::bulk_push_client (std::shared_ptr<btcb::bootstrap_client> const & connection_a) :
 connection (connection_a)
 {
 }
 
-nano::bulk_push_client::~bulk_push_client ()
+btcb::bulk_push_client::~bulk_push_client ()
 {
 }
 
-void nano::bulk_push_client::start ()
+void btcb::bulk_push_client::start ()
 {
-	nano::bulk_push message;
+	btcb::bulk_push message;
 	auto this_l (shared_from_this ());
 	connection->channel->send (message, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		auto transaction (this_l->connection->node->store.tx_begin_read ());
@@ -533,9 +533,9 @@ void nano::bulk_push_client::start ()
 	});
 }
 
-void nano::bulk_push_client::push (nano::transaction const & transaction_a)
+void btcb::bulk_push_client::push (btcb::transaction const & transaction_a)
 {
-	std::shared_ptr<nano::block> block;
+	std::shared_ptr<btcb::block> block;
 	bool finished (false);
 	while (block == nullptr && !finished)
 	{
@@ -557,7 +557,7 @@ void nano::bulk_push_client::push (nano::transaction const & transaction_a)
 			block = connection->node->store.block_get (transaction_a, current_target.first);
 			if (block == nullptr)
 			{
-				current_target.first = nano::block_hash (0);
+				current_target.first = btcb::block_hash (0);
 			}
 			else
 			{
@@ -579,12 +579,12 @@ void nano::bulk_push_client::push (nano::transaction const & transaction_a)
 	}
 }
 
-void nano::bulk_push_client::send_finished ()
+void btcb::bulk_push_client::send_finished ()
 {
 	auto buffer (std::make_shared<std::vector<uint8_t>> ());
-	buffer->push_back (static_cast<uint8_t> (nano::block_type::not_a_block));
+	buffer->push_back (static_cast<uint8_t> (btcb::block_type::not_a_block));
 	auto this_l (shared_from_this ());
-	connection->channel->send_buffer (buffer, nano::stat::detail::all, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->channel->send_buffer (buffer, btcb::stat::detail::all, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		try
 		{
 			this_l->promise.set_value (false);
@@ -595,15 +595,15 @@ void nano::bulk_push_client::send_finished ()
 	});
 }
 
-void nano::bulk_push_client::push_block (nano::block const & block_a)
+void btcb::bulk_push_client::push_block (btcb::block const & block_a)
 {
 	auto buffer (std::make_shared<std::vector<uint8_t>> ());
 	{
-		nano::vectorstream stream (*buffer);
-		nano::serialize_block (stream, block_a);
+		btcb::vectorstream stream (*buffer);
+		btcb::serialize_block (stream, block_a);
 	}
 	auto this_l (shared_from_this ());
-	connection->channel->send_buffer (buffer, nano::stat::detail::all, [this_l](boost::system::error_code const & ec, size_t size_a) {
+	connection->channel->send_buffer (buffer, btcb::stat::detail::all, [this_l](boost::system::error_code const & ec, size_t size_a) {
 		if (!ec)
 		{
 			auto transaction (this_l->connection->node->store.tx_begin_read ());
@@ -619,7 +619,7 @@ void nano::bulk_push_client::push_block (nano::block const & block_a)
 	});
 }
 
-nano::bulk_pull_account_client::bulk_pull_account_client (std::shared_ptr<nano::bootstrap_client> connection_a, nano::account const & account_a) :
+btcb::bulk_pull_account_client::bulk_pull_account_client (std::shared_ptr<btcb::bootstrap_client> connection_a, btcb::account const & account_a) :
 connection (connection_a),
 account (account_a),
 total_blocks (0)
@@ -627,7 +627,7 @@ total_blocks (0)
 	connection->attempt->condition.notify_all ();
 }
 
-nano::bulk_pull_account_client::~bulk_pull_account_client ()
+btcb::bulk_pull_account_client::~bulk_pull_account_client ()
 {
 	{
 		std::lock_guard<std::mutex> mutex (connection->attempt->mutex);
@@ -636,12 +636,12 @@ nano::bulk_pull_account_client::~bulk_pull_account_client ()
 	connection->attempt->condition.notify_all ();
 }
 
-void nano::bulk_pull_account_client::request ()
+void btcb::bulk_pull_account_client::request ()
 {
-	nano::bulk_pull_account req;
+	btcb::bulk_pull_account req;
 	req.account = account;
 	req.minimum_amount = connection->node->config.receive_minimum;
-	req.flags = nano::bulk_pull_account_flags::pending_hash_and_amount;
+	req.flags = btcb::bulk_pull_account_flags::pending_hash_and_amount;
 	if (connection->node->config.logging.bulk_pull_logging ())
 	{
 		std::unique_lock<std::mutex> lock (connection->attempt->mutex);
@@ -665,15 +665,15 @@ void nano::bulk_pull_account_client::request ()
 			{
 				this_l->connection->node->logger.try_log (boost::str (boost::format ("Error starting bulk pull request to %1%: to %2%") % ec.message () % this_l->connection->channel->to_string ()));
 			}
-			this_l->connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_error_starting_request, nano::stat::dir::in);
+			this_l->connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_error_starting_request, btcb::stat::dir::in);
 		}
 	});
 }
 
-void nano::bulk_pull_account_client::receive_pending ()
+void btcb::bulk_pull_account_client::receive_pending ()
 {
 	auto this_l (shared_from_this ());
-	size_t size_l (sizeof (nano::uint256_union) + sizeof (nano::uint128_union));
+	size_t size_l (sizeof (btcb::uint256_union) + sizeof (btcb::uint128_union));
 	connection->channel->socket->async_read (connection->receive_buffer, size_l, [this_l, size_l](boost::system::error_code const & ec, size_t size_a) {
 		// An issue with asio is that sometimes, instead of reporting a bad file descriptor during disconnect,
 		// we simply get a size of 0.
@@ -681,13 +681,13 @@ void nano::bulk_pull_account_client::receive_pending ()
 		{
 			if (!ec)
 			{
-				nano::block_hash pending;
-				nano::bufferstream frontier_stream (this_l->connection->receive_buffer->data (), sizeof (nano::uint256_union));
-				auto error1 (nano::try_read (frontier_stream, pending));
+				btcb::block_hash pending;
+				btcb::bufferstream frontier_stream (this_l->connection->receive_buffer->data (), sizeof (btcb::uint256_union));
+				auto error1 (btcb::try_read (frontier_stream, pending));
 				assert (!error1);
-				nano::amount balance;
-				nano::bufferstream balance_stream (this_l->connection->receive_buffer->data () + sizeof (nano::uint256_union), sizeof (nano::uint128_union));
-				auto error2 (nano::try_read (balance_stream, balance));
+				btcb::amount balance;
+				btcb::bufferstream balance_stream (this_l->connection->receive_buffer->data () + sizeof (btcb::uint256_union), sizeof (btcb::uint128_union));
+				auto error2 (btcb::try_read (balance_stream, balance));
 				assert (!error2);
 				if (this_l->total_blocks == 0 || !pending.is_zero ())
 				{
@@ -736,7 +736,7 @@ void nano::bulk_pull_account_client::receive_pending ()
 	});
 }
 
-nano::pull_info::pull_info (nano::account const & account_a, nano::block_hash const & head_a, nano::block_hash const & end_a, count_t count_a) :
+btcb::pull_info::pull_info (btcb::account const & account_a, btcb::block_hash const & head_a, btcb::block_hash const & end_a, count_t count_a) :
 account (account_a),
 head (head_a),
 head_original (head_a),
@@ -745,7 +745,7 @@ count (count_a)
 {
 }
 
-nano::bootstrap_attempt::bootstrap_attempt (std::shared_ptr<nano::node> node_a) :
+btcb::bootstrap_attempt::bootstrap_attempt (std::shared_ptr<btcb::node> node_a) :
 next_log (std::chrono::steady_clock::now ()),
 connections (0),
 pulling (0),
@@ -754,20 +754,20 @@ account_count (0),
 total_blocks (0),
 runs_count (0),
 stopped (false),
-mode (nano::bootstrap_mode::legacy),
+mode (btcb::bootstrap_mode::legacy),
 lazy_stopped (0)
 {
 	node->logger.always_log ("Starting bootstrap attempt");
 	node->bootstrap_initiator.notify_listeners (true);
 }
 
-nano::bootstrap_attempt::~bootstrap_attempt ()
+btcb::bootstrap_attempt::~bootstrap_attempt ()
 {
 	node->logger.always_log ("Exiting bootstrap attempt");
 	node->bootstrap_initiator.notify_listeners (false);
 }
 
-bool nano::bootstrap_attempt::should_log ()
+bool btcb::bootstrap_attempt::should_log ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto result (false);
@@ -780,7 +780,7 @@ bool nano::bootstrap_attempt::should_log ()
 	return result;
 }
 
-bool nano::bootstrap_attempt::request_frontier (std::unique_lock<std::mutex> & lock_a)
+bool btcb::bootstrap_attempt::request_frontier (std::unique_lock<std::mutex> & lock_a)
 {
 	auto result (true);
 	auto connection_l (connection (lock_a));
@@ -789,7 +789,7 @@ bool nano::bootstrap_attempt::request_frontier (std::unique_lock<std::mutex> & l
 	{
 		std::future<bool> future;
 		{
-			auto client (std::make_shared<nano::frontier_req_client> (connection_l));
+			auto client (std::make_shared<btcb::frontier_req_client> (connection_l));
 			client->run ();
 			frontiers = client;
 			future = client->promise.get_future ();
@@ -809,21 +809,21 @@ bool nano::bootstrap_attempt::request_frontier (std::unique_lock<std::mutex> & l
 			}
 			else
 			{
-				node->stats.inc (nano::stat::type::error, nano::stat::detail::frontier_req, nano::stat::dir::out);
+				node->stats.inc (btcb::stat::type::error, btcb::stat::detail::frontier_req, btcb::stat::dir::out);
 			}
 		}
 	}
 	return result;
 }
 
-void nano::bootstrap_attempt::request_pull (std::unique_lock<std::mutex> & lock_a)
+void btcb::bootstrap_attempt::request_pull (std::unique_lock<std::mutex> & lock_a)
 {
 	auto connection_l (connection (lock_a));
 	if (connection_l)
 	{
 		auto pull (pulls.front ());
 		pulls.pop_front ();
-		if (mode != nano::bootstrap_mode::legacy)
+		if (mode != btcb::bootstrap_mode::legacy)
 		{
 			// Check if pull is obsolete (head was processed)
 			std::unique_lock<std::mutex> lock (lazy_mutex);
@@ -838,20 +838,20 @@ void nano::bootstrap_attempt::request_pull (std::unique_lock<std::mutex> & lock_
 		// The bulk_pull_client destructor attempt to requeue_pull which can cause a deadlock if this is the last reference
 		// Dispatch request in an external thread in case it needs to be destroyed
 		node->background ([connection_l, pull]() {
-			auto client (std::make_shared<nano::bulk_pull_client> (connection_l, pull));
+			auto client (std::make_shared<btcb::bulk_pull_client> (connection_l, pull));
 			client->request ();
 		});
 	}
 }
 
-void nano::bootstrap_attempt::request_push (std::unique_lock<std::mutex> & lock_a)
+void btcb::bootstrap_attempt::request_push (std::unique_lock<std::mutex> & lock_a)
 {
 	bool error (false);
 	if (auto connection_shared = connection_frontier_request.lock ())
 	{
 		std::future<bool> future;
 		{
-			auto client (std::make_shared<nano::bulk_push_client> (connection_shared));
+			auto client (std::make_shared<btcb::bulk_push_client> (connection_shared));
 			client->start ();
 			push = client;
 			future = client->promise.get_future ();
@@ -870,7 +870,7 @@ void nano::bootstrap_attempt::request_push (std::unique_lock<std::mutex> & lock_
 	}
 }
 
-bool nano::bootstrap_attempt::still_pulling ()
+bool btcb::bootstrap_attempt::still_pulling ()
 {
 	assert (!mutex.try_lock ());
 	auto running (!stopped);
@@ -879,7 +879,7 @@ bool nano::bootstrap_attempt::still_pulling ()
 	return running && (more_pulls || still_pulling);
 }
 
-void nano::bootstrap_attempt::run ()
+void btcb::bootstrap_attempt::run ()
 {
 	populate_connections ();
 	std::unique_lock<std::mutex> lock (mutex);
@@ -894,7 +894,7 @@ void nano::bootstrap_attempt::run ()
 	{
 		for (auto i = static_cast<CryptoPP::word32> (pulls.size () - 1); i > 0; --i)
 		{
-			auto k = nano::random_pool::generate_word32 (0, i);
+			auto k = btcb::random_pool::generate_word32 (0, i);
 			std::swap (pulls[i], pulls[k]);
 		}
 	}
@@ -934,7 +934,7 @@ void nano::bootstrap_attempt::run ()
 		if (!wallet_accounts.empty () && !node->flags.disable_wallet_bootstrap)
 		{
 			lock.unlock ();
-			mode = nano::bootstrap_mode::wallet_lazy;
+			mode = btcb::bootstrap_mode::wallet_lazy;
 			wallet_run ();
 			lock.lock ();
 		}
@@ -942,7 +942,7 @@ void nano::bootstrap_attempt::run ()
 		else if (runs_count < 3 && !lazy_finished () && !node->flags.disable_lazy_bootstrap)
 		{
 			lock.unlock ();
-			mode = nano::bootstrap_mode::lazy;
+			mode = btcb::bootstrap_mode::lazy;
 			lazy_run ();
 			lock.lock ();
 		}
@@ -956,13 +956,13 @@ void nano::bootstrap_attempt::run ()
 	idle.clear ();
 }
 
-std::shared_ptr<nano::bootstrap_client> nano::bootstrap_attempt::connection (std::unique_lock<std::mutex> & lock_a)
+std::shared_ptr<btcb::bootstrap_client> btcb::bootstrap_attempt::connection (std::unique_lock<std::mutex> & lock_a)
 {
 	while (!stopped && idle.empty ())
 	{
 		condition.wait (lock_a);
 	}
-	std::shared_ptr<nano::bootstrap_client> result;
+	std::shared_ptr<btcb::bootstrap_client> result;
 	if (!idle.empty ())
 	{
 		result = idle.back ();
@@ -971,7 +971,7 @@ std::shared_ptr<nano::bootstrap_client> nano::bootstrap_attempt::connection (std
 	return result;
 }
 
-bool nano::bootstrap_attempt::consume_future (std::future<bool> & future_a)
+bool btcb::bootstrap_attempt::consume_future (std::future<bool> & future_a)
 {
 	bool result;
 	try
@@ -987,13 +987,13 @@ bool nano::bootstrap_attempt::consume_future (std::future<bool> & future_a)
 
 struct block_rate_cmp
 {
-	bool operator() (const std::shared_ptr<nano::bootstrap_client> & lhs, const std::shared_ptr<nano::bootstrap_client> & rhs) const
+	bool operator() (const std::shared_ptr<btcb::bootstrap_client> & lhs, const std::shared_ptr<btcb::bootstrap_client> & rhs) const
 	{
 		return lhs->block_rate () > rhs->block_rate ();
 	}
 };
 
-unsigned nano::bootstrap_attempt::target_connections (size_t pulls_remaining)
+unsigned btcb::bootstrap_attempt::target_connections (size_t pulls_remaining)
 {
 	if (node->config.bootstrap_connections >= node->config.bootstrap_connections_max)
 	{
@@ -1006,16 +1006,16 @@ unsigned nano::bootstrap_attempt::target_connections (size_t pulls_remaining)
 	return std::max (1U, (unsigned)(target + 0.5f));
 }
 
-void nano::bootstrap_attempt::populate_connections ()
+void btcb::bootstrap_attempt::populate_connections ()
 {
 	double rate_sum = 0.0;
 	size_t num_pulls = 0;
-	std::priority_queue<std::shared_ptr<nano::bootstrap_client>, std::vector<std::shared_ptr<nano::bootstrap_client>>, block_rate_cmp> sorted_connections;
-	std::unordered_set<nano::tcp_endpoint> endpoints;
+	std::priority_queue<std::shared_ptr<btcb::bootstrap_client>, std::vector<std::shared_ptr<btcb::bootstrap_client>>, block_rate_cmp> sorted_connections;
+	std::unordered_set<btcb::tcp_endpoint> endpoints;
 	{
 		std::unique_lock<std::mutex> lock (mutex);
 		num_pulls = pulls.size ();
-		std::deque<std::weak_ptr<nano::bootstrap_client>> new_clients;
+		std::deque<std::weak_ptr<btcb::bootstrap_client>> new_clients;
 		for (auto & c : clients)
 		{
 			if (auto client = c.lock ())
@@ -1088,7 +1088,7 @@ void nano::bootstrap_attempt::populate_connections ()
 		for (auto i = 0u; i < delta; i++)
 		{
 			auto endpoint (node->network.bootstrap_peer ());
-			if (endpoint != nano::tcp_endpoint (boost::asio::ip::address_v6::any (), 0) && endpoints.find (endpoint) == endpoints.end ())
+			if (endpoint != btcb::tcp_endpoint (boost::asio::ip::address_v6::any (), 0) && endpoints.find (endpoint) == endpoints.end ())
 			{
 				connect_client (endpoint);
 				std::lock_guard<std::mutex> lock (mutex);
@@ -1104,7 +1104,7 @@ void nano::bootstrap_attempt::populate_connections ()
 	}
 	if (!stopped)
 	{
-		std::weak_ptr<nano::bootstrap_attempt> this_w (shared_from_this ());
+		std::weak_ptr<btcb::bootstrap_attempt> this_w (shared_from_this ());
 		node->alarm.add (std::chrono::steady_clock::now () + std::chrono::seconds (1), [this_w]() {
 			if (auto this_l = this_w.lock ())
 			{
@@ -1114,15 +1114,15 @@ void nano::bootstrap_attempt::populate_connections ()
 	}
 }
 
-void nano::bootstrap_attempt::add_connection (nano::endpoint const & endpoint_a)
+void btcb::bootstrap_attempt::add_connection (btcb::endpoint const & endpoint_a)
 {
-	connect_client (nano::tcp_endpoint (endpoint_a.address (), endpoint_a.port ()));
+	connect_client (btcb::tcp_endpoint (endpoint_a.address (), endpoint_a.port ()));
 }
 
-void nano::bootstrap_attempt::connect_client (nano::tcp_endpoint const & endpoint_a)
+void btcb::bootstrap_attempt::connect_client (btcb::tcp_endpoint const & endpoint_a)
 {
 	++connections;
-	auto socket (std::make_shared<nano::socket> (node));
+	auto socket (std::make_shared<btcb::socket> (node));
 	auto this_l (shared_from_this ());
 	socket->async_connect (endpoint_a,
 	[this_l, socket, endpoint_a](boost::system::error_code const & ec) {
@@ -1132,7 +1132,7 @@ void nano::bootstrap_attempt::connect_client (nano::tcp_endpoint const & endpoin
 			{
 				this_l->node->logger.try_log (boost::str (boost::format ("Connection established to %1%") % endpoint_a));
 			}
-			auto client (std::make_shared<nano::bootstrap_client> (this_l->node, this_l, std::make_shared<nano::transport::channel_tcp> (*this_l->node, socket)));
+			auto client (std::make_shared<btcb::bootstrap_client> (this_l->node, this_l, std::make_shared<btcb::transport::channel_tcp> (*this_l->node, socket)));
 			this_l->pool_connection (client);
 		}
 		else
@@ -1157,7 +1157,7 @@ void nano::bootstrap_attempt::connect_client (nano::tcp_endpoint const & endpoin
 	});
 }
 
-void nano::bootstrap_attempt::pool_connection (std::shared_ptr<nano::bootstrap_client> client_a)
+void btcb::bootstrap_attempt::pool_connection (std::shared_ptr<btcb::bootstrap_client> client_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	if (!stopped && !client_a->pending_stop)
@@ -1167,7 +1167,7 @@ void nano::bootstrap_attempt::pool_connection (std::shared_ptr<nano::bootstrap_c
 	condition.notify_all ();
 }
 
-void nano::bootstrap_attempt::stop ()
+void btcb::bootstrap_attempt::stop ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	stopped = true;
@@ -1201,9 +1201,9 @@ void nano::bootstrap_attempt::stop ()
 	}
 }
 
-void nano::bootstrap_attempt::add_pull (nano::pull_info const & pull_a)
+void btcb::bootstrap_attempt::add_pull (btcb::pull_info const & pull_a)
 {
-	nano::pull_info pull (pull_a);
+	btcb::pull_info pull (pull_a);
 	node->bootstrap_initiator.cache.update_pull (pull);
 	{
 		std::lock_guard<std::mutex> lock (mutex);
@@ -1212,7 +1212,7 @@ void nano::bootstrap_attempt::add_pull (nano::pull_info const & pull_a)
 	condition.notify_all ();
 }
 
-void nano::bootstrap_attempt::requeue_pull (nano::pull_info const & pull_a)
+void btcb::bootstrap_attempt::requeue_pull (btcb::pull_info const & pull_a)
 {
 	auto pull (pull_a);
 	if (++pull.attempts < (bootstrap_frontier_retry_limit + (pull.processed / 10000)))
@@ -1221,7 +1221,7 @@ void nano::bootstrap_attempt::requeue_pull (nano::pull_info const & pull_a)
 		pulls.push_front (pull);
 		condition.notify_all ();
 	}
-	else if (mode == nano::bootstrap_mode::lazy)
+	else if (mode == btcb::bootstrap_mode::lazy)
 	{
 		{
 			// Retry for lazy pulls (not weak state block link assumptions)
@@ -1237,19 +1237,19 @@ void nano::bootstrap_attempt::requeue_pull (nano::pull_info const & pull_a)
 		{
 			node->logger.try_log (boost::str (boost::format ("Failed to pull account %1% down to %2% after %3% attempts and %4% blocks processed") % pull.account.to_account () % pull.end.to_string () % pull.attempts % pull.processed));
 		}
-		node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_failed_account, nano::stat::dir::in);
+		node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_failed_account, btcb::stat::dir::in);
 
 		node->bootstrap_initiator.cache.add (pull);
 	}
 }
 
-void nano::bootstrap_attempt::add_bulk_push_target (nano::block_hash const & head, nano::block_hash const & end)
+void btcb::bootstrap_attempt::add_bulk_push_target (btcb::block_hash const & head, btcb::block_hash const & end)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	bulk_push_targets.push_back (std::make_pair (head, end));
 }
 
-void nano::bootstrap_attempt::lazy_start (nano::block_hash const & hash_a)
+void btcb::bootstrap_attempt::lazy_start (btcb::block_hash const & hash_a)
 {
 	std::unique_lock<std::mutex> lock (lazy_mutex);
 	// Add start blocks, limit 1024 (32k with disabled legacy bootstrap)
@@ -1261,7 +1261,7 @@ void nano::bootstrap_attempt::lazy_start (nano::block_hash const & hash_a)
 	}
 }
 
-void nano::bootstrap_attempt::lazy_add (nano::block_hash const & hash_a)
+void btcb::bootstrap_attempt::lazy_add (btcb::block_hash const & hash_a)
 {
 	// Add only unknown blocks
 	assert (!lazy_mutex.try_lock ());
@@ -1271,7 +1271,7 @@ void nano::bootstrap_attempt::lazy_add (nano::block_hash const & hash_a)
 	}
 }
 
-void nano::bootstrap_attempt::lazy_pull_flush ()
+void btcb::bootstrap_attempt::lazy_pull_flush ()
 {
 	assert (!mutex.try_lock ());
 	std::unique_lock<std::mutex> lazy_lock (lazy_mutex);
@@ -1281,13 +1281,13 @@ void nano::bootstrap_attempt::lazy_pull_flush ()
 		// Recheck if block was already processed
 		if (lazy_blocks.find (pull_start) == lazy_blocks.end () && !node->store.block_exists (transaction, pull_start))
 		{
-			pulls.push_back (nano::pull_info (pull_start, pull_start, nano::block_hash (0), node->network_params.bootstrap.lazy_max_pull_blocks));
+			pulls.push_back (btcb::pull_info (pull_start, pull_start, btcb::block_hash (0), node->network_params.bootstrap.lazy_max_pull_blocks));
 		}
 	}
 	lazy_pulls.clear ();
 }
 
-bool nano::bootstrap_attempt::lazy_finished ()
+bool btcb::bootstrap_attempt::lazy_finished ()
 {
 	bool result (true);
 	auto transaction (node->store.tx_begin_read ());
@@ -1313,7 +1313,7 @@ bool nano::bootstrap_attempt::lazy_finished ()
 	return result;
 }
 
-void nano::bootstrap_attempt::lazy_clear ()
+void btcb::bootstrap_attempt::lazy_clear ()
 {
 	assert (!lazy_mutex.try_lock ());
 	lazy_blocks.clear ();
@@ -1324,7 +1324,7 @@ void nano::bootstrap_attempt::lazy_clear ()
 	lazy_stopped = 0;
 }
 
-void nano::bootstrap_attempt::lazy_run ()
+void btcb::bootstrap_attempt::lazy_run ()
 {
 	populate_connections ();
 	auto start_time (std::chrono::steady_clock::now ());
@@ -1374,7 +1374,7 @@ void nano::bootstrap_attempt::lazy_run ()
 		{
 			pulls.clear ();
 			lazy_clear ();
-			mode = nano::bootstrap_mode::wallet_lazy;
+			mode = btcb::bootstrap_mode::wallet_lazy;
 			lock.unlock ();
 			lazy_lock.unlock ();
 			wallet_run ();
@@ -1385,7 +1385,7 @@ void nano::bootstrap_attempt::lazy_run ()
 		{
 			pulls.clear ();
 			lazy_clear ();
-			mode = nano::bootstrap_mode::legacy;
+			mode = btcb::bootstrap_mode::legacy;
 			lock.unlock ();
 			lazy_lock.unlock ();
 			run ();
@@ -1397,10 +1397,10 @@ void nano::bootstrap_attempt::lazy_run ()
 	idle.clear ();
 }
 
-bool nano::bootstrap_attempt::process_block (std::shared_ptr<nano::block> block_a, nano::account const & known_account_a, uint64_t total_blocks, bool block_expected)
+bool btcb::bootstrap_attempt::process_block (std::shared_ptr<btcb::block> block_a, btcb::account const & known_account_a, uint64_t total_blocks, bool block_expected)
 {
 	bool stop_pull (false);
-	if (mode != nano::bootstrap_mode::legacy && block_expected)
+	if (mode != btcb::bootstrap_mode::legacy && block_expected)
 	{
 		auto hash (block_a->hash ());
 		std::unique_lock<std::mutex> lock (lazy_mutex);
@@ -1411,34 +1411,34 @@ bool nano::bootstrap_attempt::process_block (std::shared_ptr<nano::block> block_
 			auto transaction (node->store.tx_begin_read ());
 			if (!node->store.block_exists (transaction, block_a->type (), hash))
 			{
-				nano::uint128_t balance (std::numeric_limits<nano::uint128_t>::max ());
-				nano::unchecked_info info (block_a, known_account_a, 0, nano::signature_verification::unknown);
+				btcb::uint128_t balance (std::numeric_limits<btcb::uint128_t>::max ());
+				btcb::unchecked_info info (block_a, known_account_a, 0, btcb::signature_verification::unknown);
 				node->block_processor.add (info);
 				// Search for new dependencies
 				if (!block_a->source ().is_zero () && !node->store.block_exists (transaction, block_a->source ()))
 				{
 					lazy_add (block_a->source ());
 				}
-				else if (block_a->type () == nano::block_type::send)
+				else if (block_a->type () == btcb::block_type::send)
 				{
 					// Calculate balance for legacy send blocks
-					std::shared_ptr<nano::send_block> block_l (std::static_pointer_cast<nano::send_block> (block_a));
+					std::shared_ptr<btcb::send_block> block_l (std::static_pointer_cast<btcb::send_block> (block_a));
 					if (block_l != nullptr)
 					{
 						balance = block_l->hashables.balance.number ();
 					}
 				}
-				else if (block_a->type () == nano::block_type::state)
+				else if (block_a->type () == btcb::block_type::state)
 				{
-					std::shared_ptr<nano::state_block> block_l (std::static_pointer_cast<nano::state_block> (block_a));
+					std::shared_ptr<btcb::state_block> block_l (std::static_pointer_cast<btcb::state_block> (block_a));
 					if (block_l != nullptr)
 					{
 						balance = block_l->hashables.balance.number ();
-						nano::block_hash link (block_l->hashables.link);
+						btcb::block_hash link (block_l->hashables.link);
 						// If link is not epoch link or 0. And if block from link unknown
 						if (!link.is_zero () && link != node->ledger.epoch_link && lazy_blocks.find (link) == lazy_blocks.end () && !node->store.block_exists (transaction, link))
 						{
-							nano::block_hash previous (block_l->hashables.previous);
+							btcb::block_hash previous (block_l->hashables.previous);
 							// If state block previous is 0 then source block required
 							if (previous.is_zero ())
 							{
@@ -1447,7 +1447,7 @@ bool nano::bootstrap_attempt::process_block (std::shared_ptr<nano::block> block_
 							// In other cases previous block balance required to find out subtype of state block
 							else if (node->store.block_exists (transaction, previous))
 							{
-								nano::amount prev_balance (node->ledger.balance (transaction, previous));
+								btcb::amount prev_balance (node->ledger.balance (transaction, previous));
 								if (prev_balance.number () <= balance)
 								{
 									lazy_add (link);
@@ -1504,18 +1504,18 @@ bool nano::bootstrap_attempt::process_block (std::shared_ptr<nano::block> block_
 				auto next_block (find_state->second);
 				lazy_state_unknown.erase (hash);
 				// Retrieve balance for previous state blocks
-				if (block_a->type () == nano::block_type::state)
+				if (block_a->type () == btcb::block_type::state)
 				{
-					std::shared_ptr<nano::state_block> block_l (std::static_pointer_cast<nano::state_block> (block_a));
+					std::shared_ptr<btcb::state_block> block_l (std::static_pointer_cast<btcb::state_block> (block_a));
 					if (block_l->hashables.balance.number () <= next_block.second)
 					{
 						lazy_add (next_block.first);
 					}
 				}
 				// Retrieve balance for previous legacy send blocks
-				else if (block_a->type () == nano::block_type::send)
+				else if (block_a->type () == btcb::block_type::send)
 				{
-					std::shared_ptr<nano::send_block> block_l (std::static_pointer_cast<nano::send_block> (block_a));
+					std::shared_ptr<btcb::send_block> block_l (std::static_pointer_cast<btcb::send_block> (block_a));
 					if (block_l->hashables.balance.number () <= next_block.second)
 					{
 						lazy_add (next_block.first);
@@ -1540,20 +1540,20 @@ bool nano::bootstrap_attempt::process_block (std::shared_ptr<nano::block> block_
 			}
 		}
 	}
-	else if (mode != nano::bootstrap_mode::legacy)
+	else if (mode != btcb::bootstrap_mode::legacy)
 	{
 		// Drop connection with unexpected block for lazy bootstrap
 		stop_pull = true;
 	}
 	else
 	{
-		nano::unchecked_info info (block_a, known_account_a, 0, nano::signature_verification::unknown);
+		btcb::unchecked_info info (block_a, known_account_a, 0, btcb::signature_verification::unknown);
 		node->block_processor.add (info);
 	}
 	return stop_pull;
 }
 
-void nano::bootstrap_attempt::request_pending (std::unique_lock<std::mutex> & lock_a)
+void btcb::bootstrap_attempt::request_pending (std::unique_lock<std::mutex> & lock_a)
 {
 	auto connection_l (connection (lock_a));
 	if (connection_l)
@@ -1564,13 +1564,13 @@ void nano::bootstrap_attempt::request_pending (std::unique_lock<std::mutex> & lo
 		// The bulk_pull_account_client destructor attempt to requeue_pull which can cause a deadlock if this is the last reference
 		// Dispatch request in an external thread in case it needs to be destroyed
 		node->background ([connection_l, account]() {
-			auto client (std::make_shared<nano::bulk_pull_account_client> (connection_l, account));
+			auto client (std::make_shared<btcb::bulk_pull_account_client> (connection_l, account));
 			client->request ();
 		});
 	}
 }
 
-void nano::bootstrap_attempt::requeue_pending (nano::account const & account_a)
+void btcb::bootstrap_attempt::requeue_pending (btcb::account const & account_a)
 {
 	auto account (account_a);
 	{
@@ -1580,13 +1580,13 @@ void nano::bootstrap_attempt::requeue_pending (nano::account const & account_a)
 	}
 }
 
-void nano::bootstrap_attempt::wallet_start (std::deque<nano::account> & accounts_a)
+void btcb::bootstrap_attempt::wallet_start (std::deque<btcb::account> & accounts_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	wallet_accounts.swap (accounts_a);
 }
 
-bool nano::bootstrap_attempt::wallet_finished ()
+bool btcb::bootstrap_attempt::wallet_finished ()
 {
 	assert (!mutex.try_lock ());
 	auto running (!stopped);
@@ -1595,7 +1595,7 @@ bool nano::bootstrap_attempt::wallet_finished ()
 	return running && (more_accounts || still_pulling);
 }
 
-void nano::bootstrap_attempt::wallet_run ()
+void btcb::bootstrap_attempt::wallet_run ()
 {
 	populate_connections ();
 	auto start_time (std::chrono::steady_clock::now ());
@@ -1629,38 +1629,38 @@ void nano::bootstrap_attempt::wallet_run ()
 	idle.clear ();
 }
 
-nano::bootstrap_initiator::bootstrap_initiator (nano::node & node_a) :
+btcb::bootstrap_initiator::bootstrap_initiator (btcb::node & node_a) :
 node (node_a),
 stopped (false),
 thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::bootstrap_initiator);
+	btcb::thread_role::set (btcb::thread_role::name::bootstrap_initiator);
 	run_bootstrap ();
 })
 {
 }
 
-nano::bootstrap_initiator::~bootstrap_initiator ()
+btcb::bootstrap_initiator::~bootstrap_initiator ()
 {
 	stop ();
 	thread.join ();
 }
 
-void nano::bootstrap_initiator::bootstrap ()
+void btcb::bootstrap_initiator::bootstrap ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped && attempt == nullptr)
 	{
-		node.stats.inc (nano::stat::type::bootstrap, nano::stat::detail::initiate, nano::stat::dir::out);
-		attempt = std::make_shared<nano::bootstrap_attempt> (node.shared ());
+		node.stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::initiate, btcb::stat::dir::out);
+		attempt = std::make_shared<btcb::bootstrap_attempt> (node.shared ());
 		condition.notify_all ();
 	}
 }
 
-void nano::bootstrap_initiator::bootstrap (nano::endpoint const & endpoint_a, bool add_to_peers)
+void btcb::bootstrap_initiator::bootstrap (btcb::endpoint const & endpoint_a, bool add_to_peers)
 {
 	if (add_to_peers)
 	{
-		node.network.udp_channels.insert (nano::transport::map_endpoint_to_v6 (endpoint_a), nano::protocol_version);
+		node.network.udp_channels.insert (btcb::transport::map_endpoint_to_v6 (endpoint_a), btcb::protocol_version);
 	}
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped)
@@ -1670,14 +1670,14 @@ void nano::bootstrap_initiator::bootstrap (nano::endpoint const & endpoint_a, bo
 			attempt->stop ();
 			condition.wait (lock);
 		}
-		node.stats.inc (nano::stat::type::bootstrap, nano::stat::detail::initiate, nano::stat::dir::out);
-		attempt = std::make_shared<nano::bootstrap_attempt> (node.shared ());
+		node.stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::initiate, btcb::stat::dir::out);
+		attempt = std::make_shared<btcb::bootstrap_attempt> (node.shared ());
 		attempt->add_connection (endpoint_a);
 		condition.notify_all ();
 	}
 }
 
-void nano::bootstrap_initiator::bootstrap_lazy (nano::block_hash const & hash_a, bool force)
+void btcb::bootstrap_initiator::bootstrap_lazy (btcb::block_hash const & hash_a, bool force)
 {
 	{
 		std::unique_lock<std::mutex> lock (mutex);
@@ -1689,33 +1689,33 @@ void nano::bootstrap_initiator::bootstrap_lazy (nano::block_hash const & hash_a,
 				condition.wait (lock);
 			}
 		}
-		node.stats.inc (nano::stat::type::bootstrap, nano::stat::detail::initiate_lazy, nano::stat::dir::out);
+		node.stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::initiate_lazy, btcb::stat::dir::out);
 		if (attempt == nullptr)
 		{
-			attempt = std::make_shared<nano::bootstrap_attempt> (node.shared ());
-			attempt->mode = nano::bootstrap_mode::lazy;
+			attempt = std::make_shared<btcb::bootstrap_attempt> (node.shared ());
+			attempt->mode = btcb::bootstrap_mode::lazy;
 		}
 		attempt->lazy_start (hash_a);
 	}
 	condition.notify_all ();
 }
 
-void nano::bootstrap_initiator::bootstrap_wallet (std::deque<nano::account> & accounts_a)
+void btcb::bootstrap_initiator::bootstrap_wallet (std::deque<btcb::account> & accounts_a)
 {
 	{
 		std::unique_lock<std::mutex> lock (mutex);
-		node.stats.inc (nano::stat::type::bootstrap, nano::stat::detail::initiate_wallet_lazy, nano::stat::dir::out);
+		node.stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::initiate_wallet_lazy, btcb::stat::dir::out);
 		if (attempt == nullptr)
 		{
-			attempt = std::make_shared<nano::bootstrap_attempt> (node.shared ());
-			attempt->mode = nano::bootstrap_mode::wallet_lazy;
+			attempt = std::make_shared<btcb::bootstrap_attempt> (node.shared ());
+			attempt->mode = btcb::bootstrap_mode::wallet_lazy;
 		}
 		attempt->wallet_start (accounts_a);
 	}
 	condition.notify_all ();
 }
 
-void nano::bootstrap_initiator::run_bootstrap ()
+void btcb::bootstrap_initiator::run_bootstrap ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (!stopped)
@@ -1723,11 +1723,11 @@ void nano::bootstrap_initiator::run_bootstrap ()
 		if (attempt != nullptr)
 		{
 			lock.unlock ();
-			if (attempt->mode == nano::bootstrap_mode::legacy)
+			if (attempt->mode == btcb::bootstrap_mode::legacy)
 			{
 				attempt->run ();
 			}
-			else if (attempt->mode == nano::bootstrap_mode::lazy)
+			else if (attempt->mode == btcb::bootstrap_mode::lazy)
 			{
 				attempt->lazy_run ();
 			}
@@ -1746,24 +1746,24 @@ void nano::bootstrap_initiator::run_bootstrap ()
 	}
 }
 
-void nano::bootstrap_initiator::add_observer (std::function<void(bool)> const & observer_a)
+void btcb::bootstrap_initiator::add_observer (std::function<void(bool)> const & observer_a)
 {
 	std::lock_guard<std::mutex> lock (observers_mutex);
 	observers.push_back (observer_a);
 }
 
-bool nano::bootstrap_initiator::in_progress ()
+bool btcb::bootstrap_initiator::in_progress ()
 {
 	return current_attempt () != nullptr;
 }
 
-std::shared_ptr<nano::bootstrap_attempt> nano::bootstrap_initiator::current_attempt ()
+std::shared_ptr<btcb::bootstrap_attempt> btcb::bootstrap_initiator::current_attempt ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return attempt;
 }
 
-void nano::bootstrap_initiator::stop ()
+void btcb::bootstrap_initiator::stop ()
 {
 	{
 		std::unique_lock<std::mutex> lock (mutex);
@@ -1776,7 +1776,7 @@ void nano::bootstrap_initiator::stop ()
 	condition.notify_all ();
 }
 
-void nano::bootstrap_initiator::notify_listeners (bool in_progress_a)
+void btcb::bootstrap_initiator::notify_listeners (bool in_progress_a)
 {
 	std::lock_guard<std::mutex> lock (observers_mutex);
 	for (auto & i : observers)
@@ -1785,7 +1785,7 @@ void nano::bootstrap_initiator::notify_listeners (bool in_progress_a)
 	}
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (bootstrap_initiator & bootstrap_initiator, const std::string & name)
 {
@@ -1809,15 +1809,15 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (bootstrap_initiato
 }
 }
 
-nano::bootstrap_listener::bootstrap_listener (uint16_t port_a, nano::node & node_a) :
+btcb::bootstrap_listener::bootstrap_listener (uint16_t port_a, btcb::node & node_a) :
 node (node_a),
 port (port_a)
 {
 }
 
-void nano::bootstrap_listener::start ()
+void btcb::bootstrap_listener::start ()
 {
-	listening_socket = std::make_shared<nano::server_socket> (node.shared (), boost::asio::ip::tcp::endpoint (boost::asio::ip::address_v6::any (), port), node.config.tcp_incoming_connections_max);
+	listening_socket = std::make_shared<btcb::server_socket> (node.shared (), boost::asio::ip::tcp::endpoint (boost::asio::ip::address_v6::any (), port), node.config.tcp_incoming_connections_max);
 	boost::system::error_code ec;
 	listening_socket->start (ec);
 	if (ec)
@@ -1825,7 +1825,7 @@ void nano::bootstrap_listener::start ()
 		node.logger.try_log (boost::str (boost::format ("Error while binding for incoming TCP/bootstrap on port %1%: %2%") % listening_socket->listening_port () % ec.message ()));
 		throw std::runtime_error (ec.message ());
 	}
-	listening_socket->on_connection ([this](std::shared_ptr<nano::socket> new_connection, boost::system::error_code const & ec_a) {
+	listening_socket->on_connection ([this](std::shared_ptr<btcb::socket> new_connection, boost::system::error_code const & ec_a) {
 		bool keep_accepting = true;
 		if (ec_a)
 		{
@@ -1840,7 +1840,7 @@ void nano::bootstrap_listener::start ()
 	});
 }
 
-void nano::bootstrap_listener::stop ()
+void btcb::bootstrap_listener::stop ()
 {
 	decltype (connections) connections_l;
 	{
@@ -1855,15 +1855,15 @@ void nano::bootstrap_listener::stop ()
 	}
 }
 
-size_t nano::bootstrap_listener::connection_count ()
+size_t btcb::bootstrap_listener::connection_count ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return connections.size ();
 }
 
-void nano::bootstrap_listener::accept_action (boost::system::error_code const & ec, std::shared_ptr<nano::socket> socket_a)
+void btcb::bootstrap_listener::accept_action (boost::system::error_code const & ec, std::shared_ptr<btcb::socket> socket_a)
 {
-	auto connection (std::make_shared<nano::bootstrap_server> (socket_a, node.shared ()));
+	auto connection (std::make_shared<btcb::bootstrap_server> (socket_a, node.shared ()));
 	{
 		std::lock_guard<std::mutex> lock (mutex);
 		connections[connection.get ()] = connection;
@@ -1871,12 +1871,12 @@ void nano::bootstrap_listener::accept_action (boost::system::error_code const & 
 	}
 }
 
-boost::asio::ip::tcp::endpoint nano::bootstrap_listener::endpoint ()
+boost::asio::ip::tcp::endpoint btcb::bootstrap_listener::endpoint ()
 {
 	return boost::asio::ip::tcp::endpoint (boost::asio::ip::address_v6::loopback (), listening_socket->listening_port ());
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (bootstrap_listener & bootstrap_listener, const std::string & name)
 {
@@ -1887,7 +1887,7 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (bootstrap_listener
 }
 }
 
-nano::bootstrap_server::~bootstrap_server ()
+btcb::bootstrap_server::~bootstrap_server ()
 {
 	if (node->config.logging.bulk_pull_logging ())
 	{
@@ -1907,7 +1907,7 @@ nano::bootstrap_server::~bootstrap_server ()
 	node->bootstrap.connections.erase (this);
 }
 
-void nano::bootstrap_server::stop ()
+void btcb::bootstrap_server::stop ()
 {
 	if (!stopped)
 	{
@@ -1920,7 +1920,7 @@ void nano::bootstrap_server::stop ()
 	}
 }
 
-nano::bootstrap_server::bootstrap_server (std::shared_ptr<nano::socket> socket_a, std::shared_ptr<nano::node> node_a) :
+btcb::bootstrap_server::bootstrap_server (std::shared_ptr<btcb::socket> socket_a, std::shared_ptr<btcb::node> node_a) :
 receive_buffer (std::make_shared<std::vector<uint8_t>> ()),
 socket (socket_a),
 node (node_a)
@@ -1928,7 +1928,7 @@ node (node_a)
 	receive_buffer->resize (512);
 }
 
-void nano::bootstrap_server::receive ()
+void btcb::bootstrap_server::receive ()
 {
 	auto this_l (shared_from_this ());
 	socket->async_read (receive_buffer, 8, [this_l](boost::system::error_code const & ec, size_t size_a) {
@@ -1942,55 +1942,55 @@ void nano::bootstrap_server::receive ()
 	});
 }
 
-void nano::bootstrap_server::receive_header_action (boost::system::error_code const & ec, size_t size_a)
+void btcb::bootstrap_server::receive_header_action (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
 		assert (size_a == 8);
-		nano::bufferstream type_stream (receive_buffer->data (), size_a);
+		btcb::bufferstream type_stream (receive_buffer->data (), size_a);
 		auto error (false);
-		nano::message_header header (error, type_stream);
+		btcb::message_header header (error, type_stream);
 		if (!error)
 		{
 			switch (header.type)
 			{
-				case nano::message_type::bulk_pull:
+				case btcb::message_type::bulk_pull:
 				{
-					node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull, nano::stat::dir::in);
+					node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull, btcb::stat::dir::in);
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_action (ec, size_a, header);
 					});
 					break;
 				}
-				case nano::message_type::bulk_pull_account:
+				case btcb::message_type::bulk_pull_account:
 				{
-					node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_pull_account, nano::stat::dir::in);
+					node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_pull_account, btcb::stat::dir::in);
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_bulk_pull_account_action (ec, size_a, header);
 					});
 					break;
 				}
-				case nano::message_type::frontier_req:
+				case btcb::message_type::frontier_req:
 				{
-					node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::frontier_req, nano::stat::dir::in);
+					node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::frontier_req, btcb::stat::dir::in);
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
 						this_l->receive_frontier_req_action (ec, size_a, header);
 					});
 					break;
 				}
-				case nano::message_type::bulk_push:
+				case btcb::message_type::bulk_push:
 				{
-					node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::bulk_push, nano::stat::dir::in);
+					node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::bulk_push, btcb::stat::dir::in);
 					if (is_bootstrap_connection ())
 					{
-						add_request (std::unique_ptr<nano::message> (new nano::bulk_push (header)));
+						add_request (std::unique_ptr<btcb::message> (new btcb::bulk_push (header)));
 					}
 					break;
 				}
-				case nano::message_type::keepalive:
+				case btcb::message_type::keepalive:
 				{
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
@@ -1998,7 +1998,7 @@ void nano::bootstrap_server::receive_header_action (boost::system::error_code co
 					});
 					break;
 				}
-				case nano::message_type::publish:
+				case btcb::message_type::publish:
 				{
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
@@ -2006,7 +2006,7 @@ void nano::bootstrap_server::receive_header_action (boost::system::error_code co
 					});
 					break;
 				}
-				case nano::message_type::confirm_ack:
+				case btcb::message_type::confirm_ack:
 				{
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
@@ -2014,7 +2014,7 @@ void nano::bootstrap_server::receive_header_action (boost::system::error_code co
 					});
 					break;
 				}
-				case nano::message_type::confirm_req:
+				case btcb::message_type::confirm_req:
 				{
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
@@ -2022,7 +2022,7 @@ void nano::bootstrap_server::receive_header_action (boost::system::error_code co
 					});
 					break;
 				}
-				case nano::message_type::node_id_handshake:
+				case btcb::message_type::node_id_handshake:
 				{
 					auto this_l (shared_from_this ());
 					socket->async_read (receive_buffer, header.payload_length_bytes (), [this_l, header](boost::system::error_code const & ec, size_t size_a) {
@@ -2050,13 +2050,13 @@ void nano::bootstrap_server::receive_header_action (boost::system::error_code co
 	}
 }
 
-void nano::bootstrap_server::receive_bulk_pull_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_bulk_pull_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::bulk_pull> request (new nano::bulk_pull (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::bulk_pull> request (new btcb::bulk_pull (error, stream, header_a));
 		if (!error)
 		{
 			if (node->config.logging.bulk_pull_logging ())
@@ -2065,43 +2065,43 @@ void nano::bootstrap_server::receive_bulk_pull_action (boost::system::error_code
 			}
 			if (is_bootstrap_connection ())
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
 	}
 }
 
-void nano::bootstrap_server::receive_bulk_pull_account_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_bulk_pull_account_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
 		assert (size_a == header_a.payload_length_bytes ());
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::bulk_pull_account> request (new nano::bulk_pull_account (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::bulk_pull_account> request (new btcb::bulk_pull_account (error, stream, header_a));
 		if (!error)
 		{
 			if (node->config.logging.bulk_pull_logging ())
 			{
-				node->logger.try_log (boost::str (boost::format ("Received bulk pull account for %1% with a minimum amount of %2%") % request->account.to_account () % nano::amount (request->minimum_amount).format_balance (nano::Mxrb_ratio, 10, true)));
+				node->logger.try_log (boost::str (boost::format ("Received bulk pull account for %1% with a minimum amount of %2%") % request->account.to_account () % btcb::amount (request->minimum_amount).format_balance (btcb::Mxrb_ratio, 10, true)));
 			}
 			if (is_bootstrap_connection ())
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
 	}
 }
 
-void nano::bootstrap_server::receive_frontier_req_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_frontier_req_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::frontier_req> request (new nano::frontier_req (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::frontier_req> request (new btcb::frontier_req (error, stream, header_a));
 		if (!error)
 		{
 			if (node->config.logging.bulk_pull_logging ())
@@ -2110,7 +2110,7 @@ void nano::bootstrap_server::receive_frontier_req_action (boost::system::error_c
 			}
 			if (is_bootstrap_connection ())
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2124,18 +2124,18 @@ void nano::bootstrap_server::receive_frontier_req_action (boost::system::error_c
 	}
 }
 
-void nano::bootstrap_server::receive_keepalive_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_keepalive_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::keepalive> request (new nano::keepalive (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::keepalive> request (new btcb::keepalive (error, stream, header_a));
 		if (!error)
 		{
 			if (node_id_handshake_finished)
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2149,18 +2149,18 @@ void nano::bootstrap_server::receive_keepalive_action (boost::system::error_code
 	}
 }
 
-void nano::bootstrap_server::receive_publish_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_publish_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::publish> request (new nano::publish (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::publish> request (new btcb::publish (error, stream, header_a));
 		if (!error)
 		{
 			if (node_id_handshake_finished)
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2174,18 +2174,18 @@ void nano::bootstrap_server::receive_publish_action (boost::system::error_code c
 	}
 }
 
-void nano::bootstrap_server::receive_confirm_req_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_confirm_req_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::confirm_req> request (new nano::confirm_req (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::confirm_req> request (new btcb::confirm_req (error, stream, header_a));
 		if (!error)
 		{
 			if (node_id_handshake_finished)
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2196,18 +2196,18 @@ void nano::bootstrap_server::receive_confirm_req_action (boost::system::error_co
 	}
 }
 
-void nano::bootstrap_server::receive_confirm_ack_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_confirm_ack_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::confirm_ack> request (new nano::confirm_ack (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::confirm_ack> request (new btcb::confirm_ack (error, stream, header_a));
 		if (!error)
 		{
 			if (node_id_handshake_finished)
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2218,18 +2218,18 @@ void nano::bootstrap_server::receive_confirm_ack_action (boost::system::error_co
 	}
 }
 
-void nano::bootstrap_server::receive_node_id_handshake_action (boost::system::error_code const & ec, size_t size_a, nano::message_header const & header_a)
+void btcb::bootstrap_server::receive_node_id_handshake_action (boost::system::error_code const & ec, size_t size_a, btcb::message_header const & header_a)
 {
 	if (!ec)
 	{
 		auto error (false);
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		std::unique_ptr<nano::node_id_handshake> request (new nano::node_id_handshake (error, stream, header_a));
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		std::unique_ptr<btcb::node_id_handshake> request (new btcb::node_id_handshake (error, stream, header_a));
 		if (!error)
 		{
 			if (!node_id_handshake_finished)
 			{
-				add_request (std::unique_ptr<nano::message> (request.release ()));
+				add_request (std::unique_ptr<btcb::message> (request.release ()));
 			}
 			receive ();
 		}
@@ -2240,7 +2240,7 @@ void nano::bootstrap_server::receive_node_id_handshake_action (boost::system::er
 	}
 }
 
-void nano::bootstrap_server::add_request (std::unique_ptr<nano::message> message_a)
+void btcb::bootstrap_server::add_request (std::unique_ptr<btcb::message> message_a)
 {
 	assert (message_a != nullptr);
 	std::lock_guard<std::mutex> lock (mutex);
@@ -2252,7 +2252,7 @@ void nano::bootstrap_server::add_request (std::unique_ptr<nano::message> message
 	}
 }
 
-void nano::bootstrap_server::finish_request ()
+void btcb::bootstrap_server::finish_request ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	requests.pop ();
@@ -2262,7 +2262,7 @@ void nano::bootstrap_server::finish_request ()
 	}
 	else
 	{
-		std::weak_ptr<nano::bootstrap_server> this_w (shared_from_this ());
+		std::weak_ptr<btcb::bootstrap_server> this_w (shared_from_this ());
 		node->alarm.add (std::chrono::steady_clock::now () + (node->config.tcp_io_timeout * 2) + std::chrono::seconds (1), [this_w]() {
 			if (auto this_l = this_w.lock ())
 			{
@@ -2272,9 +2272,9 @@ void nano::bootstrap_server::finish_request ()
 	}
 }
 
-void nano::bootstrap_server::finish_request_async ()
+void btcb::bootstrap_server::finish_request_async ()
 {
-	std::weak_ptr<nano::bootstrap_server> this_w (shared_from_this ());
+	std::weak_ptr<btcb::bootstrap_server> this_w (shared_from_this ());
 	node->background ([this_w]() {
 		if (auto this_l = this_w.lock ())
 		{
@@ -2283,7 +2283,7 @@ void nano::bootstrap_server::finish_request_async ()
 	});
 }
 
-void nano::bootstrap_server::timeout ()
+void btcb::bootstrap_server::timeout ()
 {
 	if (socket != nullptr)
 	{
@@ -2309,15 +2309,15 @@ void nano::bootstrap_server::timeout ()
 
 namespace
 {
-class request_response_visitor : public nano::message_visitor
+class request_response_visitor : public btcb::message_visitor
 {
 public:
-	request_response_visitor (std::shared_ptr<nano::bootstrap_server> connection_a) :
+	request_response_visitor (std::shared_ptr<btcb::bootstrap_server> connection_a) :
 	connection (connection_a)
 	{
 	}
 	virtual ~request_response_visitor () = default;
-	void keepalive (nano::keepalive const & message_a) override
+	void keepalive (btcb::keepalive const & message_a) override
 	{
 		bool first_keepalive (connection->keepalive_first);
 		if (first_keepalive)
@@ -2330,7 +2330,7 @@ public:
 			connection_l->node->network.tcp_channels.process_keepalive (message_a, connection_l->remote_endpoint, first_keepalive);
 		});
 	}
-	void publish (nano::publish const & message_a) override
+	void publish (btcb::publish const & message_a) override
 	{
 		connection->finish_request_async ();
 		auto connection_l (connection->shared_from_this ());
@@ -2338,7 +2338,7 @@ public:
 			connection_l->node->network.tcp_channels.process_message (message_a, connection_l->remote_endpoint, connection_l->remote_node_id);
 		});
 	}
-	void confirm_req (nano::confirm_req const & message_a) override
+	void confirm_req (btcb::confirm_req const & message_a) override
 	{
 		connection->finish_request_async ();
 		auto connection_l (connection->shared_from_this ());
@@ -2346,7 +2346,7 @@ public:
 			connection_l->node->network.tcp_channels.process_message (message_a, connection_l->remote_endpoint, connection_l->remote_node_id);
 		});
 	}
-	void confirm_ack (nano::confirm_ack const & message_a) override
+	void confirm_ack (btcb::confirm_ack const & message_a) override
 	{
 		connection->finish_request_async ();
 		auto connection_l (connection->shared_from_this ());
@@ -2354,27 +2354,27 @@ public:
 			connection_l->node->network.tcp_channels.process_message (message_a, connection_l->remote_endpoint, connection_l->remote_node_id);
 		});
 	}
-	void bulk_pull (nano::bulk_pull const &) override
+	void bulk_pull (btcb::bulk_pull const &) override
 	{
-		auto response (std::make_shared<nano::bulk_pull_server> (connection, std::unique_ptr<nano::bulk_pull> (static_cast<nano::bulk_pull *> (connection->requests.front ().release ()))));
+		auto response (std::make_shared<btcb::bulk_pull_server> (connection, std::unique_ptr<btcb::bulk_pull> (static_cast<btcb::bulk_pull *> (connection->requests.front ().release ()))));
 		response->send_next ();
 	}
-	void bulk_pull_account (nano::bulk_pull_account const &) override
+	void bulk_pull_account (btcb::bulk_pull_account const &) override
 	{
-		auto response (std::make_shared<nano::bulk_pull_account_server> (connection, std::unique_ptr<nano::bulk_pull_account> (static_cast<nano::bulk_pull_account *> (connection->requests.front ().release ()))));
+		auto response (std::make_shared<btcb::bulk_pull_account_server> (connection, std::unique_ptr<btcb::bulk_pull_account> (static_cast<btcb::bulk_pull_account *> (connection->requests.front ().release ()))));
 		response->send_frontier ();
 	}
-	void bulk_push (nano::bulk_push const &) override
+	void bulk_push (btcb::bulk_push const &) override
 	{
-		auto response (std::make_shared<nano::bulk_push_server> (connection));
+		auto response (std::make_shared<btcb::bulk_push_server> (connection));
 		response->receive ();
 	}
-	void frontier_req (nano::frontier_req const &) override
+	void frontier_req (btcb::frontier_req const &) override
 	{
-		auto response (std::make_shared<nano::frontier_req_server> (connection, std::unique_ptr<nano::frontier_req> (static_cast<nano::frontier_req *> (connection->requests.front ().release ()))));
+		auto response (std::make_shared<btcb::frontier_req_server> (connection, std::unique_ptr<btcb::frontier_req> (static_cast<btcb::frontier_req *> (connection->requests.front ().release ()))));
 		response->send_next ();
 	}
-	void node_id_handshake (nano::node_id_handshake const & message_a) override
+	void node_id_handshake (btcb::node_id_handshake const & message_a) override
 	{
 		if (connection->node->config.logging.network_node_id_handshake_logging ())
 		{
@@ -2382,10 +2382,10 @@ public:
 		}
 		if (message_a.query)
 		{
-			boost::optional<std::pair<nano::account, nano::signature>> response (std::make_pair (connection->node->node_id.pub, nano::sign_message (connection->node->node_id.prv, connection->node->node_id.pub, *message_a.query)));
-			assert (!nano::validate_message (response->first, *message_a.query, response->second));
+			boost::optional<std::pair<btcb::account, btcb::signature>> response (std::make_pair (connection->node->node_id.pub, btcb::sign_message (connection->node->node_id.prv, connection->node->node_id.pub, *message_a.query)));
+			assert (!btcb::validate_message (response->first, *message_a.query, response->second));
 			auto cookie (connection->node->network.tcp_channels.assign_syn_cookie (connection->remote_endpoint));
-			nano::node_id_handshake response_message (cookie, response);
+			btcb::node_id_handshake response_message (cookie, response);
 			auto bytes = response_message.to_bytes ();
 			connection->socket->async_write (bytes, [ bytes, connection = connection ](boost::system::error_code const & ec, size_t size_a) {
 				if (ec)
@@ -2399,7 +2399,7 @@ public:
 				}
 				else
 				{
-					connection->node->stats.inc (nano::stat::type::message, nano::stat::detail::node_id_handshake, nano::stat::dir::out);
+					connection->node->stats.inc (btcb::stat::type::message, btcb::stat::detail::node_id_handshake, btcb::stat::dir::out);
 					connection->finish_request ();
 				}
 			});
@@ -2428,18 +2428,18 @@ public:
 			connection_l->node->network.tcp_channels.process_message (message_a, connection_l->remote_endpoint, connection_l->remote_node_id);
 		});
 	}
-	std::shared_ptr<nano::bootstrap_server> connection;
+	std::shared_ptr<btcb::bootstrap_server> connection;
 };
 }
 
-void nano::bootstrap_server::run_next ()
+void btcb::bootstrap_server::run_next ()
 {
 	assert (!requests.empty ());
 	request_response_visitor visitor (shared_from_this ());
 	requests.front ()->visit (visitor);
 }
 
-bool nano::bootstrap_server::is_bootstrap_connection ()
+bool btcb::bootstrap_server::is_bootstrap_connection ()
 {
 	if (!bootstrap_connection && !node->flags.disable_bootstrap_listener && node->bootstrap.bootstrap_count < node->config.bootstrap_connections_max)
 	{
@@ -2464,7 +2464,7 @@ bool nano::bootstrap_server::is_bootstrap_connection ()
  * range will be exclusive of the frontier for that account with
  * a range of (frontier, end)
  */
-void nano::bulk_pull_server::set_current_end ()
+void btcb::bulk_pull_server::set_current_end ()
 {
 	include_start = false;
 	assert (request != nullptr);
@@ -2490,7 +2490,7 @@ void nano::bulk_pull_server::set_current_end ()
 	}
 	else
 	{
-		nano::account_info info;
+		btcb::account_info info;
 		auto no_address (connection->node->store.account_get (transaction, request->start, info));
 		if (no_address)
 		{
@@ -2529,15 +2529,15 @@ void nano::bulk_pull_server::set_current_end ()
 	}
 }
 
-void nano::bulk_pull_server::send_next ()
+void btcb::bulk_pull_server::send_next ()
 {
 	auto block (get_next ());
 	if (block != nullptr)
 	{
 		{
 			send_buffer->clear ();
-			nano::vectorstream stream (*send_buffer);
-			nano::serialize_block (stream, *block);
+			btcb::vectorstream stream (*send_buffer);
+			btcb::serialize_block (stream, *block);
 		}
 		auto this_l (shared_from_this ());
 		if (connection->node->config.logging.bulk_pull_logging ())
@@ -2554,9 +2554,9 @@ void nano::bulk_pull_server::send_next ()
 	}
 }
 
-std::shared_ptr<nano::block> nano::bulk_pull_server::get_next ()
+std::shared_ptr<btcb::block> btcb::bulk_pull_server::get_next ()
 {
-	std::shared_ptr<nano::block> result;
+	std::shared_ptr<btcb::block> result;
 	bool send_current = false, set_current_to_end = false;
 
 	/*
@@ -2626,7 +2626,7 @@ std::shared_ptr<nano::block> nano::bulk_pull_server::get_next ()
 	return result;
 }
 
-void nano::bulk_pull_server::sent_action (boost::system::error_code const & ec, size_t size_a)
+void btcb::bulk_pull_server::sent_action (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -2641,10 +2641,10 @@ void nano::bulk_pull_server::sent_action (boost::system::error_code const & ec, 
 	}
 }
 
-void nano::bulk_pull_server::send_finished ()
+void btcb::bulk_pull_server::send_finished ()
 {
 	send_buffer->clear ();
-	send_buffer->push_back (static_cast<uint8_t> (nano::block_type::not_a_block));
+	send_buffer->push_back (static_cast<uint8_t> (btcb::block_type::not_a_block));
 	auto this_l (shared_from_this ());
 	if (connection->node->config.logging.bulk_pull_logging ())
 	{
@@ -2655,7 +2655,7 @@ void nano::bulk_pull_server::send_finished ()
 	});
 }
 
-void nano::bulk_pull_server::no_block_sent (boost::system::error_code const & ec, size_t size_a)
+void btcb::bulk_pull_server::no_block_sent (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -2671,7 +2671,7 @@ void nano::bulk_pull_server::no_block_sent (boost::system::error_code const & ec
 	}
 }
 
-nano::bulk_pull_server::bulk_pull_server (std::shared_ptr<nano::bootstrap_server> const & connection_a, std::unique_ptr<nano::bulk_pull> request_a) :
+btcb::bulk_pull_server::bulk_pull_server (std::shared_ptr<btcb::bootstrap_server> const & connection_a, std::unique_ptr<btcb::bulk_pull> request_a) :
 connection (connection_a),
 request (std::move (request_a)),
 send_buffer (std::make_shared<std::vector<uint8_t>> ())
@@ -2682,7 +2682,7 @@ send_buffer (std::make_shared<std::vector<uint8_t>> ())
 /**
  * Bulk pull blocks related to an account
  */
-void nano::bulk_pull_account_server::set_params ()
+void btcb::bulk_pull_account_server::set_params ()
 {
 	assert (request != nullptr);
 
@@ -2692,11 +2692,11 @@ void nano::bulk_pull_account_server::set_params ()
 	invalid_request = false;
 	pending_include_address = false;
 	pending_address_only = false;
-	if (request->flags == nano::bulk_pull_account_flags::pending_address_only)
+	if (request->flags == btcb::bulk_pull_account_flags::pending_address_only)
 	{
 		pending_address_only = true;
 	}
-	else if (request->flags == nano::bulk_pull_account_flags::pending_hash_amount_and_address)
+	else if (request->flags == btcb::bulk_pull_account_flags::pending_hash_amount_and_address)
 	{
 		/**
 		 ** This is the same as "pending_hash_and_amount" but with the
@@ -2704,7 +2704,7 @@ void nano::bulk_pull_account_server::set_params ()
 		 **/
 		pending_include_address = true;
 	}
-	else if (request->flags == nano::bulk_pull_account_flags::pending_hash_and_amount)
+	else if (request->flags == btcb::bulk_pull_account_flags::pending_hash_and_amount)
 	{
 		/** The defaults are set above **/
 	}
@@ -2727,7 +2727,7 @@ void nano::bulk_pull_account_server::set_params ()
 	current_key.hash = 0;
 }
 
-void nano::bulk_pull_account_server::send_frontier ()
+void btcb::bulk_pull_account_server::send_frontier ()
 {
 	/*
 	 * This function is really the entry point into this class,
@@ -2741,12 +2741,12 @@ void nano::bulk_pull_account_server::send_frontier ()
 		// Get account balance and frontier block hash
 		auto account_frontier_hash (connection->node->ledger.latest (stream_transaction, request->account));
 		auto account_frontier_balance_int (connection->node->ledger.account_balance (stream_transaction, request->account));
-		nano::uint128_union account_frontier_balance (account_frontier_balance_int);
+		btcb::uint128_union account_frontier_balance (account_frontier_balance_int);
 
 		// Write the frontier block hash and balance into a buffer
 		send_buffer->clear ();
 		{
-			nano::vectorstream output_stream (*send_buffer);
+			btcb::vectorstream output_stream (*send_buffer);
 
 			write (output_stream, account_frontier_hash.bytes);
 			write (output_stream, account_frontier_balance.bytes);
@@ -2760,7 +2760,7 @@ void nano::bulk_pull_account_server::send_frontier ()
 	}
 }
 
-void nano::bulk_pull_account_server::send_next_block ()
+void btcb::bulk_pull_account_server::send_next_block ()
 {
 	/*
 	 * Get the next item from the queue, it is a tuple with the key (which
@@ -2779,7 +2779,7 @@ void nano::bulk_pull_account_server::send_next_block ()
 
 		if (pending_address_only)
 		{
-			nano::vectorstream output_stream (*send_buffer);
+			btcb::vectorstream output_stream (*send_buffer);
 
 			if (connection->node->config.logging.bulk_pull_logging ())
 			{
@@ -2790,7 +2790,7 @@ void nano::bulk_pull_account_server::send_next_block ()
 		}
 		else
 		{
-			nano::vectorstream output_stream (*send_buffer);
+			btcb::vectorstream output_stream (*send_buffer);
 
 			if (connection->node->config.logging.bulk_pull_logging ())
 			{
@@ -2828,9 +2828,9 @@ void nano::bulk_pull_account_server::send_next_block ()
 	}
 }
 
-std::pair<std::unique_ptr<nano::pending_key>, std::unique_ptr<nano::pending_info>> nano::bulk_pull_account_server::get_next ()
+std::pair<std::unique_ptr<btcb::pending_key>, std::unique_ptr<btcb::pending_info>> btcb::bulk_pull_account_server::get_next ()
 {
-	std::pair<std::unique_ptr<nano::pending_key>, std::unique_ptr<nano::pending_info>> result;
+	std::pair<std::unique_ptr<btcb::pending_key>, std::unique_ptr<btcb::pending_info>> result;
 
 	while (true)
 	{
@@ -2842,13 +2842,13 @@ std::pair<std::unique_ptr<nano::pending_key>, std::unique_ptr<nano::pending_info
 		auto stream_transaction (connection->node->store.tx_begin_read ());
 		auto stream (connection->node->store.pending_begin (stream_transaction, current_key));
 
-		if (stream == nano::store_iterator<nano::pending_key, nano::pending_info> (nullptr))
+		if (stream == btcb::store_iterator<btcb::pending_key, btcb::pending_info> (nullptr))
 		{
 			break;
 		}
 
-		nano::pending_key key (stream->first);
-		nano::pending_info info (stream->second);
+		btcb::pending_key key (stream->first);
+		btcb::pending_info info (stream->second);
 
 		/*
 		 * Get the key for the next value, to use in the next call or iteration
@@ -2898,8 +2898,8 @@ std::pair<std::unique_ptr<nano::pending_key>, std::unique_ptr<nano::pending_info
 			}
 		}
 
-		result.first = std::unique_ptr<nano::pending_key> (new nano::pending_key (key));
-		result.second = std::unique_ptr<nano::pending_info> (new nano::pending_info (info));
+		result.first = std::unique_ptr<btcb::pending_key> (new btcb::pending_key (key));
+		result.second = std::unique_ptr<btcb::pending_info> (new btcb::pending_info (info));
 
 		break;
 	}
@@ -2907,7 +2907,7 @@ std::pair<std::unique_ptr<nano::pending_key>, std::unique_ptr<nano::pending_info
 	return result;
 }
 
-void nano::bulk_pull_account_server::sent_action (boost::system::error_code const & ec, size_t size_a)
+void btcb::bulk_pull_account_server::sent_action (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -2922,7 +2922,7 @@ void nano::bulk_pull_account_server::sent_action (boost::system::error_code cons
 	}
 }
 
-void nano::bulk_pull_account_server::send_finished ()
+void btcb::bulk_pull_account_server::send_finished ()
 {
 	/*
 	 * The "bulk_pull_account" final sequence is a final block of all
@@ -2935,9 +2935,9 @@ void nano::bulk_pull_account_server::send_finished ()
 	send_buffer->clear ();
 
 	{
-		nano::vectorstream output_stream (*send_buffer);
-		nano::uint256_union account_zero (0);
-		nano::uint128_union balance_zero (0);
+		btcb::vectorstream output_stream (*send_buffer);
+		btcb::uint256_union account_zero (0);
+		btcb::uint128_union balance_zero (0);
 
 		write (output_stream, account_zero.bytes);
 
@@ -2963,7 +2963,7 @@ void nano::bulk_pull_account_server::send_finished ()
 	});
 }
 
-void nano::bulk_pull_account_server::complete (boost::system::error_code const & ec, size_t size_a)
+void btcb::bulk_pull_account_server::complete (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -2994,7 +2994,7 @@ void nano::bulk_pull_account_server::complete (boost::system::error_code const &
 	}
 }
 
-nano::bulk_pull_account_server::bulk_pull_account_server (std::shared_ptr<nano::bootstrap_server> const & connection_a, std::unique_ptr<nano::bulk_pull_account> request_a) :
+btcb::bulk_pull_account_server::bulk_pull_account_server (std::shared_ptr<btcb::bootstrap_server> const & connection_a, std::unique_ptr<btcb::bulk_pull_account> request_a) :
 connection (connection_a),
 request (std::move (request_a)),
 send_buffer (std::make_shared<std::vector<uint8_t>> ()),
@@ -3006,14 +3006,14 @@ current_key (0, 0)
 	set_params ();
 }
 
-nano::bulk_push_server::bulk_push_server (std::shared_ptr<nano::bootstrap_server> const & connection_a) :
+btcb::bulk_push_server::bulk_push_server (std::shared_ptr<btcb::bootstrap_server> const & connection_a) :
 receive_buffer (std::make_shared<std::vector<uint8_t>> ()),
 connection (connection_a)
 {
 	receive_buffer->resize (256);
 }
 
-void nano::bulk_push_server::receive ()
+void btcb::bulk_push_server::receive ()
 {
 	if (connection->node->bootstrap_initiator.in_progress ())
 	{
@@ -3041,53 +3041,53 @@ void nano::bulk_push_server::receive ()
 	}
 }
 
-void nano::bulk_push_server::received_type ()
+void btcb::bulk_push_server::received_type ()
 {
 	auto this_l (shared_from_this ());
-	nano::block_type type (static_cast<nano::block_type> (receive_buffer->data ()[0]));
+	btcb::block_type type (static_cast<btcb::block_type> (receive_buffer->data ()[0]));
 	switch (type)
 	{
-		case nano::block_type::send:
+		case btcb::block_type::send:
 		{
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::send, nano::stat::dir::in);
-			connection->socket->async_read (receive_buffer, nano::send_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::send, btcb::stat::dir::in);
+			connection->socket->async_read (receive_buffer, btcb::send_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::receive:
+		case btcb::block_type::receive:
 		{
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::receive, nano::stat::dir::in);
-			connection->socket->async_read (receive_buffer, nano::receive_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::receive, btcb::stat::dir::in);
+			connection->socket->async_read (receive_buffer, btcb::receive_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::open:
+		case btcb::block_type::open:
 		{
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::open, nano::stat::dir::in);
-			connection->socket->async_read (receive_buffer, nano::open_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::open, btcb::stat::dir::in);
+			connection->socket->async_read (receive_buffer, btcb::open_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::change:
+		case btcb::block_type::change:
 		{
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::change, nano::stat::dir::in);
-			connection->socket->async_read (receive_buffer, nano::change_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::change, btcb::stat::dir::in);
+			connection->socket->async_read (receive_buffer, btcb::change_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::state:
+		case btcb::block_type::state:
 		{
-			connection->node->stats.inc (nano::stat::type::bootstrap, nano::stat::detail::state_block, nano::stat::dir::in);
-			connection->socket->async_read (receive_buffer, nano::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
+			connection->node->stats.inc (btcb::stat::type::bootstrap, btcb::stat::detail::state_block, btcb::stat::dir::in);
+			connection->socket->async_read (receive_buffer, btcb::state_block::size, [this_l, type](boost::system::error_code const & ec, size_t size_a) {
 				this_l->received_block (ec, size_a, type);
 			});
 			break;
 		}
-		case nano::block_type::not_a_block:
+		case btcb::block_type::not_a_block:
 		{
 			connection->finish_request ();
 			break;
@@ -3103,13 +3103,13 @@ void nano::bulk_push_server::received_type ()
 	}
 }
 
-void nano::bulk_push_server::received_block (boost::system::error_code const & ec, size_t size_a, nano::block_type type_a)
+void btcb::bulk_push_server::received_block (boost::system::error_code const & ec, size_t size_a, btcb::block_type type_a)
 {
 	if (!ec)
 	{
-		nano::bufferstream stream (receive_buffer->data (), size_a);
-		auto block (nano::deserialize_block (stream, type_a));
-		if (block != nullptr && !nano::work_validate (*block))
+		btcb::bufferstream stream (receive_buffer->data (), size_a);
+		auto block (btcb::deserialize_block (stream, type_a));
+		if (block != nullptr && !btcb::work_validate (*block))
 		{
 			if (!connection->node->block_processor.full ())
 			{
@@ -3127,7 +3127,7 @@ void nano::bulk_push_server::received_block (boost::system::error_code const & e
 	}
 }
 
-nano::frontier_req_server::frontier_req_server (std::shared_ptr<nano::bootstrap_server> const & connection_a, std::unique_ptr<nano::frontier_req> request_a) :
+btcb::frontier_req_server::frontier_req_server (std::shared_ptr<btcb::bootstrap_server> const & connection_a, std::unique_ptr<btcb::frontier_req> request_a) :
 connection (connection_a),
 current (request_a->start.number () - 1),
 frontier (0),
@@ -3138,13 +3138,13 @@ count (0)
 	next ();
 }
 
-void nano::frontier_req_server::send_next ()
+void btcb::frontier_req_server::send_next ()
 {
 	if (!current.is_zero () && count < request->count)
 	{
 		{
 			send_buffer->clear ();
-			nano::vectorstream stream (*send_buffer);
+			btcb::vectorstream stream (*send_buffer);
 			write (stream, current.bytes);
 			write (stream, frontier.bytes);
 		}
@@ -3164,12 +3164,12 @@ void nano::frontier_req_server::send_next ()
 	}
 }
 
-void nano::frontier_req_server::send_finished ()
+void btcb::frontier_req_server::send_finished ()
 {
 	{
 		send_buffer->clear ();
-		nano::vectorstream stream (*send_buffer);
-		nano::uint256_union zero (0);
+		btcb::vectorstream stream (*send_buffer);
+		btcb::uint256_union zero (0);
 		write (stream, zero.bytes);
 		write (stream, zero.bytes);
 	}
@@ -3183,7 +3183,7 @@ void nano::frontier_req_server::send_finished ()
 	});
 }
 
-void nano::frontier_req_server::no_block_sent (boost::system::error_code const & ec, size_t size_a)
+void btcb::frontier_req_server::no_block_sent (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -3198,7 +3198,7 @@ void nano::frontier_req_server::no_block_sent (boost::system::error_code const &
 	}
 }
 
-void nano::frontier_req_server::sent_action (boost::system::error_code const & ec, size_t size_a)
+void btcb::frontier_req_server::sent_action (boost::system::error_code const & ec, size_t size_a)
 {
 	if (!ec)
 	{
@@ -3214,28 +3214,28 @@ void nano::frontier_req_server::sent_action (boost::system::error_code const & e
 	}
 }
 
-void nano::frontier_req_server::next ()
+void btcb::frontier_req_server::next ()
 {
 	// Filling accounts deque to prevent often read transactions
 	if (accounts.empty ())
 	{
-		auto now (nano::seconds_since_epoch ());
+		auto now (btcb::seconds_since_epoch ());
 		bool skip_old (request->age != std::numeric_limits<decltype (request->age)>::max ());
 		size_t max_size (128);
 		auto transaction (connection->node->store.tx_begin_read ());
 		for (auto i (connection->node->store.latest_begin (transaction, current.number () + 1)), n (connection->node->store.latest_end ()); i != n && accounts.size () != max_size; ++i)
 		{
-			nano::account_info info (i->second);
+			btcb::account_info info (i->second);
 			if (!skip_old || (now - info.modified) <= request->age)
 			{
-				accounts.push_back (std::make_pair (nano::account (i->first), info.head));
+				accounts.push_back (std::make_pair (btcb::account (i->first), info.head));
 			}
 		}
 		/* If loop breaks before max_size, then latest_end () is reached
 		Add empty record to finish frontier_req_server */
 		if (accounts.size () != max_size)
 		{
-			accounts.push_back (std::make_pair (nano::account (0), nano::block_hash (0)));
+			accounts.push_back (std::make_pair (btcb::account (0), btcb::block_hash (0)));
 		}
 	}
 	// Retrieving accounts from deque
@@ -3245,7 +3245,7 @@ void nano::frontier_req_server::next ()
 	frontier = account_pair.second;
 }
 
-void nano::pulls_cache::add (nano::pull_info const & pull_a)
+void btcb::pulls_cache::add (btcb::pull_info const & pull_a)
 {
 	if (pull_a.processed > 500)
 	{
@@ -3256,18 +3256,18 @@ void nano::pulls_cache::add (nano::pull_info const & pull_a)
 			cache.erase (cache.begin ());
 		}
 		assert (cache.size () <= cache_size_max);
-		nano::uint512_union head_512 (pull_a.account, pull_a.head_original);
+		btcb::uint512_union head_512 (pull_a.account, pull_a.head_original);
 		auto existing (cache.get<account_head_tag> ().find (head_512));
 		if (existing == cache.get<account_head_tag> ().end ())
 		{
 			// Insert new pull
-			auto inserted (cache.insert (nano::cached_pulls{ std::chrono::steady_clock::now (), head_512, pull_a.head }));
+			auto inserted (cache.insert (btcb::cached_pulls{ std::chrono::steady_clock::now (), head_512, pull_a.head }));
 			assert (inserted.second);
 		}
 		else
 		{
 			// Update existing pull
-			cache.get<account_head_tag> ().modify (existing, [pull_a](nano::cached_pulls & cache_a) {
+			cache.get<account_head_tag> ().modify (existing, [pull_a](btcb::cached_pulls & cache_a) {
 				cache_a.time = std::chrono::steady_clock::now ();
 				cache_a.new_head = pull_a.head;
 			});
@@ -3275,10 +3275,10 @@ void nano::pulls_cache::add (nano::pull_info const & pull_a)
 	}
 }
 
-void nano::pulls_cache::update_pull (nano::pull_info & pull_a)
+void btcb::pulls_cache::update_pull (btcb::pull_info & pull_a)
 {
 	std::lock_guard<std::mutex> guard (pulls_cache_mutex);
-	nano::uint512_union head_512 (pull_a.account, pull_a.head_original);
+	btcb::uint512_union head_512 (pull_a.account, pull_a.head_original);
 	auto existing (cache.get<account_head_tag> ().find (head_512));
 	if (existing != cache.get<account_head_tag> ().end ())
 	{
@@ -3286,14 +3286,14 @@ void nano::pulls_cache::update_pull (nano::pull_info & pull_a)
 	}
 }
 
-void nano::pulls_cache::remove (nano::pull_info const & pull_a)
+void btcb::pulls_cache::remove (btcb::pull_info const & pull_a)
 {
 	std::lock_guard<std::mutex> guard (pulls_cache_mutex);
-	nano::uint512_union head_512 (pull_a.account, pull_a.head_original);
+	btcb::uint512_union head_512 (pull_a.account, pull_a.head_original);
 	cache.get<account_head_tag> ().erase (head_512);
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (pulls_cache & pulls_cache, const std::string & name)
 {

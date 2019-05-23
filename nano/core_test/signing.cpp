@@ -1,20 +1,20 @@
 #include <gtest/gtest.h>
 
-#include <nano/node/node.hpp>
+#include <btcb/node/node.hpp>
 
 TEST (signature_checker, empty)
 {
-	nano::signature_checker checker (0);
-	nano::signature_check_set check = { 0, nullptr, nullptr, nullptr, nullptr, nullptr };
+	btcb::signature_checker checker (0);
+	btcb::signature_check_set check = { 0, nullptr, nullptr, nullptr, nullptr, nullptr };
 	checker.verify (check);
 }
 
 TEST (signature_checker, bulk_single_thread)
 {
-	nano::keypair key;
-	nano::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
-	nano::signature_checker checker (0);
-	std::vector<nano::uint256_union> hashes;
+	btcb::keypair key;
+	btcb::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
+	btcb::signature_checker checker (0);
+	std::vector<btcb::uint256_union> hashes;
 	size_t size (1000);
 	hashes.reserve (size);
 	std::vector<unsigned char const *> messages;
@@ -35,7 +35,7 @@ TEST (signature_checker, bulk_single_thread)
 		pub_keys.push_back (block.hashables.account.bytes.data ());
 		signatures.push_back (block.signature.bytes.data ());
 	}
-	nano::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
+	btcb::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
 	checker.verify (check);
 	bool all_valid = std::all_of (verifications.cbegin (), verifications.cend (), [](auto verification) { return verification == 1; });
 	ASSERT_TRUE (all_valid);
@@ -43,14 +43,14 @@ TEST (signature_checker, bulk_single_thread)
 
 TEST (signature_checker, many_multi_threaded)
 {
-	nano::signature_checker checker (4);
+	btcb::signature_checker checker (4);
 
 	auto signature_checker_work_func = [&checker]() {
-		nano::keypair key;
-		nano::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
+		btcb::keypair key;
+		btcb::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
 		auto block_hash = block.hash ();
 
-		nano::state_block invalid_block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
+		btcb::state_block invalid_block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
 		invalid_block.signature.bytes[31] ^= 0x1;
 		auto invalid_block_hash = block.hash ();
 
@@ -58,7 +58,7 @@ TEST (signature_checker, many_multi_threaded)
 		constexpr std::array<size_t, num_check_sizes> check_sizes{ 2048, 256, 1024, 1,
 			4096, 512, 2050, 1024, 8092, 513, 17, 1024, 2047, 255, 513, 2049, 1025, 1023 };
 
-		std::vector<nano::signature_check_set> signature_checker_sets;
+		std::vector<btcb::signature_check_set> signature_checker_sets;
 		signature_checker_sets.reserve (num_check_sizes);
 
 		// Create containers so everything is kept in scope while the threads work on the signature checks
@@ -111,10 +111,10 @@ TEST (signature_checker, many_multi_threaded)
 
 TEST (signature_checker, one)
 {
-	nano::signature_checker checker (0);
+	btcb::signature_checker checker (0);
 
 	auto verify_block = [&checker](auto & block, auto result) {
-		std::vector<nano::uint256_union> hashes;
+		std::vector<btcb::uint256_union> hashes;
 		std::vector<unsigned char const *> messages;
 		std::vector<size_t> lengths;
 		std::vector<unsigned char const *> pub_keys;
@@ -130,13 +130,13 @@ TEST (signature_checker, one)
 			pub_keys.push_back (block.hashables.account.bytes.data ());
 			signatures.push_back (block.signature.bytes.data ());
 		}
-		nano::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
+		btcb::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
 		checker.verify (check);
 		ASSERT_EQ (verifications.front (), result);
 	};
 
-	nano::keypair key;
-	nano::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
+	btcb::keypair key;
+	btcb::state_block block (key.pub, 0, key.pub, 0, 0, key.prv, key.pub, 0);
 
 	// Make signaure invalid and check result is incorrect
 	block.signature.bytes[31] ^= 0x1;

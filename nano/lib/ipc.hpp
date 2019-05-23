@@ -5,7 +5,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <string>
 
-namespace nano
+namespace btcb
 {
 namespace ipc
 {

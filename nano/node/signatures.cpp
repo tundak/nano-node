@@ -1,7 +1,7 @@
-#include <nano/lib/numbers.hpp>
-#include <nano/node/signatures.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/node/signatures.hpp>
 
-nano::signature_checker::signature_checker (unsigned num_threads) :
+btcb::signature_checker::signature_checker (unsigned num_threads) :
 thread_pool (num_threads),
 single_threaded (num_threads == 0),
 num_threads (num_threads)
@@ -12,12 +12,12 @@ num_threads (num_threads)
 	}
 }
 
-nano::signature_checker::~signature_checker ()
+btcb::signature_checker::~signature_checker ()
 {
 	stop ();
 }
 
-void nano::signature_checker::verify (nano::signature_check_set & check_a)
+void btcb::signature_checker::verify (btcb::signature_check_set & check_a)
 {
 	{
 		// Don't process anything else if we have stopped
@@ -71,7 +71,7 @@ void nano::signature_checker::verify (nano::signature_check_set & check_a)
 	future.wait ();
 }
 
-void nano::signature_checker::stop ()
+void btcb::signature_checker::stop ()
 {
 	std::lock_guard<std::mutex> guard (mutex);
 	if (!stopped)
@@ -81,17 +81,17 @@ void nano::signature_checker::stop ()
 	}
 }
 
-void nano::signature_checker::flush ()
+void btcb::signature_checker::flush ()
 {
 	std::lock_guard<std::mutex> guard (mutex);
 	while (!stopped && tasks_remaining != 0)
 		;
 }
 
-bool nano::signature_checker::verify_batch (const nano::signature_check_set & check_a, size_t start_index, size_t size)
+bool btcb::signature_checker::verify_batch (const btcb::signature_check_set & check_a, size_t start_index, size_t size)
 {
 	/* Returns false if there are at least 1 invalid signature */
-	auto code (nano::validate_message_batch (check_a.messages + start_index, check_a.message_lengths + start_index, check_a.pub_keys + start_index, check_a.signatures + start_index, size, check_a.verifications + start_index));
+	auto code (btcb::validate_message_batch (check_a.messages + start_index, check_a.message_lengths + start_index, check_a.pub_keys + start_index, check_a.signatures + start_index, size, check_a.verifications + start_index));
 	(void)code;
 
 	return std::all_of (check_a.verifications + start_index, check_a.verifications + start_index + size, [](int verification) { return verification == 0 || verification == 1; });
@@ -100,7 +100,7 @@ bool nano::signature_checker::verify_batch (const nano::signature_check_set & ch
 /* This operates on a number of signatures of size (num_batches * batch_size) from the beginning of the check_a pointers.
  * Caller should check the value of the promise which indicateswhen the work has been completed.
  */
-void nano::signature_checker::verify_async (nano::signature_check_set & check_a, size_t num_batches, std::promise<void> & promise)
+void btcb::signature_checker::verify_async (btcb::signature_check_set & check_a, size_t num_batches, std::promise<void> & promise)
 {
 	auto task = std::make_shared<Task> (check_a, num_batches);
 	++tasks_remaining;
@@ -124,7 +124,7 @@ void nano::signature_checker::verify_async (nano::signature_check_set & check_a,
 }
 
 // Set the names of all the threads in the thread pool for easier identification
-void nano::signature_checker::set_thread_names (unsigned num_threads)
+void btcb::signature_checker::set_thread_names (unsigned num_threads)
 {
 	auto ready = false;
 	auto pending = num_threads;
@@ -141,7 +141,7 @@ void nano::signature_checker::set_thread_names (unsigned num_threads)
 		// clang-format off
 		boost::asio::post (thread_pool, [&cv, &ready, &pending, &mutex = mutex, &promise = promises[i]]() {
 			std::unique_lock<std::mutex> lk (mutex);
-			nano::thread_role::set (nano::thread_role::name::signature_checking);
+			btcb::thread_role::set (btcb::thread_role::name::signature_checking);
 			if (--pending == 0)
 			{
 				// All threads have been reached

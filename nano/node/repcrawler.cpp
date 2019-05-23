@@ -1,38 +1,38 @@
-#include <nano/node/node.hpp>
-#include <nano/node/repcrawler.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/repcrawler.hpp>
 
-nano::rep_crawler::rep_crawler (nano::node & node_a) :
+btcb::rep_crawler::rep_crawler (btcb::node & node_a) :
 node (node_a)
 {
-	node.observers.endpoint.add ([this](std::shared_ptr<nano::transport::channel> channel_a) {
+	node.observers.endpoint.add ([this](std::shared_ptr<btcb::transport::channel> channel_a) {
 		this->query (channel_a);
 	});
 }
 
-void nano::rep_crawler::add (nano::block_hash const & hash_a)
+void btcb::rep_crawler::add (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (active_mutex);
 	active.insert (hash_a);
 }
 
-void nano::rep_crawler::remove (nano::block_hash const & hash_a)
+void btcb::rep_crawler::remove (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (active_mutex);
 	active.erase (hash_a);
 }
 
-bool nano::rep_crawler::exists (nano::block_hash const & hash_a)
+bool btcb::rep_crawler::exists (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (active_mutex);
 	return active.count (hash_a) != 0;
 }
 
-void nano::rep_crawler::start ()
+void btcb::rep_crawler::start ()
 {
 	ongoing_crawl ();
 }
 
-void nano::rep_crawler::ongoing_crawl ()
+void btcb::rep_crawler::ongoing_crawl ()
 {
 	auto now (std::chrono::steady_clock::now ());
 	auto total_weight_l (total_weight ());
@@ -45,7 +45,7 @@ void nano::rep_crawler::ongoing_crawl ()
 	}
 	// Reduce crawl frequency when there's enough total peer weight
 	unsigned next_run_seconds = sufficient_weight ? 7 : 3;
-	std::weak_ptr<nano::node> node_w (node.shared ());
+	std::weak_ptr<btcb::node> node_w (node.shared ());
 	node.alarm.add (now + std::chrono::seconds (next_run_seconds), [node_w, this]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -54,9 +54,9 @@ void nano::rep_crawler::ongoing_crawl ()
 	});
 }
 
-std::vector<std::shared_ptr<nano::transport::channel>> nano::rep_crawler::get_crawl_targets (nano::uint128_t total_weight_a)
+std::vector<std::shared_ptr<btcb::transport::channel>> btcb::rep_crawler::get_crawl_targets (btcb::uint128_t total_weight_a)
 {
-	std::unordered_set<std::shared_ptr<nano::transport::channel>> channels;
+	std::unordered_set<std::shared_ptr<btcb::transport::channel>> channels;
 	constexpr size_t conservative_count = 10;
 	constexpr size_t aggressive_count = 40;
 
@@ -79,15 +79,15 @@ std::vector<std::shared_ptr<nano::transport::channel>> nano::rep_crawler::get_cr
 
 	// The rest of the endpoints are picked randomly
 	auto random_peers (node.network.random_set (required_peer_count));
-	std::vector<std::shared_ptr<nano::transport::channel>> result;
+	std::vector<std::shared_ptr<btcb::transport::channel>> result;
 	result.insert (result.end (), random_peers.begin (), random_peers.end ());
 	return result;
 }
 
-void nano::rep_crawler::query (std::vector<std::shared_ptr<nano::transport::channel>> const & channels_a)
+void btcb::rep_crawler::query (std::vector<std::shared_ptr<btcb::transport::channel>> const & channels_a)
 {
 	auto transaction (node.store.tx_begin_read ());
-	std::shared_ptr<nano::block> block (node.store.block_random (transaction));
+	std::shared_ptr<btcb::block> block (node.store.block_random (transaction));
 	auto hash (block->hash ());
 	// Don't send same block multiple times in tests
 	if (node.network_params.network.is_test_network ())
@@ -102,12 +102,12 @@ void nano::rep_crawler::query (std::vector<std::shared_ptr<nano::transport::chan
 	for (auto i (channels_a.begin ()), n (channels_a.end ()); i != n; ++i)
 	{
 		on_rep_request (*i);
-		nano::confirm_req message (block);
+		btcb::confirm_req message (block);
 		(*i)->send (message);
 	}
 
 	// A representative must respond with a vote within the deadline
-	std::weak_ptr<nano::node> node_w (node.shared ());
+	std::weak_ptr<btcb::node> node_w (node.shared ());
 	node.alarm.add (std::chrono::steady_clock::now () + std::chrono::seconds (5), [node_w, hash]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -116,21 +116,21 @@ void nano::rep_crawler::query (std::vector<std::shared_ptr<nano::transport::chan
 	});
 }
 
-void nano::rep_crawler::query (std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::rep_crawler::query (std::shared_ptr<btcb::transport::channel> channel_a)
 {
-	std::vector<std::shared_ptr<nano::transport::channel>> peers;
+	std::vector<std::shared_ptr<btcb::transport::channel>> peers;
 	peers.push_back (channel_a);
 	query (peers);
 }
 
-bool nano::rep_crawler::response (std::shared_ptr<nano::transport::channel> channel_a, nano::account const & rep_account_a, nano::amount const & weight_a)
+bool btcb::rep_crawler::response (std::shared_ptr<btcb::transport::channel> channel_a, btcb::account const & rep_account_a, btcb::amount const & weight_a)
 {
 	auto updated (false);
 	std::lock_guard<std::mutex> lock (probable_reps_mutex);
 	auto existing (probable_reps.find (rep_account_a));
 	if (existing != probable_reps.end ())
 	{
-		probable_reps.modify (existing, [weight_a, &updated, rep_account_a, channel_a](nano::representative & info) {
+		probable_reps.modify (existing, [weight_a, &updated, rep_account_a, channel_a](btcb::representative & info) {
 			info.last_response = std::chrono::steady_clock::now ();
 
 			if (info.weight < weight_a)
@@ -144,15 +144,15 @@ bool nano::rep_crawler::response (std::shared_ptr<nano::transport::channel> chan
 	}
 	else
 	{
-		probable_reps.insert (nano::representative (rep_account_a, weight_a, channel_a));
+		probable_reps.insert (btcb::representative (rep_account_a, weight_a, channel_a));
 	}
 	return updated;
 }
 
-nano::uint128_t nano::rep_crawler::total_weight () const
+btcb::uint128_t btcb::rep_crawler::total_weight () const
 {
 	std::lock_guard<std::mutex> lock (probable_reps_mutex);
-	nano::uint128_t result (0);
+	btcb::uint128_t result (0);
 	for (auto i (probable_reps.get<tag_weight> ().begin ()), n (probable_reps.get<tag_weight> ().end ()); i != n; ++i)
 	{
 		auto weight (i->weight.number ());
@@ -168,9 +168,9 @@ nano::uint128_t nano::rep_crawler::total_weight () const
 	return result;
 }
 
-std::vector<nano::representative> nano::rep_crawler::representatives_by_weight ()
+std::vector<btcb::representative> btcb::rep_crawler::representatives_by_weight ()
 {
-	std::vector<nano::representative> result;
+	std::vector<btcb::representative> result;
 	std::lock_guard<std::mutex> lock (probable_reps_mutex);
 	for (auto i (probable_reps.get<tag_weight> ().begin ()), n (probable_reps.get<tag_weight> ().end ()); i != n; ++i)
 	{
@@ -187,7 +187,7 @@ std::vector<nano::representative> nano::rep_crawler::representatives_by_weight (
 	return result;
 }
 
-void nano::rep_crawler::on_rep_request (std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::rep_crawler::on_rep_request (std::shared_ptr<btcb::transport::channel> channel_a)
 {
 	std::lock_guard<std::mutex> lock (probable_reps_mutex);
 
@@ -199,13 +199,13 @@ void nano::rep_crawler::on_rep_request (std::shared_ptr<nano::transport::channel
 	auto itr_pair = probable_reps.get<tag_channel_ref> ().equal_range (*channel_a);
 	for (; itr_pair.first != itr_pair.second; itr_pair.first++)
 	{
-		channel_ref_index.modify (itr_pair.first, [](nano::representative & value_a) {
+		channel_ref_index.modify (itr_pair.first, [](btcb::representative & value_a) {
 			value_a.last_request = std::chrono::steady_clock::now ();
 		});
 	}
 }
 
-std::vector<nano::representative> nano::rep_crawler::representatives (size_t count_a)
+std::vector<btcb::representative> btcb::rep_crawler::representatives (size_t count_a)
 {
 	std::vector<representative> result;
 	result.reserve (std::min (count_a, size_t (16)));
@@ -220,9 +220,9 @@ std::vector<nano::representative> nano::rep_crawler::representatives (size_t cou
 	return result;
 }
 
-std::vector<std::shared_ptr<nano::transport::channel>> nano::rep_crawler::representative_endpoints (size_t count_a)
+std::vector<std::shared_ptr<btcb::transport::channel>> btcb::rep_crawler::representative_endpoints (size_t count_a)
 {
-	std::vector<std::shared_ptr<nano::transport::channel>> result;
+	std::vector<std::shared_ptr<btcb::transport::channel>> result;
 	auto reps (representatives (count_a));
 	for (auto rep : reps)
 	{
@@ -232,7 +232,7 @@ std::vector<std::shared_ptr<nano::transport::channel>> nano::rep_crawler::repres
 }
 
 /** Total number of representatives */
-size_t nano::rep_crawler::representative_count ()
+size_t btcb::rep_crawler::representative_count ()
 {
 	std::lock_guard<std::mutex> lock (probable_reps_mutex);
 	return probable_reps.size ();

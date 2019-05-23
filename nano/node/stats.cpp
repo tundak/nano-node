@@ -1,4 +1,4 @@
-#include <nano/node/stats.hpp>
+#include <btcb/node/stats.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
@@ -9,7 +9,7 @@
 #include <sstream>
 #include <tuple>
 
-nano::error nano::stat_config::deserialize_json (nano::jsonconfig & json)
+btcb::error btcb::stat_config::deserialize_json (btcb::jsonconfig & json)
 {
 	auto sampling_l (json.get_optional_child ("sampling"));
 	if (sampling_l)
@@ -39,13 +39,13 @@ nano::error nano::stat_config::deserialize_json (nano::jsonconfig & json)
 	return json.get_error ();
 }
 
-std::string nano::stat_log_sink::tm_to_string (tm & tm)
+std::string btcb::stat_log_sink::tm_to_string (tm & tm)
 {
 	return (boost::format ("%04d.%02d.%02d %02d:%02d:%02d") % (1900 + tm.tm_year) % (tm.tm_mon + 1) % tm.tm_mday % tm.tm_hour % tm.tm_min % tm.tm_sec).str ();
 }
 
 /** JSON sink. The resulting JSON object is provided as both a property_tree::ptree (to_object) and a string (to_string) */
-class json_writer : public nano::stat_log_sink
+class json_writer : public btcb::stat_log_sink
 {
 	boost::property_tree::ptree tree;
 	boost::property_tree::ptree entries;
@@ -101,7 +101,7 @@ private:
 };
 
 /** File sink with rotation support */
-class file_writer : public nano::stat_log_sink
+class file_writer : public btcb::stat_log_sink
 {
 public:
 	std::ofstream log;
@@ -141,29 +141,29 @@ public:
 	}
 };
 
-nano::stat::stat (nano::stat_config config) :
+btcb::stat::stat (btcb::stat_config config) :
 config (config)
 {
 }
 
-std::shared_ptr<nano::stat_entry> nano::stat::get_entry (uint32_t key)
+std::shared_ptr<btcb::stat_entry> btcb::stat::get_entry (uint32_t key)
 {
 	return get_entry (key, config.interval, config.capacity);
 }
 
-std::shared_ptr<nano::stat_entry> nano::stat::get_entry (uint32_t key, size_t interval, size_t capacity)
+std::shared_ptr<btcb::stat_entry> btcb::stat::get_entry (uint32_t key, size_t interval, size_t capacity)
 {
 	std::unique_lock<std::mutex> lock (stat_mutex);
 	return get_entry_impl (key, interval, capacity);
 }
 
-std::shared_ptr<nano::stat_entry> nano::stat::get_entry_impl (uint32_t key, size_t interval, size_t capacity)
+std::shared_ptr<btcb::stat_entry> btcb::stat::get_entry_impl (uint32_t key, size_t interval, size_t capacity)
 {
-	std::shared_ptr<nano::stat_entry> res;
+	std::shared_ptr<btcb::stat_entry> res;
 	auto entry = entries.find (key);
 	if (entry == entries.end ())
 	{
-		res = entries.insert (std::make_pair (key, std::make_shared<nano::stat_entry> (capacity, interval))).first->second;
+		res = entries.insert (std::make_pair (key, std::make_shared<btcb::stat_entry> (capacity, interval))).first->second;
 	}
 	else
 	{
@@ -173,18 +173,18 @@ std::shared_ptr<nano::stat_entry> nano::stat::get_entry_impl (uint32_t key, size
 	return res;
 }
 
-std::unique_ptr<nano::stat_log_sink> nano::stat::log_sink_json () const
+std::unique_ptr<btcb::stat_log_sink> btcb::stat::log_sink_json () const
 {
 	return std::make_unique<json_writer> ();
 }
 
-void nano::stat::log_counters (stat_log_sink & sink)
+void btcb::stat::log_counters (stat_log_sink & sink)
 {
 	std::unique_lock<std::mutex> lock (stat_mutex);
 	log_counters_impl (sink);
 }
 
-void nano::stat::log_counters_impl (stat_log_sink & sink)
+void btcb::stat::log_counters_impl (stat_log_sink & sink)
 {
 	sink.begin ();
 	if (sink.entries () >= config.log_rotation_count)
@@ -213,13 +213,13 @@ void nano::stat::log_counters_impl (stat_log_sink & sink)
 	sink.finalize ();
 }
 
-void nano::stat::log_samples (stat_log_sink & sink)
+void btcb::stat::log_samples (stat_log_sink & sink)
 {
 	std::unique_lock<std::mutex> lock (stat_mutex);
 	log_samples_impl (sink);
 }
 
-void nano::stat::log_samples_impl (stat_log_sink & sink)
+void btcb::stat::log_samples_impl (stat_log_sink & sink)
 {
 	sink.begin ();
 	if (sink.entries () >= config.log_rotation_count)
@@ -251,7 +251,7 @@ void nano::stat::log_samples_impl (stat_log_sink & sink)
 	sink.finalize ();
 }
 
-void nano::stat::update (uint32_t key_a, uint64_t value)
+void btcb::stat::update (uint32_t key_a, uint64_t value)
 {
 	static file_writer log_count (config.log_counters_filename);
 	static file_writer log_sample (config.log_samples_filename);
@@ -305,252 +305,252 @@ void nano::stat::update (uint32_t key_a, uint64_t value)
 	}
 }
 
-std::chrono::seconds nano::stat::last_reset ()
+std::chrono::seconds btcb::stat::last_reset ()
 {
 	std::unique_lock<std::mutex> lock (stat_mutex);
 	auto now (std::chrono::steady_clock::now ());
 	return std::chrono::duration_cast<std::chrono::seconds> (now - timestamp);
 }
 
-void nano::stat::clear ()
+void btcb::stat::clear ()
 {
 	std::unique_lock<std::mutex> lock (stat_mutex);
 	entries.clear ();
 	timestamp = std::chrono::steady_clock::now ();
 }
 
-std::string nano::stat::type_to_string (uint32_t key)
+std::string btcb::stat::type_to_string (uint32_t key)
 {
 	auto type = static_cast<stat::type> (key >> 16 & 0x000000ff);
 	std::string res;
 	switch (type)
 	{
-		case nano::stat::type::ipc:
+		case btcb::stat::type::ipc:
 			res = "ipc";
 			break;
-		case nano::stat::type::block:
+		case btcb::stat::type::block:
 			res = "block";
 			break;
-		case nano::stat::type::bootstrap:
+		case btcb::stat::type::bootstrap:
 			res = "bootstrap";
 			break;
-		case nano::stat::type::error:
+		case btcb::stat::type::error:
 			res = "error";
 			break;
-		case nano::stat::type::http_callback:
+		case btcb::stat::type::http_callback:
 			res = "http_callback";
 			break;
-		case nano::stat::type::ledger:
+		case btcb::stat::type::ledger:
 			res = "ledger";
 			break;
-		case nano::stat::type::tcp:
+		case btcb::stat::type::tcp:
 			res = "tcp";
 			break;
-		case nano::stat::type::udp:
+		case btcb::stat::type::udp:
 			res = "udp";
 			break;
-		case nano::stat::type::peering:
+		case btcb::stat::type::peering:
 			res = "peering";
 			break;
-		case nano::stat::type::rollback:
+		case btcb::stat::type::rollback:
 			res = "rollback";
 			break;
-		case nano::stat::type::traffic:
+		case btcb::stat::type::traffic:
 			res = "traffic";
 			break;
-		case nano::stat::type::traffic_tcp:
+		case btcb::stat::type::traffic_tcp:
 			res = "traffic_bootstrap";
 			break;
-		case nano::stat::type::vote:
+		case btcb::stat::type::vote:
 			res = "vote";
 			break;
-		case nano::stat::type::message:
+		case btcb::stat::type::message:
 			res = "message";
 			break;
-		case nano::stat::type::confirmation_height:
+		case btcb::stat::type::confirmation_height:
 			res = "confirmation_height";
 	}
 	return res;
 }
 
-std::string nano::stat::detail_to_string (uint32_t key)
+std::string btcb::stat::detail_to_string (uint32_t key)
 {
 	auto detail = static_cast<stat::detail> (key >> 8 & 0x000000ff);
 	std::string res;
 	switch (detail)
 	{
-		case nano::stat::detail::all:
+		case btcb::stat::detail::all:
 			res = "all";
 			break;
-		case nano::stat::detail::bad_sender:
+		case btcb::stat::detail::bad_sender:
 			res = "bad_sender";
 			break;
-		case nano::stat::detail::bulk_pull:
+		case btcb::stat::detail::bulk_pull:
 			res = "bulk_pull";
 			break;
-		case nano::stat::detail::bulk_pull_account:
+		case btcb::stat::detail::bulk_pull_account:
 			res = "bulk_pull_account";
 			break;
-		case nano::stat::detail::bulk_pull_deserialize_receive_block:
+		case btcb::stat::detail::bulk_pull_deserialize_receive_block:
 			res = "bulk_pull_deserialize_receive_block";
 			break;
-		case nano::stat::detail::bulk_pull_error_starting_request:
+		case btcb::stat::detail::bulk_pull_error_starting_request:
 			res = "bulk_pull_error_starting_request";
 			break;
-		case nano::stat::detail::bulk_pull_failed_account:
+		case btcb::stat::detail::bulk_pull_failed_account:
 			res = "bulk_pull_failed_account";
 			break;
-		case nano::stat::detail::bulk_pull_receive_block_failure:
+		case btcb::stat::detail::bulk_pull_receive_block_failure:
 			res = "bulk_pull_receive_block_failure";
 			break;
-		case nano::stat::detail::bulk_pull_request_failure:
+		case btcb::stat::detail::bulk_pull_request_failure:
 			res = "bulk_pull_request_failure";
 			break;
-		case nano::stat::detail::bulk_push:
+		case btcb::stat::detail::bulk_push:
 			res = "bulk_push";
 			break;
-		case nano::stat::detail::error_socket_close:
+		case btcb::stat::detail::error_socket_close:
 			res = "error_socket_close";
 			break;
-		case nano::stat::detail::change:
+		case btcb::stat::detail::change:
 			res = "change";
 			break;
-		case nano::stat::detail::confirm_ack:
+		case btcb::stat::detail::confirm_ack:
 			res = "confirm_ack";
 			break;
-		case nano::stat::detail::node_id_handshake:
+		case btcb::stat::detail::node_id_handshake:
 			res = "node_id_handshake";
 			break;
-		case nano::stat::detail::confirm_req:
+		case btcb::stat::detail::confirm_req:
 			res = "confirm_req";
 			break;
-		case nano::stat::detail::fork:
+		case btcb::stat::detail::fork:
 			res = "fork";
 			break;
-		case nano::stat::detail::frontier_req:
+		case btcb::stat::detail::frontier_req:
 			res = "frontier_req";
 			break;
-		case nano::stat::detail::handshake:
+		case btcb::stat::detail::handshake:
 			res = "handshake";
 			break;
-		case nano::stat::detail::http_callback:
+		case btcb::stat::detail::http_callback:
 			res = "http_callback";
 			break;
-		case nano::stat::detail::initiate:
+		case btcb::stat::detail::initiate:
 			res = "initiate";
 			break;
-		case nano::stat::detail::initiate_lazy:
+		case btcb::stat::detail::initiate_lazy:
 			res = "initiate_lazy";
 			break;
-		case nano::stat::detail::initiate_wallet_lazy:
+		case btcb::stat::detail::initiate_wallet_lazy:
 			res = "initiate_wallet_lazy";
 			break;
-		case nano::stat::detail::insufficient_work:
+		case btcb::stat::detail::insufficient_work:
 			res = "insufficient_work";
 			break;
-		case nano::stat::detail::invocations:
+		case btcb::stat::detail::invocations:
 			res = "invocations";
 			break;
-		case nano::stat::detail::keepalive:
+		case btcb::stat::detail::keepalive:
 			res = "keepalive";
 			break;
-		case nano::stat::detail::open:
+		case btcb::stat::detail::open:
 			res = "open";
 			break;
-		case nano::stat::detail::publish:
+		case btcb::stat::detail::publish:
 			res = "publish";
 			break;
-		case nano::stat::detail::receive:
+		case btcb::stat::detail::receive:
 			res = "receive";
 			break;
-		case nano::stat::detail::republish_vote:
+		case btcb::stat::detail::republish_vote:
 			res = "republish_vote";
 			break;
-		case nano::stat::detail::send:
+		case btcb::stat::detail::send:
 			res = "send";
 			break;
-		case nano::stat::detail::state_block:
+		case btcb::stat::detail::state_block:
 			res = "state_block";
 			break;
-		case nano::stat::detail::epoch_block:
+		case btcb::stat::detail::epoch_block:
 			res = "epoch_block";
 			break;
-		case nano::stat::detail::vote_valid:
+		case btcb::stat::detail::vote_valid:
 			res = "vote_valid";
 			break;
-		case nano::stat::detail::vote_replay:
+		case btcb::stat::detail::vote_replay:
 			res = "vote_replay";
 			break;
-		case nano::stat::detail::vote_invalid:
+		case btcb::stat::detail::vote_invalid:
 			res = "vote_invalid";
 			break;
-		case nano::stat::detail::vote_overflow:
+		case btcb::stat::detail::vote_overflow:
 			res = "vote_overflow";
 			break;
-		case nano::stat::detail::blocking:
+		case btcb::stat::detail::blocking:
 			res = "blocking";
 			break;
-		case nano::stat::detail::overflow:
+		case btcb::stat::detail::overflow:
 			res = "overflow";
 			break;
-		case nano::stat::detail::tcp_accept_success:
+		case btcb::stat::detail::tcp_accept_success:
 			res = "accept_success";
 			break;
-		case nano::stat::detail::tcp_accept_failure:
+		case btcb::stat::detail::tcp_accept_failure:
 			res = "accept_failure";
 			break;
-		case nano::stat::detail::unreachable_host:
+		case btcb::stat::detail::unreachable_host:
 			res = "unreachable_host";
 			break;
-		case nano::stat::detail::invalid_magic:
+		case btcb::stat::detail::invalid_magic:
 			res = "invalid_magic";
 			break;
-		case nano::stat::detail::invalid_network:
+		case btcb::stat::detail::invalid_network:
 			res = "invalid_network";
 			break;
-		case nano::stat::detail::invalid_header:
+		case btcb::stat::detail::invalid_header:
 			res = "invalid_header";
 			break;
-		case nano::stat::detail::invalid_message_type:
+		case btcb::stat::detail::invalid_message_type:
 			res = "invalid_message_type";
 			break;
-		case nano::stat::detail::invalid_keepalive_message:
+		case btcb::stat::detail::invalid_keepalive_message:
 			res = "invalid_keepalive_message";
 			break;
-		case nano::stat::detail::invalid_publish_message:
+		case btcb::stat::detail::invalid_publish_message:
 			res = "invalid_publish_message";
 			break;
-		case nano::stat::detail::invalid_confirm_req_message:
+		case btcb::stat::detail::invalid_confirm_req_message:
 			res = "invalid_confirm_req_message";
 			break;
-		case nano::stat::detail::invalid_confirm_ack_message:
+		case btcb::stat::detail::invalid_confirm_ack_message:
 			res = "invalid_confirm_ack_message";
 			break;
-		case nano::stat::detail::invalid_node_id_handshake_message:
+		case btcb::stat::detail::invalid_node_id_handshake_message:
 			res = "invalid_node_id_handshake_message";
 			break;
-		case nano::stat::detail::outdated_version:
+		case btcb::stat::detail::outdated_version:
 			res = "outdated_version";
 			break;
-		case nano::stat::detail::invalid_block:
+		case btcb::stat::detail::invalid_block:
 			res = "invalid_block";
 			break;
-		case nano::stat::detail::blocks_confirmed:
+		case btcb::stat::detail::blocks_confirmed:
 			res = "blocks_confirmed";
 	}
 	return res;
 }
 
-std::string nano::stat::dir_to_string (uint32_t key)
+std::string btcb::stat::dir_to_string (uint32_t key)
 {
 	auto dir = static_cast<stat::dir> (key & 0x000000ff);
 	std::string res;
 	switch (dir)
 	{
-		case nano::stat::dir::in:
+		case btcb::stat::dir::in:
 			res = "in";
 			break;
-		case nano::stat::dir::out:
+		case btcb::stat::dir::out:
 			res = "out";
 			break;
 	}

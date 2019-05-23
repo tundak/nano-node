@@ -8,13 +8,13 @@
 #include <utility>
 #include <vector>
 
-namespace nano
+namespace btcb
 {
 class node;
 class server_socket;
 
 /** Socket class for tcp clients and newly accepted connections */
-class socket : public std::enable_shared_from_this<nano::socket>
+class socket : public std::enable_shared_from_this<btcb::socket>
 {
 	friend class server_socket;
 
@@ -37,7 +37,7 @@ public:
 	 * @param max_idle_time If no activity occurs within the idle time, the socket is closed. If not set, the tcp_idle_time config option is used.
 	 * @param concurrency write concurrency
 	 */
-	explicit socket (std::shared_ptr<nano::node> node, boost::optional<std::chrono::seconds> max_idle_time = boost::none, concurrency = concurrency::single_writer);
+	explicit socket (std::shared_ptr<btcb::node> node, boost::optional<std::chrono::seconds> max_idle_time = boost::none, concurrency = concurrency::single_writer);
 	virtual ~socket ();
 	void async_connect (boost::asio::ip::tcp::endpoint const &, std::function<void(boost::system::error_code const &)>);
 	void async_read (std::shared_ptr<std::vector<uint8_t>>, size_t, std::function<void(boost::system::error_code const &, size_t)>);
@@ -63,7 +63,7 @@ protected:
 
 	boost::asio::strand<boost::asio::io_context::executor_type> strand;
 	boost::asio::ip::tcp::socket tcp_socket;
-	std::weak_ptr<nano::node> node;
+	std::weak_ptr<btcb::node> node;
 
 	/** The other end of the connection */
 	boost::asio::ip::tcp::endpoint remote;
@@ -98,20 +98,20 @@ public:
 	 * @param max_connections_a Maximum number of concurrent connections
 	 * @param concurrency_a Write concurrency for new connections
 	 */
-	explicit server_socket (std::shared_ptr<nano::node> node_a, boost::asio::ip::tcp::endpoint local_a, size_t max_connections_a, concurrency concurrency_a = concurrency::single_writer);
+	explicit server_socket (std::shared_ptr<btcb::node> node_a, boost::asio::ip::tcp::endpoint local_a, size_t max_connections_a, concurrency concurrency_a = concurrency::single_writer);
 	/**Start accepting new connections */
 	void start (boost::system::error_code &);
 	/** Stop accepting new connections */
 	void close ();
 	/** Register callback for new connections. The callback must return true to keep accepting new connections. */
-	void on_connection (std::function<bool(std::shared_ptr<nano::socket> new_connection, boost::system::error_code const &)>);
+	void on_connection (std::function<bool(std::shared_ptr<btcb::socket> new_connection, boost::system::error_code const &)>);
 	uint16_t listening_port ()
 	{
 		return local.port ();
 	}
 
 private:
-	std::vector<std::weak_ptr<nano::socket>> connections;
+	std::vector<std::weak_ptr<btcb::socket>> connections;
 	boost::asio::ip::tcp::acceptor acceptor;
 	boost::asio::ip::tcp::endpoint local;
 	boost::asio::steady_timer deferred_accept_timer;

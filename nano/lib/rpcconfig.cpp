@@ -1,9 +1,9 @@
 #include <boost/dll/runtime_symbol_info.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/rpcconfig.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/rpcconfig.hpp>
 
-nano::error nano::rpc_secure_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::rpc_secure_config::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("enable", enable);
 	json.put ("verbose_logging", verbose_logging);
@@ -15,7 +15,7 @@ nano::error nano::rpc_secure_config::serialize_json (nano::jsonconfig & json) co
 	return json.get_error ();
 }
 
-nano::error nano::rpc_secure_config::deserialize_json (nano::jsonconfig & json)
+btcb::error btcb::rpc_secure_config::deserialize_json (btcb::jsonconfig & json)
 {
 	json.get_required<bool> ("enable", enable);
 	json.get_required<bool> ("verbose_logging", verbose_logging);
@@ -27,12 +27,12 @@ nano::error nano::rpc_secure_config::deserialize_json (nano::jsonconfig & json)
 	return json.get_error ();
 }
 
-nano::rpc_config::rpc_config (bool enable_control_a) :
+btcb::rpc_config::rpc_config (bool enable_control_a) :
 enable_control (enable_control_a)
 {
 }
 
-nano::error nano::rpc_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::rpc_config::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("version", json_version ());
 	json.put ("address", address.to_string ());
@@ -41,7 +41,7 @@ nano::error nano::rpc_config::serialize_json (nano::jsonconfig & json) const
 	json.put ("max_json_depth", max_json_depth);
 	json.put ("max_request_size", max_request_size);
 
-	nano::jsonconfig rpc_process_l;
+	btcb::jsonconfig rpc_process_l;
 	rpc_process_l.put ("io_threads", rpc_process.io_threads);
 	rpc_process_l.put ("ipc_port", rpc_process.ipc_port);
 	rpc_process_l.put ("num_ipc_connections", rpc_process.num_ipc_connections);
@@ -49,7 +49,7 @@ nano::error nano::rpc_config::serialize_json (nano::jsonconfig & json) const
 	return json.get_error ();
 }
 
-nano::error nano::rpc_config::deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+btcb::error btcb::rpc_config::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 {
 	if (!json.empty ())
 	{
@@ -62,7 +62,7 @@ nano::error nano::rpc_config::deserialize_json (bool & upgraded_a, nano::jsoncon
 			json.erase ("frontier_request_limit");
 			json.erase ("chain_request_limit");
 
-			nano::jsonconfig rpc_process_l;
+			btcb::jsonconfig rpc_process_l;
 			rpc_process_l.put ("io_threads", rpc_process.io_threads);
 			rpc_process_l.put ("ipc_port", rpc_process.ipc_port);
 			rpc_process_l.put ("num_ipc_connections", rpc_process.num_ipc_connections);
@@ -99,15 +99,15 @@ nano::error nano::rpc_config::deserialize_json (bool & upgraded_a, nano::jsoncon
 	return json.get_error ();
 }
 
-namespace nano
+namespace btcb
 {
-nano::error read_and_update_rpc_config (boost::filesystem::path const & data_path, nano::rpc_config & config_a)
+btcb::error read_and_update_rpc_config (boost::filesystem::path const & data_path, btcb::rpc_config & config_a)
 {
 	boost::system::error_code error_chmod;
-	nano::jsonconfig json;
-	auto config_path = nano::get_rpc_config_path (data_path);
+	btcb::jsonconfig json;
+	auto config_path = btcb::get_rpc_config_path (data_path);
 	auto error (json.read_and_update (config_a, config_path));
-	nano::set_secure_perm_file (config_path, error_chmod);
+	btcb::set_secure_perm_file (config_path, error_chmod);
 	return error;
 }
 
@@ -116,8 +116,8 @@ std::string get_default_rpc_filepath ()
 	boost::system::error_code err;
 	auto running_executable_filepath = boost::dll::program_location (err);
 
-	// Construct the nano_rpc excutable file path based on where the currently running executable is found.
-	auto rpc_filepath = running_executable_filepath.parent_path () / "nano_rpc";
+	// Construct the btcb_rpc excutable file path based on where the currently running executable is found.
+	auto rpc_filepath = running_executable_filepath.parent_path () / "btcb_rpc";
 	if (running_executable_filepath.has_extension ())
 	{
 		rpc_filepath.replace_extension (running_executable_filepath.extension ());

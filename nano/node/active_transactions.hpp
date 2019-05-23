@@ -7,8 +7,8 @@
 #include <queue>
 #include <unordered_map>
 
-#include <nano/lib/numbers.hpp>
-#include <nano/secure/common.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/secure/common.hpp>
 
 #include <boost/circular_buffer.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -18,7 +18,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/thread/thread.hpp>
 
-namespace nano
+namespace btcb
 {
 class node;
 class block;
@@ -29,17 +29,17 @@ class transaction;
 class conflict_info final
 {
 public:
-	nano::qualified_root root;
+	btcb::qualified_root root;
 	uint64_t difficulty;
 	uint64_t adjusted_difficulty;
-	std::shared_ptr<nano::election> election;
+	std::shared_ptr<btcb::election> election;
 };
 
 class election_status final
 {
 public:
-	std::shared_ptr<nano::block> winner;
-	nano::amount tally;
+	std::shared_ptr<btcb::block> winner;
+	btcb::amount tally;
 	std::chrono::milliseconds election_end;
 	std::chrono::milliseconds election_duration;
 };
@@ -66,25 +66,25 @@ private:
 class active_transactions final
 {
 public:
-	explicit active_transactions (nano::node &, bool delay_frontier_confirmation_height_updating = false);
+	explicit active_transactions (btcb::node &, bool delay_frontier_confirmation_height_updating = false);
 	~active_transactions ();
 	// Start an election for a block
 	// Call action with confirmed block, may be different than what we started with
 	// clang-format off
-	bool start (std::shared_ptr<nano::block>, std::function<void(std::shared_ptr<nano::block>)> const & = [](std::shared_ptr<nano::block>) {});
+	bool start (std::shared_ptr<btcb::block>, std::function<void(std::shared_ptr<btcb::block>)> const & = [](std::shared_ptr<btcb::block>) {});
 	// clang-format on
 	// If this returns true, the vote is a replay
 	// If this returns false, the vote may or may not be a replay
-	bool vote (std::shared_ptr<nano::vote>, bool = false);
+	bool vote (std::shared_ptr<btcb::vote>, bool = false);
 	// Is the root of this block in the roots container
-	bool active (nano::block const &);
-	bool active (nano::qualified_root const &);
-	void update_difficulty (nano::block const &);
-	void adjust_difficulty (nano::block_hash const &);
+	bool active (btcb::block const &);
+	bool active (btcb::qualified_root const &);
+	void update_difficulty (btcb::block const &);
+	void adjust_difficulty (btcb::block_hash const &);
 	void update_active_difficulty (std::unique_lock<std::mutex> &);
 	uint64_t active_difficulty ();
-	std::deque<std::shared_ptr<nano::block>> list_blocks (bool = false);
-	void erase (nano::block const &);
+	std::deque<std::shared_ptr<btcb::block>> list_blocks (bool = false);
+	void erase (btcb::block const &);
 	//check if we should flush
 	//if counter.rate == 0 set minimum_size before considering flushing to 4 for testing convenience
 	//else minimum_size is rate * 10
@@ -95,22 +95,22 @@ public:
 	bool empty ();
 	size_t size ();
 	void stop ();
-	bool publish (std::shared_ptr<nano::block> block_a);
-	void confirm_block (nano::block_hash const &);
+	bool publish (std::shared_ptr<btcb::block> block_a);
+	void confirm_block (btcb::block_hash const &);
 	boost::multi_index_container<
-	nano::conflict_info,
+	btcb::conflict_info,
 	boost::multi_index::indexed_by<
 	boost::multi_index::hashed_unique<
-	boost::multi_index::member<nano::conflict_info, nano::qualified_root, &nano::conflict_info::root>>,
+	boost::multi_index::member<btcb::conflict_info, btcb::qualified_root, &btcb::conflict_info::root>>,
 	boost::multi_index::ordered_non_unique<
-	boost::multi_index::member<nano::conflict_info, uint64_t, &nano::conflict_info::adjusted_difficulty>,
+	boost::multi_index::member<btcb::conflict_info, uint64_t, &btcb::conflict_info::adjusted_difficulty>,
 	std::greater<uint64_t>>>>
 	roots;
-	std::unordered_map<nano::block_hash, std::shared_ptr<nano::election>> blocks;
-	std::deque<nano::election_status> list_confirmed ();
-	std::deque<nano::election_status> confirmed;
-	nano::transaction_counter counter;
-	nano::node & node;
+	std::unordered_map<btcb::block_hash, std::shared_ptr<btcb::election>> blocks;
+	std::deque<btcb::election_status> list_confirmed ();
+	std::deque<btcb::election_status> confirmed;
+	btcb::transaction_counter counter;
+	btcb::node & node;
 	std::mutex mutex;
 	// Maximum number of conflicts to vote on per interval, lowest root hash first
 	static unsigned constexpr announcements_per_interval = 32;
@@ -127,12 +127,12 @@ public:
 private:
 	// Call action with confirmed block, may be different than what we started with
 	// clang-format off
-	bool add (std::shared_ptr<nano::block>, std::function<void(std::shared_ptr<nano::block>)> const & = [](std::shared_ptr<nano::block>) {});
+	bool add (std::shared_ptr<btcb::block>, std::function<void(std::shared_ptr<btcb::block>)> const & = [](std::shared_ptr<btcb::block>) {});
 	// clang-format on
 	void request_loop ();
 	void request_confirm (std::unique_lock<std::mutex> &);
-	void confirm_frontiers (nano::transaction const &);
-	nano::account next_frontier_account{ 0 };
+	void confirm_frontiers (btcb::transaction const &);
+	btcb::account next_frontier_account{ 0 };
 	std::chrono::steady_clock::time_point next_frontier_check{ std::chrono::steady_clock::now () };
 	std::condition_variable condition;
 	bool started{ false };

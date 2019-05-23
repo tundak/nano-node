@@ -1,14 +1,14 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/blocks.hpp>
-#include <nano/lib/work.hpp>
-#include <nano/node/xorshift.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/blocks.hpp>
+#include <btcb/lib/work.hpp>
+#include <btcb/node/xorshift.hpp>
 
 #include <future>
 
-bool nano::work_validate (nano::block_hash const & root_a, uint64_t work_a, uint64_t * difficulty_a)
+bool btcb::work_validate (btcb::block_hash const & root_a, uint64_t work_a, uint64_t * difficulty_a)
 {
-	static nano::network_constants network_constants;
-	auto value (nano::work_value (root_a, work_a));
+	static btcb::network_constants network_constants;
+	auto value (btcb::work_value (root_a, work_a));
 	if (difficulty_a != nullptr)
 	{
 		*difficulty_a = value;
@@ -16,12 +16,12 @@ bool nano::work_validate (nano::block_hash const & root_a, uint64_t work_a, uint
 	return value < network_constants.publish_threshold;
 }
 
-bool nano::work_validate (nano::block const & block_a, uint64_t * difficulty_a)
+bool btcb::work_validate (btcb::block const & block_a, uint64_t * difficulty_a)
 {
 	return work_validate (block_a.root (), block_a.block_work (), difficulty_a);
 }
 
-uint64_t nano::work_value (nano::block_hash const & root_a, uint64_t work_a)
+uint64_t btcb::work_value (btcb::block_hash const & root_a, uint64_t work_a)
 {
 	uint64_t result;
 	blake2b_state hash;
@@ -32,7 +32,7 @@ uint64_t nano::work_value (nano::block_hash const & root_a, uint64_t work_a)
 	return result;
 }
 
-nano::work_pool::work_pool (unsigned max_threads_a, std::chrono::nanoseconds pow_rate_limiter_a, std::function<boost::optional<uint64_t> (nano::uint256_union const &, uint64_t)> opencl_a) :
+btcb::work_pool::work_pool (unsigned max_threads_a, std::chrono::nanoseconds pow_rate_limiter_a, std::function<boost::optional<uint64_t> (btcb::uint256_union const &, uint64_t)> opencl_a) :
 ticket (0),
 done (false),
 pow_rate_limiter (pow_rate_limiter_a),
@@ -40,20 +40,20 @@ opencl (opencl_a)
 {
 	static_assert (ATOMIC_INT_LOCK_FREE == 2, "Atomic int needed");
 	boost::thread::attributes attrs;
-	nano::thread_attributes::set (attrs);
+	btcb::thread_attributes::set (attrs);
 	auto count (network_constants.is_test_network () ? 1 : std::min (max_threads_a, std::max (1u, boost::thread::hardware_concurrency ())));
 	for (auto i (0u); i < count; ++i)
 	{
 		auto thread (boost::thread (attrs, [this, i]() {
-			nano::thread_role::set (nano::thread_role::name::work);
-			nano::work_thread_reprioritize ();
+			btcb::thread_role::set (btcb::thread_role::name::work);
+			btcb::work_thread_reprioritize ();
 			loop (i);
 		}));
 		threads.push_back (std::move (thread));
 	}
 }
 
-nano::work_pool::~work_pool ()
+btcb::work_pool::~work_pool ()
 {
 	stop ();
 	for (auto & i : threads)
@@ -62,11 +62,11 @@ nano::work_pool::~work_pool ()
 	}
 }
 
-void nano::work_pool::loop (uint64_t thread)
+void btcb::work_pool::loop (uint64_t thread)
 {
 	// Quick RNG for work attempts.
 	xorshift1024star rng;
-	nano::random_pool::generate_block (reinterpret_cast<uint8_t *> (rng.s.data ()), rng.s.size () * sizeof (decltype (rng.s)::value_type));
+	btcb::random_pool::generate_block (reinterpret_cast<uint8_t *> (rng.s.data ()), rng.s.size () * sizeof (decltype (rng.s)::value_type));
 	uint64_t work;
 	uint64_t output;
 	blake2b_state hash;
@@ -136,7 +136,7 @@ void nano::work_pool::loop (uint64_t thread)
 	}
 }
 
-void nano::work_pool::cancel (nano::uint256_union const & root_a)
+void btcb::work_pool::cancel (btcb::uint256_union const & root_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	if (!pending.empty ())
@@ -161,7 +161,7 @@ void nano::work_pool::cancel (nano::uint256_union const & root_a)
 	});
 }
 
-void nano::work_pool::stop ()
+void btcb::work_pool::stop ()
 {
 	{
 		std::lock_guard<std::mutex> lock (mutex);
@@ -170,12 +170,12 @@ void nano::work_pool::stop ()
 	producer_condition.notify_all ();
 }
 
-void nano::work_pool::generate (nano::uint256_union const & hash_a, std::function<void(boost::optional<uint64_t> const &)> callback_a)
+void btcb::work_pool::generate (btcb::uint256_union const & hash_a, std::function<void(boost::optional<uint64_t> const &)> callback_a)
 {
 	generate (hash_a, callback_a, network_constants.publish_threshold);
 }
 
-void nano::work_pool::generate (nano::uint256_union const & hash_a, std::function<void(boost::optional<uint64_t> const &)> callback_a, uint64_t difficulty_a)
+void btcb::work_pool::generate (btcb::uint256_union const & hash_a, std::function<void(boost::optional<uint64_t> const &)> callback_a, uint64_t difficulty_a)
 {
 	assert (!hash_a.is_zero ());
 	boost::optional<uint64_t> result;
@@ -197,12 +197,12 @@ void nano::work_pool::generate (nano::uint256_union const & hash_a, std::functio
 	}
 }
 
-uint64_t nano::work_pool::generate (nano::uint256_union const & hash_a)
+uint64_t btcb::work_pool::generate (btcb::uint256_union const & hash_a)
 {
 	return generate (hash_a, network_constants.publish_threshold);
 }
 
-uint64_t nano::work_pool::generate (nano::uint256_union const & hash_a, uint64_t difficulty_a)
+uint64_t btcb::work_pool::generate (btcb::uint256_union const & hash_a, uint64_t difficulty_a)
 {
 	std::promise<boost::optional<uint64_t>> work;
 	std::future<boost::optional<uint64_t>> future = work.get_future ();
@@ -216,7 +216,7 @@ uint64_t nano::work_pool::generate (nano::uint256_union const & hash_a, uint64_t
 	return result.value ();
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (work_pool & work_pool, const std::string & name)
 {

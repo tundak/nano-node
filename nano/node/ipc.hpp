@@ -1,11 +1,11 @@
 #pragma once
 
 #include <atomic>
-#include <nano/lib/ipc.hpp>
-#include <nano/lib/numbers.hpp>
-#include <nano/node/node_rpc_config.hpp>
+#include <btcb/lib/ipc.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/node/node_rpc_config.hpp>
 
-namespace nano
+namespace btcb
 {
 class node;
 
@@ -15,20 +15,20 @@ namespace ipc
 	class ipc_server
 	{
 	public:
-		ipc_server (nano::node & node_a, nano::node_rpc_config const & node_rpc_config);
+		ipc_server (btcb::node & node_a, btcb::node_rpc_config const & node_rpc_config);
 
 		virtual ~ipc_server ();
 		void stop ();
 
-		nano::node & node;
-		nano::node_rpc_config const & node_rpc_config;
+		btcb::node & node;
+		btcb::node_rpc_config const & node_rpc_config;
 
 		/** Unique counter/id shared across sessions */
 		std::atomic<uint64_t> id_dispenser{ 0 };
 
 	private:
 		std::unique_ptr<dsock_file_remover> file_remover;
-		std::vector<std::shared_ptr<nano::ipc::transport>> transports;
+		std::vector<std::shared_ptr<btcb::ipc::transport>> transports;
 	};
 }
 }

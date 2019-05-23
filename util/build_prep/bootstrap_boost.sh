@@ -15,7 +15,7 @@ while getopts 'hmcCkpvB:' OPT; do
 		h)
 			echo "Usage: bootstrap_boost.sh [-hmcCkpv] [-B <boostVersion>]"
 			echo "   -h                 This help"
-			echo "   -m                 Build a minimal set of libraries needed for Nano"
+			echo "   -m                 Build a minimal set of libraries needed for Btcb"
 			echo "   -c                 Use Clang"
 			echo "   -C                 Use libc++ when using Clang"
 			echo "   -k                 Keep the downloaded archive file"

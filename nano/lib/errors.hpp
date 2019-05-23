@@ -4,7 +4,7 @@
 #include <boost/system/error_code.hpp>
 #include <cassert>
 #include <memory>
-#include <nano/lib/expected.hpp>
+#include <btcb/lib/expected.hpp>
 #include <string>
 #include <system_error>
 #include <type_traits>
@@ -12,7 +12,7 @@
 using tl::expected;
 using tl::make_unexpected;
 
-namespace nano
+namespace btcb
 {
 /** Common error codes */
 enum class error_common
@@ -149,7 +149,7 @@ auto either (T && value, std::error_code ec) -> expected<typename std::remove_re
 		return std::move (value);
 	}
 }
-} // nano namespace
+} // btcb namespace
 
 // Convenience macro to implement the standard boilerplate for using std::error_code with enums
 // Use this at the end of any header defining one or more error code enums.
@@ -192,14 +192,14 @@ auto either (T && value, std::error_code ec) -> expected<typename std::remove_re
 		};                                                                                                                   \
 	}
 
-REGISTER_ERROR_CODES (nano, error_common);
-REGISTER_ERROR_CODES (nano, error_blocks);
-REGISTER_ERROR_CODES (nano, error_rpc);
-REGISTER_ERROR_CODES (nano, error_process);
-REGISTER_ERROR_CODES (nano, error_config);
+REGISTER_ERROR_CODES (btcb, error_common);
+REGISTER_ERROR_CODES (btcb, error_blocks);
+REGISTER_ERROR_CODES (btcb, error_rpc);
+REGISTER_ERROR_CODES (btcb, error_process);
+REGISTER_ERROR_CODES (btcb, error_config);
 
 /* boost->std error_code bridge */
-namespace nano
+namespace btcb
 {
 namespace error_conversion
 {
@@ -218,10 +218,10 @@ struct is_error_code_enum<boost::system::errc::errc_t>
 inline std::error_code make_error_code (boost::system::errc::errc_t e)
 {
 	return std::error_code (static_cast<int> (e),
-	::nano::error_conversion::generic_category ());
+	::btcb::error_conversion::generic_category ());
 }
 }
-namespace nano
+namespace btcb
 {
 namespace error_conversion
 {
@@ -251,24 +251,24 @@ namespace error_conversion
 		if (error.category () == boost::system::generic_category ())
 		{
 			return std::error_code (error.value (),
-			nano::error_conversion::generic_category ());
+			btcb::error_conversion::generic_category ());
 		}
 		assert (false);
 
-		return nano::error_common::invalid_type_conversion;
+		return btcb::error_common::invalid_type_conversion;
 	}
 }
 }
 
-namespace nano
+namespace btcb
 {
 /** Adapter for std/boost::error_code, std::exception and bool flags to facilitate unified error handling */
 class error
 {
 public:
 	error () = default;
-	error (nano::error const & error_a) = default;
-	error (nano::error && error_a) = default;
+	error (btcb::error const & error_a) = default;
+	error (btcb::error && error_a) = default;
 
 	error (std::error_code code_a)
 	{
@@ -277,24 +277,24 @@ public:
 
 	error (std::string message_a)
 	{
-		code = nano::error_common::generic;
+		code = btcb::error_common::generic;
 		message = std::move (message_a);
 	}
 
 	error (std::exception const & exception_a)
 	{
-		code = nano::error_common::exception;
+		code = btcb::error_common::exception;
 		message = exception_a.what ();
 	}
 
-	error & operator= (nano::error const & err_a)
+	error & operator= (btcb::error const & err_a)
 	{
 		code = err_a.code;
 		message = err_a.message;
 		return *this;
 	}
 
-	error & operator= (nano::error && err_a)
+	error & operator= (btcb::error && err_a)
 	{
 		code = err_a.code;
 		message = std::move (err_a.message);
@@ -312,7 +312,7 @@ public:
 	/** Assign boost error code (as converted to std::error_code) */
 	error & operator= (const boost::system::error_code & code_a)
 	{
-		code = nano::error_conversion::convert (code_a);
+		code = btcb::error_conversion::convert (code_a);
 		message.clear ();
 		return *this;
 	}
@@ -320,23 +320,23 @@ public:
 	/** Assign boost error code (as converted to std::error_code) */
 	error & operator= (const boost::system::errc::errc_t & code_a)
 	{
-		code = nano::error_conversion::convert (boost::system::errc::make_error_code (code_a));
+		code = btcb::error_conversion::convert (boost::system::errc::make_error_code (code_a));
 		message.clear ();
 		return *this;
 	}
 
-	/** Set the error to nano::error_common::generic and the error message to \p message_a */
+	/** Set the error to btcb::error_common::generic and the error message to \p message_a */
 	error & operator= (const std::string message_a)
 	{
-		code = nano::error_common::generic;
+		code = btcb::error_common::generic;
 		message = std::move (message_a);
 		return *this;
 	}
 
-	/** Sets the error to nano::error_common::exception and adopts the exception error message. */
+	/** Sets the error to btcb::error_common::exception and adopts the exception error message. */
 	error & operator= (std::exception const & exception_a)
 	{
-		code = nano::error_common::exception;
+		code = btcb::error_common::exception;
 		message = exception_a.what ();
 		return *this;
 	}
@@ -354,7 +354,7 @@ public:
 	}
 
 	/** Call the function iff the current error is zero */
-	error & then (std::function<nano::error &()> next)
+	error & then (std::function<btcb::error &()> next)
 	{
 		return code ? *this : next ();
 	}
@@ -426,19 +426,19 @@ public:
 	}
 
 	/** Set an error message and an error code */
-	error & set (std::string message_a, std::error_code code_a = nano::error_common::generic)
+	error & set (std::string message_a, std::error_code code_a = btcb::error_common::generic)
 	{
 		message = message_a;
 		code = code_a;
 		return *this;
 	}
 
-	/** Set a custom error message. If the error code is not set, it will be set to nano::error_common::generic. */
+	/** Set a custom error message. If the error code is not set, it will be set to btcb::error_common::generic. */
 	error & set_message (std::string message_a)
 	{
 		if (!code)
 		{
-			code = nano::error_common::generic;
+			code = btcb::error_common::generic;
 		}
 		message = std::move (message_a);
 		return *this;
@@ -458,14 +458,14 @@ private:
 };
 
 /**
- * A type that manages a nano::error.
- * The default return type is nano::error&, though shared_ptr<nano::error> is a good option in cases
+ * A type that manages a btcb::error.
+ * The default return type is btcb::error&, though shared_ptr<btcb::error> is a good option in cases
  * where shared error state is desirable.
  */
-template <typename RET_TYPE = nano::error &>
+template <typename RET_TYPE = btcb::error &>
 class error_aware
 {
-	static_assert (std::is_same<RET_TYPE, nano::error &>::value || std::is_same<RET_TYPE, std::shared_ptr<nano::error>>::value, "Must be nano::error& or shared_ptr<nano::error>");
+	static_assert (std::is_same<RET_TYPE, btcb::error &>::value || std::is_same<RET_TYPE, std::shared_ptr<btcb::error>>::value, "Must be btcb::error& or shared_ptr<btcb::error>");
 
 public:
 	/** Returns the error object managed by this object */

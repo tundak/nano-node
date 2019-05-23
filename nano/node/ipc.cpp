@@ -11,13 +11,13 @@
 #include <fstream>
 #include <future>
 #include <iostream>
-#include <nano/lib/config.hpp>
-#include <nano/lib/ipc.hpp>
-#include <nano/lib/timer.hpp>
-#include <nano/node/common.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/json_handler.hpp>
-#include <nano/node/node.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/ipc.hpp>
+#include <btcb/lib/timer.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/json_handler.hpp>
+#include <btcb/node/node.hpp>
 #include <thread>
 
 using namespace boost::log;
@@ -28,10 +28,10 @@ namespace
  * A session represents an inbound connection over which multiple requests/reponses are transmitted.
  */
 template <typename SOCKET_TYPE>
-class session : public nano::ipc::socket_base, public std::enable_shared_from_this<session<SOCKET_TYPE>>
+class session : public btcb::ipc::socket_base, public std::enable_shared_from_this<session<SOCKET_TYPE>>
 {
 public:
-	session (nano::ipc::ipc_server & server_a, boost::asio::io_context & io_ctx_a, nano::ipc::ipc_config_transport & config_transport_a) :
+	session (btcb::ipc::ipc_server & server_a, boost::asio::io_context & io_ctx_a, btcb::ipc::ipc_config_transport & config_transport_a) :
 	socket_base (io_ctx_a),
 	server (server_a), node (server_a.node), session_id (server_a.id_dispenser.fetch_add (1)), io_ctx (io_ctx_a), socket (io_ctx_a), config_transport (config_transport_a)
 	{
@@ -89,7 +89,7 @@ public:
 		session_timer.restart ();
 		auto request_id_l (std::to_string (server.id_dispenser.fetch_add (1)));
 
-		// This is called when nano::rpc_handler#process_request is done. We convert to
+		// This is called when btcb::rpc_handler#process_request is done. We convert to
 		// json and write the response to the ipc socket with a length prefix.
 		auto this_l (this->shared_from_this ());
 		auto response_handler_l ([this_l, request_id_l](std::string const & body) {
@@ -121,11 +121,11 @@ public:
 			// Do not call any member variables here (like session_timer) as it's possible that the next request may already be underway.
 		});
 
-		node.stats.inc (nano::stat::type::ipc, nano::stat::detail::invocations);
+		node.stats.inc (btcb::stat::type::ipc, btcb::stat::detail::invocations);
 		auto body (std::string (reinterpret_cast<char *> (buffer.data ()), buffer.size ()));
 
 		// Note that if the rpc action is async, the shared_ptr<json_handler> lifetime will be extended by the action handler
-		auto handler (std::make_shared<nano::json_handler> (node, server.node_rpc_config, body, response_handler_l, [& server = server]() {
+		auto handler (std::make_shared<btcb::json_handler> (node, server.node_rpc_config, body, response_handler_l, [& server = server]() {
 			server.stop ();
 		}));
 		// For unsafe actions to be allowed, the unsafe encoding must be used AND the transport config must allow it
@@ -140,16 +140,16 @@ public:
 		// Await next request indefinitely
 		buffer.resize (sizeof (buffer_size));
 		async_read_exactly (buffer.data (), buffer.size (), std::chrono::seconds::max (), [this_l]() {
-			if (this_l->buffer[nano::ipc::preamble_offset::lead] != 'N' || this_l->buffer[nano::ipc::preamble_offset::reserved_1] != 0 || this_l->buffer[nano::ipc::preamble_offset::reserved_2] != 0)
+			if (this_l->buffer[btcb::ipc::preamble_offset::lead] != 'N' || this_l->buffer[btcb::ipc::preamble_offset::reserved_1] != 0 || this_l->buffer[btcb::ipc::preamble_offset::reserved_2] != 0)
 			{
 				if (this_l->node.config.logging.log_ipc ())
 				{
 					this_l->node.logger.always_log ("IPC: Invalid preamble");
 				}
 			}
-			else if (this_l->buffer[nano::ipc::preamble_offset::encoding] == static_cast<uint8_t> (nano::ipc::payload_encoding::json_legacy) || this_l->buffer[nano::ipc::preamble_offset::encoding] == static_cast<uint8_t> (nano::ipc::payload_encoding::json_unsafe))
+			else if (this_l->buffer[btcb::ipc::preamble_offset::encoding] == static_cast<uint8_t> (btcb::ipc::payload_encoding::json_legacy) || this_l->buffer[btcb::ipc::preamble_offset::encoding] == static_cast<uint8_t> (btcb::ipc::payload_encoding::json_unsafe))
 			{
-				auto allow_unsafe (this_l->buffer[nano::ipc::preamble_offset::encoding] == static_cast<uint8_t> (nano::ipc::payload_encoding::json_unsafe));
+				auto allow_unsafe (this_l->buffer[btcb::ipc::preamble_offset::encoding] == static_cast<uint8_t> (btcb::ipc::payload_encoding::json_unsafe));
 				// Length of payload
 				this_l->async_read_exactly (&this_l->buffer_size, sizeof (this_l->buffer_size), [this_l, allow_unsafe]() {
 					boost::endian::big_to_native_inplace (this_l->buffer_size);
@@ -175,14 +175,14 @@ public:
 	}
 
 private:
-	nano::ipc::ipc_server & server;
-	nano::node & node;
+	btcb::ipc::ipc_server & server;
+	btcb::node & node;
 
 	/** Unique session id used for logging */
 	uint64_t session_id;
 
 	/** Timer for measuring the duration of ipc calls */
-	nano::timer<std::chrono::microseconds> session_timer;
+	btcb::timer<std::chrono::microseconds> session_timer;
 
 	/**
 	 * IO context from node, or per-transport, depending on configuration.
@@ -204,15 +204,15 @@ private:
 	std::vector<uint8_t> buffer;
 
 	/** Transport configuration */
-	nano::ipc::ipc_config_transport & config_transport;
+	btcb::ipc::ipc_config_transport & config_transport;
 };
 
 /** Domain and TCP socket transport */
 template <typename ACCEPTOR_TYPE, typename SOCKET_TYPE, typename ENDPOINT_TYPE>
-class socket_transport : public nano::ipc::transport
+class socket_transport : public btcb::ipc::transport
 {
 public:
-	socket_transport (nano::ipc::ipc_server & server_a, ENDPOINT_TYPE endpoint_a, nano::ipc::ipc_config_transport & config_transport_a, int concurrency_a) :
+	socket_transport (btcb::ipc::ipc_server & server_a, ENDPOINT_TYPE endpoint_a, btcb::ipc::ipc_config_transport & config_transport_a, int concurrency_a) :
 	server (server_a), config_transport (config_transport_a)
 	{
 		// Using a per-transport event dispatcher?
@@ -232,7 +232,7 @@ public:
 		// A separate io_context for domain sockets may facilitate better performance on some systems.
 		if (concurrency_a > 0)
 		{
-			runner = std::make_unique<nano::thread_runner> (*io_ctx, concurrency_a);
+			runner = std::make_unique<btcb::thread_runner> (*io_ctx, concurrency_a);
 		}
 	}
 
@@ -282,15 +282,15 @@ public:
 	}
 
 private:
-	nano::ipc::ipc_server & server;
-	nano::ipc::ipc_config_transport & config_transport;
-	std::unique_ptr<nano::thread_runner> runner;
+	btcb::ipc::ipc_server & server;
+	btcb::ipc::ipc_config_transport & config_transport;
+	std::unique_ptr<btcb::thread_runner> runner;
 	std::unique_ptr<boost::asio::io_context> io_ctx;
 	std::unique_ptr<ACCEPTOR_TYPE> acceptor;
 };
 }
 
-nano::ipc::ipc_server::ipc_server (nano::node & node_a, nano::node_rpc_config const & node_rpc_config_a) :
+btcb::ipc::ipc_server::ipc_server (btcb::node & node_a, btcb::node_rpc_config const & node_rpc_config_a) :
 node (node_a),
 node_rpc_config (node_rpc_config_a)
 {
@@ -322,12 +322,12 @@ node_rpc_config (node_rpc_config_a)
 	}
 }
 
-nano::ipc::ipc_server::~ipc_server ()
+btcb::ipc::ipc_server::~ipc_server ()
 {
 	node.logger.always_log ("IPC: server stopped");
 }
 
-void nano::ipc::ipc_server::stop ()
+void btcb::ipc::ipc_server::stop ()
 {
 	for (auto & transport : transports)
 	{

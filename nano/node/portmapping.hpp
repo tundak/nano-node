@@ -3,9 +3,9 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <miniupnp/miniupnpc/miniupnpc.h>
 #include <mutex>
-#include <nano/lib/config.hpp>
+#include <btcb/lib/config.hpp>
 
-namespace nano
+namespace btcb
 {
 class node;
 
@@ -24,11 +24,11 @@ public:
 class port_mapping
 {
 public:
-	port_mapping (nano::node &);
+	port_mapping (btcb::node &);
 	void start ();
 	void stop ();
 	void refresh_devices ();
-	nano::endpoint external_address ();
+	btcb::endpoint external_address ();
 
 private:
 	/** Add port mappings for the node port (not RPC). Refresh when the lease ends. */
@@ -37,14 +37,14 @@ private:
 	void check_mapping_loop ();
 	int check_mapping ();
 	std::mutex mutex;
-	nano::node & node;
+	btcb::node & node;
 	/** List of all UPnP devices */
 	UPNPDev * devices;
 	/** UPnP collected url information */
 	UPNPUrls urls;
 	/** UPnP state */
 	IGDdatas data;
-	nano::network_params network_params;
+	btcb::network_params network_params;
 	boost::asio::ip::address_v4 address;
 	std::array<mapping_protocol, 2> protocols;
 	uint64_t check_count;

@@ -1,13 +1,13 @@
 #include <boost/format.hpp>
-#include <nano/lib/rpc_handler_interface.hpp>
-#include <nano/rpc/rpc.hpp>
-#include <nano/rpc/rpc_connection.hpp>
+#include <btcb/lib/rpc_handler_interface.hpp>
+#include <btcb/rpc/rpc.hpp>
+#include <btcb/rpc/rpc_connection.hpp>
 
-#ifdef NANO_SECURE_RPC
-#include <nano/rpc/rpc_secure.hpp>
+#ifdef BTCB_SECURE_RPC
+#include <btcb/rpc/rpc_secure.hpp>
 #endif
 
-nano::rpc::rpc (boost::asio::io_context & io_ctx_a, nano::rpc_config const & config_a, nano::rpc_handler_interface & rpc_handler_interface_a) :
+btcb::rpc::rpc (boost::asio::io_context & io_ctx_a, btcb::rpc_config const & config_a, btcb::rpc_handler_interface & rpc_handler_interface_a) :
 config (config_a),
 acceptor (io_ctx_a),
 logger (std::chrono::milliseconds (0)),
@@ -17,7 +17,7 @@ rpc_handler_interface (rpc_handler_interface_a)
 	rpc_handler_interface.rpc_instance (*this);
 }
 
-nano::rpc::~rpc ()
+btcb::rpc::~rpc ()
 {
 	if (!stopped)
 	{
@@ -25,7 +25,7 @@ nano::rpc::~rpc ()
 	}
 }
 
-void nano::rpc::start ()
+void btcb::rpc::start ()
 {
 	auto endpoint (boost::asio::ip::tcp::endpoint (config.address, config.port));
 	acceptor.open (endpoint.protocol ());
@@ -42,9 +42,9 @@ void nano::rpc::start ()
 	accept ();
 }
 
-void nano::rpc::accept ()
+void btcb::rpc::accept ()
 {
-	auto connection (std::make_shared<nano::rpc_connection> (config, io_ctx, logger, rpc_handler_interface));
+	auto connection (std::make_shared<btcb::rpc_connection> (config, io_ctx, logger, rpc_handler_interface));
 	acceptor.async_accept (connection->socket, [this, connection](boost::system::error_code const & ec) {
 		if (ec != boost::asio::error::operation_aborted && acceptor.is_open ())
 		{
@@ -61,19 +61,19 @@ void nano::rpc::accept ()
 	});
 }
 
-void nano::rpc::stop ()
+void btcb::rpc::stop ()
 {
 	stopped = true;
 	acceptor.close ();
 }
 
-std::unique_ptr<nano::rpc> nano::get_rpc (boost::asio::io_context & io_ctx_a, nano::rpc_config const & config_a, nano::rpc_handler_interface & rpc_handler_interface_a)
+std::unique_ptr<btcb::rpc> btcb::get_rpc (boost::asio::io_context & io_ctx_a, btcb::rpc_config const & config_a, btcb::rpc_handler_interface & rpc_handler_interface_a)
 {
 	std::unique_ptr<rpc> impl;
 
 	if (config_a.secure.enable)
 	{
-#ifdef NANO_SECURE_RPC
+#ifdef BTCB_SECURE_RPC
 		impl = std::make_unique<rpc_secure> (io_ctx_a, config_a, rpc_handler_interface_a);
 #else
 		std::cerr << "RPC configured for TLS, but the node is not compiled with TLS support" << std::endl;

@@ -4,8 +4,8 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/node/logging.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/node/logging.hpp>
 
 #ifdef BOOST_WINDOWS
 #include <boost/log/sinks/event_log_backend.hpp>
@@ -14,12 +14,12 @@
 #include <boost/log/sinks/syslog_backend.hpp>
 #endif
 
-BOOST_LOG_ATTRIBUTE_KEYWORD (severity, "Severity", nano::severity_level)
+BOOST_LOG_ATTRIBUTE_KEYWORD (severity, "Severity", btcb::severity_level)
 
-boost::shared_ptr<boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend>> nano::logging::file_sink;
-std::atomic_flag nano::logging::logging_already_added ATOMIC_FLAG_INIT;
+boost::shared_ptr<boost::log::sinks::synchronous_sink<boost::log::sinks::text_file_backend>> btcb::logging::file_sink;
+std::atomic_flag btcb::logging::logging_already_added ATOMIC_FLAG_INIT;
 
-void nano::logging::init (boost::filesystem::path const & application_path_a)
+void btcb::logging::init (boost::filesystem::path const & application_path_a)
 {
 	if (!logging_already_added.test_and_set ())
 	{
@@ -32,22 +32,22 @@ void nano::logging::init (boost::filesystem::path const & application_path_a)
 			boost::log::add_console_log (std::cerr, boost::log::keywords::format = format_with_timestamp);
 		}
 
-		nano::network_constants network_constants;
+		btcb::network_constants network_constants;
 		if (!network_constants.is_test_network ())
 		{
 #ifdef BOOST_WINDOWS
-			if (nano::event_log_reg_entry_exists () || nano::is_windows_elevated ())
+			if (btcb::event_log_reg_entry_exists () || btcb::is_windows_elevated ())
 			{
-				static auto event_sink = boost::make_shared<boost::log::sinks::synchronous_sink<boost::log::sinks::simple_event_log_backend>> (boost::log::keywords::log_name = "Nano", boost::log::keywords::log_source = "Nano");
+				static auto event_sink = boost::make_shared<boost::log::sinks::synchronous_sink<boost::log::sinks::simple_event_log_backend>> (boost::log::keywords::log_name = "Btcb", boost::log::keywords::log_source = "Btcb");
 				event_sink->set_formatter (format);
 
 				// Currently only mapping sys log errors
-				boost::log::sinks::event_log::custom_event_type_mapping<nano::severity_level> mapping ("Severity");
-				mapping[nano::severity_level::error] = boost::log::sinks::event_log::error;
+				boost::log::sinks::event_log::custom_event_type_mapping<btcb::severity_level> mapping ("Severity");
+				mapping[btcb::severity_level::error] = boost::log::sinks::event_log::error;
 				event_sink->locked_backend ()->set_event_type_mapper (mapping);
 
 				// Only allow messages or error or greater severity to the event log
-				event_sink->set_filter (severity >= nano::severity_level::error);
+				event_sink->set_filter (severity >= btcb::severity_level::error);
 				boost::log::core::get ()->add_sink (event_sink);
 			}
 #else
@@ -55,12 +55,12 @@ void nano::logging::init (boost::filesystem::path const & application_path_a)
 			sys_sink->set_formatter (format);
 
 			// Currently only mapping sys log errors
-			boost::log::sinks::syslog::custom_severity_mapping<nano::severity_level> mapping ("Severity");
-			mapping[nano::severity_level::error] = boost::log::sinks::syslog::error;
+			boost::log::sinks::syslog::custom_severity_mapping<btcb::severity_level> mapping ("Severity");
+			mapping[btcb::severity_level::error] = boost::log::sinks::syslog::error;
 			sys_sink->locked_backend ()->set_severity_mapper (mapping);
 
 			// Only allow messages or error or greater severity to the sys log
-			sys_sink->set_filter (severity >= nano::severity_level::error);
+			sys_sink->set_filter (severity >= btcb::severity_level::error);
 			boost::log::core::get ()->add_sink (sys_sink);
 #endif
 		}
@@ -70,16 +70,16 @@ void nano::logging::init (boost::filesystem::path const & application_path_a)
 	}
 }
 
-void nano::logging::release_file_sink ()
+void btcb::logging::release_file_sink ()
 {
 	if (logging_already_added.test_and_set ())
 	{
-		boost::log::core::get ()->remove_sink (nano::logging::file_sink);
-		nano::logging::file_sink.reset ();
+		boost::log::core::get ()->remove_sink (btcb::logging::file_sink);
+		btcb::logging::file_sink.reset ();
 	}
 }
 
-nano::error nano::logging::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::logging::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("version", json_version ());
 	json.put ("ledger", ledger_logging_value);
@@ -107,7 +107,7 @@ nano::error nano::logging::serialize_json (nano::jsonconfig & json) const
 	return json.get_error ();
 }
 
-bool nano::logging::upgrade_json (unsigned version_a, nano::jsonconfig & json)
+bool btcb::logging::upgrade_json (unsigned version_a, btcb::jsonconfig & json)
 {
 	json.put ("version", json_version ());
 	switch (version_a)
@@ -143,7 +143,7 @@ bool nano::logging::upgrade_json (unsigned version_a, nano::jsonconfig & json)
 	return version_a < json_version ();
 }
 
-nano::error nano::logging::deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+btcb::error btcb::logging::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 {
 	int version_l;
 	if (!json.has_key ("version"))
@@ -154,7 +154,7 @@ nano::error nano::logging::deserialize_json (bool & upgraded_a, nano::jsonconfig
 		auto work_peers_l (json.get_optional_child ("work_peers"));
 		if (!work_peers_l)
 		{
-			nano::jsonconfig peers;
+			btcb::jsonconfig peers;
 			json.put_child ("work_peers", peers);
 		}
 		upgraded_a = true;
@@ -192,97 +192,97 @@ nano::error nano::logging::deserialize_json (bool & upgraded_a, nano::jsonconfig
 	return json.get_error ();
 }
 
-bool nano::logging::ledger_logging () const
+bool btcb::logging::ledger_logging () const
 {
 	return ledger_logging_value;
 }
 
-bool nano::logging::ledger_duplicate_logging () const
+bool btcb::logging::ledger_duplicate_logging () const
 {
 	return ledger_logging () && ledger_duplicate_logging_value;
 }
 
-bool nano::logging::vote_logging () const
+bool btcb::logging::vote_logging () const
 {
 	return vote_logging_value;
 }
 
-bool nano::logging::network_logging () const
+bool btcb::logging::network_logging () const
 {
 	return network_logging_value;
 }
 
-bool nano::logging::network_timeout_logging () const
+bool btcb::logging::network_timeout_logging () const
 {
 	return network_logging () && network_timeout_logging_value;
 }
 
-bool nano::logging::network_message_logging () const
+bool btcb::logging::network_message_logging () const
 {
 	return network_logging () && network_message_logging_value;
 }
 
-bool nano::logging::network_publish_logging () const
+bool btcb::logging::network_publish_logging () const
 {
 	return network_logging () && network_publish_logging_value;
 }
 
-bool nano::logging::network_packet_logging () const
+bool btcb::logging::network_packet_logging () const
 {
 	return network_logging () && network_packet_logging_value;
 }
 
-bool nano::logging::network_keepalive_logging () const
+bool btcb::logging::network_keepalive_logging () const
 {
 	return network_logging () && network_keepalive_logging_value;
 }
 
-bool nano::logging::network_node_id_handshake_logging () const
+bool btcb::logging::network_node_id_handshake_logging () const
 {
 	return network_logging () && network_node_id_handshake_logging_value;
 }
 
-bool nano::logging::node_lifetime_tracing () const
+bool btcb::logging::node_lifetime_tracing () const
 {
 	return node_lifetime_tracing_value;
 }
 
-bool nano::logging::insufficient_work_logging () const
+bool btcb::logging::insufficient_work_logging () const
 {
 	return network_logging () && insufficient_work_logging_value;
 }
 
-bool nano::logging::log_ipc () const
+bool btcb::logging::log_ipc () const
 {
 	return network_logging () && log_ipc_value;
 }
 
-bool nano::logging::bulk_pull_logging () const
+bool btcb::logging::bulk_pull_logging () const
 {
 	return network_logging () && bulk_pull_logging_value;
 }
 
-bool nano::logging::callback_logging () const
+bool btcb::logging::callback_logging () const
 {
 	return network_logging ();
 }
 
-bool nano::logging::work_generation_time () const
+bool btcb::logging::work_generation_time () const
 {
 	return work_generation_time_value;
 }
 
-bool nano::logging::upnp_details_logging () const
+bool btcb::logging::upnp_details_logging () const
 {
 	return upnp_details_logging_value;
 }
 
-bool nano::logging::timing_logging () const
+bool btcb::logging::timing_logging () const
 {
 	return timing_logging_value;
 }
 
-bool nano::logging::log_to_cerr () const
+bool btcb::logging::log_to_cerr () const
 {
 	return log_to_cerr_value;
 }

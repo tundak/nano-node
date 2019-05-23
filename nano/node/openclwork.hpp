@@ -2,10 +2,10 @@
 
 #include <boost/optional.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/node/openclconfig.hpp>
-#include <nano/node/xorshift.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/node/openclconfig.hpp>
+#include <btcb/node/xorshift.hpp>
 
 #include <map>
 #include <mutex>
@@ -19,7 +19,7 @@
 #include <CL/cl.h>
 #endif
 
-namespace nano
+namespace btcb
 {
 class logger_mt;
 class opencl_platform
@@ -33,18 +33,18 @@ class opencl_environment
 public:
 	opencl_environment (bool &);
 	void dump (std::ostream & stream);
-	std::vector<nano::opencl_platform> platforms;
+	std::vector<btcb::opencl_platform> platforms;
 };
 union uint256_union;
 class work_pool;
 class opencl_work
 {
 public:
-	opencl_work (bool &, nano::opencl_config const &, nano::opencl_environment &, nano::logger_mt &);
+	opencl_work (bool &, btcb::opencl_config const &, btcb::opencl_environment &, btcb::logger_mt &);
 	~opencl_work ();
-	boost::optional<uint64_t> generate_work (nano::uint256_union const &, uint64_t const);
-	static std::unique_ptr<opencl_work> create (bool, nano::opencl_config const &, nano::logger_mt &);
-	nano::opencl_config const & config;
+	boost::optional<uint64_t> generate_work (btcb::uint256_union const &, uint64_t const);
+	static std::unique_ptr<opencl_work> create (bool, btcb::opencl_config const &, btcb::logger_mt &);
+	btcb::opencl_config const & config;
 	std::mutex mutex;
 	cl_context context;
 	cl_mem attempt_buffer;
@@ -54,7 +54,7 @@ public:
 	cl_program program;
 	cl_kernel kernel;
 	cl_command_queue queue;
-	nano::xorshift1024star rand;
-	nano::logger_mt & logger;
+	btcb::xorshift1024star rand;
+	btcb::logger_mt & logger;
 };
 }

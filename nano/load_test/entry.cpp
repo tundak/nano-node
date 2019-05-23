@@ -6,15 +6,15 @@
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/program_options.hpp>
 #include <iomanip>
-#include <nano/core_test/testutil.hpp>
-#include <nano/node/daemonconfig.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/secure/utility.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/node/daemonconfig.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/secure/utility.hpp>
 #include <random>
 
-namespace nano
+namespace btcb
 {
-void force_nano_test_network ();
+void force_btcb_test_network ();
 }
 
 namespace beast = boost::beast;
@@ -36,8 +36,8 @@ constexpr auto ipc_port_start = 62000;
 
 void write_config_files (boost::filesystem::path const & data_path, int index)
 {
-	nano::daemon_config daemon_config (data_path);
-	nano::jsonconfig json;
+	btcb::daemon_config daemon_config (data_path);
+	btcb::jsonconfig json;
 	json.read_and_update (daemon_config, data_path / "config.json");
 	auto node_l = json.get_required_child ("node");
 	node_l.put ("peering_port", peering_port_start + index);
@@ -46,8 +46,8 @@ void write_config_files (boost::filesystem::path const & data_path, int index)
 	tcp.put ("port", ipc_port_start + index);
 	json.write (data_path / "config.json");
 
-	nano::rpc_config rpc_config;
-	nano::jsonconfig json1;
+	btcb::rpc_config rpc_config;
+	btcb::jsonconfig json1;
 	json1.read_and_update (rpc_config, data_path / "rpc_config.json");
 	json1.put ("port", rpc_port_start + index);
 	json1.put ("enable_control", true);
@@ -351,7 +351,7 @@ account_info account_info_rpc (boost::asio::io_context & ioc, tcp::resolver::res
 /** This launches a node and fires a lot of send/recieve RPC requests at it (configurable), then other nodes are tested to make sure they observe these blocks as well. */
 int main (int argc, char * const * argv)
 {
-	nano::force_nano_test_network ();
+	btcb::force_btcb_test_network ();
 
 	boost::program_options::options_description description ("Command line options");
 
@@ -362,8 +362,8 @@ int main (int argc, char * const * argv)
 		("send_count,s", boost::program_options::value<int> ()->default_value (2000), "How many send blocks to generate")
 		("simultaneous_process_calls", boost::program_options::value<int> ()->default_value (20), "Number of simultaneous rpc sends to do")
 		("destination_count", boost::program_options::value<int> ()->default_value (2), "How many destination accounts to choose between")
-		("node_path", boost::program_options::value<std::string> (), "The path to the nano_node to test")
-		("rpc_path", boost::program_options::value<std::string> (), "The path to do nano_rpc to test");
+		("node_path", boost::program_options::value<std::string> (), "The path to the btcb_node to test")
+		("rpc_path", boost::program_options::value<std::string> (), "The path to do btcb_rpc to test");
 	// clang-format on
 
 	boost::program_options::variables_map vm;
@@ -394,7 +394,7 @@ int main (int argc, char * const * argv)
 	}
 	else
 	{
-		auto node_filepath = running_executable_filepath.parent_path () / "nano_node";
+		auto node_filepath = running_executable_filepath.parent_path () / "btcb_node";
 		if (running_executable_filepath.has_extension ())
 		{
 			node_filepath.replace_extension (running_executable_filepath.extension ());
@@ -410,7 +410,7 @@ int main (int argc, char * const * argv)
 	}
 	else
 	{
-		auto rpc_filepath = running_executable_filepath.parent_path () / "nano_rpc";
+		auto rpc_filepath = running_executable_filepath.parent_path () / "btcb_rpc";
 		if (running_executable_filepath.has_extension ())
 		{
 			rpc_filepath.replace_extension (running_executable_filepath.extension ());
@@ -421,13 +421,13 @@ int main (int argc, char * const * argv)
 	std::vector<boost::filesystem::path> data_paths;
 	for (auto i = 0; i < node_count; ++i)
 	{
-		auto data_path = nano::unique_path ();
+		auto data_path = btcb::unique_path ();
 		boost::filesystem::create_directory (data_path);
 		write_config_files (data_path, i);
 		data_paths.push_back (std::move (data_path));
 	}
 
-	nano::network_constants network_constants;
+	btcb::network_constants network_constants;
 	auto current_network = network_constants.get_current_network_as_string ();
 #if BOOST_PROCESS_SUPPORTED
 	std::vector<std::unique_ptr<boost::process::child>> nodes;
@@ -484,7 +484,7 @@ int main (int argc, char * const * argv)
 	std::string wallet = wallet_create_rpc (ioc, primary_node_results);
 
 	// Add genesis account to it
-	wallet_add_rpc (ioc, primary_node_results, wallet, nano::test_genesis_key.prv.data.to_string ());
+	wallet_add_rpc (ioc, primary_node_results, wallet, btcb::test_genesis_key.prv.data.to_string ());
 
 	// Add destination accounts
 	for (auto & account : destination_accounts)
@@ -514,7 +514,7 @@ int main (int argc, char * const * argv)
 				destination_account = &destination_accounts[random_account_index];
 			}
 
-			std::make_shared<send_session> (ioc, send_calls_remaining, wallet, nano::genesis_account.to_account (), destination_account->as_string, primary_node_results)->run ();
+			std::make_shared<send_session> (ioc, send_calls_remaining, wallet, btcb::genesis_account.to_account (), destination_account->as_string, primary_node_results)->run ();
 		}
 
 		while (send_calls_remaining != 0)
@@ -539,7 +539,7 @@ int main (int argc, char * const * argv)
 			known_account_info.emplace (destination_accounts[i].as_string, account_info_rpc (ioc, primary_node_results, destination_accounts[i].as_string));
 		}
 
-		nano::timer<std::chrono::milliseconds> timer;
+		btcb::timer<std::chrono::milliseconds> timer;
 		timer.start ();
 
 		for (int i = 1; i < node_count; ++i)
@@ -571,7 +571,7 @@ int main (int argc, char * const * argv)
 		// Stop main node
 		stop_rpc (ioc, primary_node_results);
 	});
-	nano::thread_runner runner (ioc, simultaneous_process_calls);
+	btcb::thread_runner runner (ioc, simultaneous_process_calls);
 	t.join ();
 	runner.join ();
 

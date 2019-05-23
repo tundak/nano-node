@@ -1,9 +1,9 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/node/node.hpp>
-#include <nano/node/openclconfig.hpp>
-#include <nano/node/openclwork.hpp>
-#include <nano/node/wallet.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/openclconfig.hpp>
+#include <btcb/node/openclwork.hpp>
+#include <btcb/node/wallet.hpp>
 
 #include <array>
 #include <iostream>
@@ -346,7 +346,7 @@ static void ucharcpyglb (uchar * dst, __global uchar const * src, size_t count)
 	}
 }
 	
-__kernel void nano_work (__global ulong const * attempt, __global ulong * result_a, __global uchar const * item_a, __global ulong const * difficulty_a)
+__kernel void btcb_work (__global ulong const * attempt, __global ulong * result_a, __global uchar const * item_a, __global ulong const * difficulty_a)
 {
 	int const thread = get_global_id (0);
 	uchar item_l [32];
@@ -387,7 +387,7 @@ void printstate (blake2b_state * S)
 	<< std::dec << std::endl;
 }
 
-nano::opencl_environment::opencl_environment (bool & error_a)
+btcb::opencl_environment::opencl_environment (bool & error_a)
 {
 	cl_uint platformIdCount = 0;
 	clGetPlatformIDs (0, nullptr, &platformIdCount);
@@ -395,7 +395,7 @@ nano::opencl_environment::opencl_environment (bool & error_a)
 	clGetPlatformIDs (platformIdCount, platformIds.data (), nullptr);
 	for (auto i (platformIds.begin ()), n (platformIds.end ()); i != n; ++i)
 	{
-		nano::opencl_platform platform;
+		btcb::opencl_platform platform;
 		platform.platform = *i;
 		cl_uint deviceIdCount = 0;
 		clGetDeviceIDs (*i, CL_DEVICE_TYPE_ALL, 0, nullptr, &deviceIdCount);
@@ -409,7 +409,7 @@ nano::opencl_environment::opencl_environment (bool & error_a)
 	}
 }
 
-void nano::opencl_environment::dump (std::ostream & stream)
+void btcb::opencl_environment::dump (std::ostream & stream)
 {
 	auto index (0);
 	size_t device_count (0);
@@ -496,7 +496,7 @@ void nano::opencl_environment::dump (std::ostream & stream)
 	}
 }
 
-nano::opencl_work::opencl_work (bool & error_a, nano::opencl_config const & config_a, nano::opencl_environment & environment_a, nano::logger_mt & logger_a) :
+btcb::opencl_work::opencl_work (bool & error_a, btcb::opencl_config const & config_a, btcb::opencl_environment & environment_a, btcb::logger_mt & logger_a) :
 config (config_a),
 context (0),
 attempt_buffer (0),
@@ -515,7 +515,7 @@ logger (logger_a)
 		error_a |= config.device >= platform.devices.size ();
 		if (!error_a)
 		{
-			nano::random_pool::generate_block (reinterpret_cast<uint8_t *> (rand.s.data ()), rand.s.size () * sizeof (decltype (rand.s)::value_type));
+			btcb::random_pool::generate_block (reinterpret_cast<uint8_t *> (rand.s.data ()), rand.s.size () * sizeof (decltype (rand.s)::value_type));
 			std::array<cl_device_id, 1> selected_devices;
 			selected_devices[0] = platform.devices[config.device];
 			cl_context_properties contextProperties[] = {
@@ -544,7 +544,7 @@ logger (logger_a)
 						if (!error_a)
 						{
 							cl_int item_error (0);
-							size_t item_size (sizeof (nano::uint256_union));
+							size_t item_size (sizeof (btcb::uint256_union));
 							item_buffer = clCreateBuffer (context, 0, item_size, nullptr, &item_error);
 							error_a |= item_error != CL_SUCCESS;
 							if (!error_a)
@@ -566,7 +566,7 @@ logger (logger_a)
 										if (!error_a)
 										{
 											cl_int kernel_error (0);
-											kernel = clCreateKernel (program, "nano_work", &kernel_error);
+											kernel = clCreateKernel (program, "btcb_work", &kernel_error);
 											error_a |= kernel_error != CL_SUCCESS;
 											if (!error_a)
 											{
@@ -671,7 +671,7 @@ logger (logger_a)
 	}
 }
 
-nano::opencl_work::~opencl_work ()
+btcb::opencl_work::~opencl_work ()
 {
 	if (kernel != 0)
 	{
@@ -687,7 +687,7 @@ nano::opencl_work::~opencl_work ()
 	}
 }
 
-boost::optional<uint64_t> nano::opencl_work::generate_work (nano::uint256_union const & root_a, uint64_t const difficulty_a)
+boost::optional<uint64_t> btcb::opencl_work::generate_work (btcb::uint256_union const & root_a, uint64_t const difficulty_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	bool error (false);
@@ -695,13 +695,13 @@ boost::optional<uint64_t> nano::opencl_work::generate_work (nano::uint256_union 
 	uint64_t computed_difficulty (0);
 	unsigned thread_count (config.threads);
 	size_t work_size[] = { thread_count, 0, 0 };
-	while ((nano::work_validate (root_a, result, &computed_difficulty) || computed_difficulty < difficulty_a) && !error)
+	while ((btcb::work_validate (root_a, result, &computed_difficulty) || computed_difficulty < difficulty_a) && !error)
 	{
 		result = rand.next ();
 		cl_int write_error1 = clEnqueueWriteBuffer (queue, attempt_buffer, false, 0, sizeof (uint64_t), &result, 0, nullptr, nullptr);
 		if (write_error1 == CL_SUCCESS)
 		{
-			cl_int write_error2 = clEnqueueWriteBuffer (queue, item_buffer, false, 0, sizeof (nano::uint256_union), root_a.bytes.data (), 0, nullptr, nullptr);
+			cl_int write_error2 = clEnqueueWriteBuffer (queue, item_buffer, false, 0, sizeof (btcb::uint256_union), root_a.bytes.data (), 0, nullptr, nullptr);
 			if (write_error2 == CL_SUCCESS)
 			{
 				cl_int write_error3 = clEnqueueWriteBuffer (queue, difficulty_buffer, false, 0, sizeof (uint64_t), &difficulty_a, 0, nullptr, nullptr);
@@ -761,19 +761,19 @@ boost::optional<uint64_t> nano::opencl_work::generate_work (nano::uint256_union 
 	return value;
 }
 
-std::unique_ptr<nano::opencl_work> nano::opencl_work::create (bool create_a, nano::opencl_config const & config_a, nano::logger_mt & logger_a)
+std::unique_ptr<btcb::opencl_work> btcb::opencl_work::create (bool create_a, btcb::opencl_config const & config_a, btcb::logger_mt & logger_a)
 {
-	std::unique_ptr<nano::opencl_work> result;
+	std::unique_ptr<btcb::opencl_work> result;
 	if (create_a)
 	{
 		auto error (false);
-		nano::opencl_environment environment (error);
+		btcb::opencl_environment environment (error);
 		std::stringstream stream;
 		environment.dump (stream);
 		logger_a.always_log (stream.str ());
 		if (!error)
 		{
-			result.reset (new nano::opencl_work (error, config_a, environment, logger_a));
+			result.reset (new btcb::opencl_work (error, config_a, environment, logger_a));
 			if (error)
 			{
 				result.reset ();

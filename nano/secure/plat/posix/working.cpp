@@ -1,9 +1,9 @@
-#include <nano/node/working.hpp>
+#include <btcb/node/working.hpp>
 
 #include <pwd.h>
 #include <sys/types.h>
 
-namespace nano
+namespace btcb
 {
 boost::filesystem::path app_path ()
 {

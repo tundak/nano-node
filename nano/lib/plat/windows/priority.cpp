@@ -1,5 +1,5 @@
 #include <windows.h>
-namespace nano
+namespace btcb
 {
 void work_thread_reprioritize ()
 {

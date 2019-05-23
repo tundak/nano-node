@@ -2,11 +2,11 @@
 #include <chrono>
 #include <gtest/gtest.h>
 #include <memory>
-#include <nano/core_test/testutil.hpp>
-#include <nano/lib/ipc_client.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/rpc/rpc.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/lib/ipc_client.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/rpc/rpc.hpp>
 #include <sstream>
 #include <vector>
 
@@ -14,27 +14,27 @@ using namespace std::chrono_literals;
 
 TEST (ipc, asynchronous)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	system.nodes[0]->config.ipc_config.transport_tcp.enabled = true;
 	system.nodes[0]->config.ipc_config.transport_tcp.port = 24077;
-	nano::node_rpc_config node_rpc_config;
-	nano::ipc::ipc_server ipc (*system.nodes[0], node_rpc_config);
-	nano::ipc::ipc_client client (system.nodes[0]->io_ctx);
+	btcb::node_rpc_config node_rpc_config;
+	btcb::ipc::ipc_server ipc (*system.nodes[0], node_rpc_config);
+	btcb::ipc::ipc_client client (system.nodes[0]->io_ctx);
 
-	auto req (nano::ipc::prepare_request (nano::ipc::payload_encoding::json_legacy, std::string (R"({"action": "block_count"})")));
+	auto req (btcb::ipc::prepare_request (btcb::ipc::payload_encoding::json_legacy, std::string (R"({"action": "block_count"})")));
 	auto res (std::make_shared<std::vector<uint8_t>> ());
 	std::atomic<bool> call_completed{ false };
-	client.async_connect ("::1", 24077, [&client, &req, &res, &call_completed](nano::error err) {
-		client.async_write (req, [&client, &req, &res, &call_completed](nano::error err_a, size_t size_a) {
+	client.async_connect ("::1", 24077, [&client, &req, &res, &call_completed](btcb::error err) {
+		client.async_write (req, [&client, &req, &res, &call_completed](btcb::error err_a, size_t size_a) {
 			ASSERT_NO_ERROR (static_cast<std::error_code> (err_a));
 			ASSERT_EQ (size_a, req->size ());
 			// Read length
-			client.async_read (res, sizeof (uint32_t), [&client, &res, &call_completed](nano::error err_read_a, size_t size_read_a) {
+			client.async_read (res, sizeof (uint32_t), [&client, &res, &call_completed](btcb::error err_read_a, size_t size_read_a) {
 				ASSERT_NO_ERROR (static_cast<std::error_code> (err_read_a));
 				ASSERT_EQ (size_read_a, sizeof (uint32_t));
 				uint32_t payload_size_l = boost::endian::big_to_native (*reinterpret_cast<uint32_t *> (res->data ()));
 				// Read json payload
-				client.async_read (res, payload_size_l, [&res, &call_completed](nano::error err_read_a, size_t size_read_a) {
+				client.async_read (res, payload_size_l, [&res, &call_completed](btcb::error err_read_a, size_t size_read_a) {
 					std::string payload (res->begin (), res->end ());
 					std::stringstream ss;
 					ss << payload;
@@ -57,18 +57,18 @@ TEST (ipc, asynchronous)
 
 TEST (ipc, synchronous)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	system.nodes[0]->config.ipc_config.transport_tcp.enabled = true;
 	system.nodes[0]->config.ipc_config.transport_tcp.port = 24077;
-	nano::node_rpc_config node_rpc_config;
-	nano::ipc::ipc_server ipc (*system.nodes[0], node_rpc_config);
-	nano::ipc::ipc_client client (system.nodes[0]->io_ctx);
+	btcb::node_rpc_config node_rpc_config;
+	btcb::ipc::ipc_server ipc (*system.nodes[0], node_rpc_config);
+	btcb::ipc::ipc_client client (system.nodes[0]->io_ctx);
 
 	// Start blocking IPC client in a separate thread
 	std::atomic<bool> call_completed{ false };
 	std::thread client_thread ([&client, &call_completed]() {
 		client.connect ("::1", 24077);
-		std::string response (nano::ipc::request (client, std::string (R"({"action": "block_count"})")));
+		std::string response (btcb::ipc::request (client, std::string (R"({"action": "block_count"})")));
 		std::stringstream ss;
 		ss << response;
 		// Make sure the response is valid json
@@ -89,18 +89,18 @@ TEST (ipc, synchronous)
 
 TEST (ipc, config_upgrade_v0_v1)
 {
-	auto path1 (nano::unique_path ());
-	auto path2 (nano::unique_path ());
-	nano::ipc::ipc_config config1;
-	nano::ipc::ipc_config config2;
-	nano::jsonconfig tree;
+	auto path1 (btcb::unique_path ());
+	auto path2 (btcb::unique_path ());
+	btcb::ipc::ipc_config config1;
+	btcb::ipc::ipc_config config2;
+	btcb::jsonconfig tree;
 	config1.serialize_json (tree);
-	nano::jsonconfig local = tree.get_required_child ("local");
+	btcb::jsonconfig local = tree.get_required_child ("local");
 	local.erase ("version");
 	local.erase ("allow_unsafe");
 	bool upgraded (false);
 	ASSERT_FALSE (config2.deserialize_json (upgraded, tree));
-	nano::jsonconfig local2 = tree.get_required_child ("local");
+	btcb::jsonconfig local2 = tree.get_required_child ("local");
 	ASSERT_TRUE (upgraded);
 	ASSERT_LE (1, local2.get<int> ("version"));
 	ASSERT_FALSE (local2.get<bool> ("allow_unsafe"));

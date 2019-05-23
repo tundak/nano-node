@@ -1,33 +1,33 @@
-#include <nano/lib/config.hpp>
-#include <nano/lib/interface.h>
-#include <nano/node/cli.hpp>
-#include <nano/node/common.hpp>
-#include <nano/node/daemonconfig.hpp>
-#include <nano/node/node.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/interface.h>
+#include <btcb/node/cli.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/daemonconfig.hpp>
+#include <btcb/node/node.hpp>
 
 namespace
 {
-void reset_confirmation_heights (nano::block_store & store);
+void reset_confirmation_heights (btcb::block_store & store);
 }
 
-std::string nano::error_cli_messages::message (int ev) const
+std::string btcb::error_cli_messages::message (int ev) const
 {
-	switch (static_cast<nano::error_cli> (ev))
+	switch (static_cast<btcb::error_cli> (ev))
 	{
-		case nano::error_cli::generic:
+		case btcb::error_cli::generic:
 			return "Unknown error";
-		case nano::error_cli::parse_error:
+		case btcb::error_cli::parse_error:
 			return "Coud not parse command line";
-		case nano::error_cli::invalid_arguments:
+		case btcb::error_cli::invalid_arguments:
 			return "Invalid arguments";
-		case nano::error_cli::unknown_command:
+		case btcb::error_cli::unknown_command:
 			return "Unknown command";
 	}
 
 	return "Invalid error code";
 }
 
-void nano::add_node_options (boost::program_options::options_description & description_a)
+void btcb::add_node_options (boost::program_options::options_description & description_a)
 {
 	// clang-format off
 	description_a.add_options ()
@@ -67,16 +67,16 @@ void nano::add_node_options (boost::program_options::options_description & descr
 	// clang-format on
 }
 
-std::error_code nano::handle_node_options (boost::program_options::variables_map & vm)
+std::error_code btcb::handle_node_options (boost::program_options::variables_map & vm)
 {
 	std::error_code ec;
-	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+	boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 
 	if (vm.count ("account_create"))
 	{
 		if (vm.count ("wallet") == 1)
 		{
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				std::string password;
@@ -97,53 +97,53 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					else
 					{
 						std::cerr << "Invalid password\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Wallet doesn't exist\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_add command requires one <wallet> option and one <key> option and optionally one <password> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("account_get") > 0)
 	{
 		if (vm.count ("key") == 1)
 		{
-			nano::uint256_union pub;
+			btcb::uint256_union pub;
 			pub.decode_hex (vm["key"].as<std::string> ());
 			std::cout << "Account: " << pub.to_account () << std::endl;
 		}
 		else
 		{
 			std::cerr << "account comand requires one <key> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("account_key") > 0)
 	{
 		if (vm.count ("account") == 1)
 		{
-			nano::uint256_union account;
+			btcb::uint256_union account;
 			account.decode_account (vm["account"].as<std::string> ());
 			std::cout << "Hex: " << account.to_string () << std::endl;
 		}
 		else
 		{
 			std::cerr << "account_key command requires one <account> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("vacuum") > 0)
@@ -212,7 +212,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	{
 		try
 		{
-			boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+			boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 
 			auto source_path = data_path / "data.ldb";
 			auto snapshot_path = data_path / "snapshot.ldb";
@@ -270,7 +270,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else if (vm.count ("unchecked_clear"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 		inactive_node node (data_path);
 		auto transaction (node.node->store.tx_begin_write ());
 		node.node->store.unchecked_clear (transaction);
@@ -278,7 +278,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else if (vm.count ("clear_send_ids"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 		inactive_node node (data_path);
 		auto transaction (node.node->wallets.tx_begin_write ());
 		node.node->wallets.clear_send_ids (transaction);
@@ -286,7 +286,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else if (vm.count ("online_weight_clear"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 		inactive_node node (data_path);
 		auto transaction (node.node->store.tx_begin_write ());
 		node.node->store.online_weight_clear (transaction);
@@ -294,7 +294,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else if (vm.count ("peer_clear"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 		inactive_node node (data_path);
 		auto transaction (node.node->store.tx_begin_write ());
 		node.node->store.peer_clear (transaction);
@@ -302,16 +302,16 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else if (vm.count ("confirmation_height_clear"))
 	{
-		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : nano::working_path ();
+		boost::filesystem::path data_path = vm.count ("data_path") ? boost::filesystem::path (vm["data_path"].as<std::string> ()) : btcb::working_path ();
 		inactive_node node (data_path);
 		auto account_it = vm.find ("account");
 		if (account_it != vm.cend ())
 		{
 			auto account_str = account_it->second.as<std::string> ();
-			nano::account account;
+			btcb::account account;
 			if (!account.decode_account (account_str))
 			{
-				nano::account_info account_info;
+				btcb::account_info account_info;
 				auto transaction (node.node->store.tx_begin_read ());
 				if (!node.node->store.account_get (transaction, account, account_info))
 				{
@@ -322,13 +322,13 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 				else
 				{
 					std::cerr << "Could not find account" << std::endl;
-					ec = nano::error_cli::generic;
+					ec = btcb::error_cli::generic;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid account id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
@@ -343,8 +343,8 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 
 		// Check/upgrade the config.json file.
 		{
-			nano::daemon_config config (data_path);
-			auto error = nano::read_and_update_daemon_config (data_path, config);
+			btcb::daemon_config config (data_path);
+			auto error = btcb::read_and_update_daemon_config (data_path, config);
 			if (error)
 			{
 				std::cerr << "Error deserializing config: " << error.get_message () << std::endl;
@@ -352,18 +352,18 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 		}
 
 		std::cout << "Testing hash function" << std::endl;
-		nano::raw_key key;
+		btcb::raw_key key;
 		key.data.clear ();
-		nano::send_block send (0, 0, 0, key, 0, 0);
+		btcb::send_block send (0, 0, 0, key, 0, 0);
 		std::cout << "Testing key derivation function" << std::endl;
-		nano::raw_key junk1;
+		btcb::raw_key junk1;
 		junk1.data.clear ();
-		nano::uint256_union junk2 (0);
-		nano::kdf kdf;
+		btcb::uint256_union junk2 (0);
+		btcb::kdf kdf;
 		kdf.phs (junk1, "", junk2);
 		std::cout << "Dumping OpenCL information" << std::endl;
 		bool error (false);
-		nano::opencl_environment environment (error);
+		btcb::opencl_environment environment (error);
 		if (!error)
 		{
 			environment.dump (std::cout);
@@ -374,12 +374,12 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 		else
 		{
 			std::cerr << "Error initializing OpenCL" << std::endl;
-			ec = nano::error_cli::generic;
+			ec = btcb::error_cli::generic;
 		}
 	}
 	else if (vm.count ("key_create"))
 	{
-		nano::keypair pair;
+		btcb::keypair pair;
 		std::cout << "Private: " << pair.prv.data.to_string () << std::endl
 		          << "Public: " << pair.pub.to_string () << std::endl
 		          << "Account: " << pair.pub.to_account () << std::endl;
@@ -388,9 +388,9 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	{
 		if (vm.count ("key") == 1)
 		{
-			nano::uint256_union prv;
+			btcb::uint256_union prv;
 			prv.decode_hex (vm["key"].as<std::string> ());
-			nano::uint256_union pub (nano::pub_key (prv));
+			btcb::uint256_union pub (btcb::pub_key (prv));
 			std::cout << "Private: " << prv.to_string () << std::endl
 			          << "Public: " << pub.to_string () << std::endl
 			          << "Account: " << pub.to_account () << std::endl;
@@ -398,14 +398,14 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 		else
 		{
 			std::cerr << "key_expand command requires one <key> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_add_adhoc"))
 	{
 		if (vm.count ("wallet") == 1 && vm.count ("key") == 1)
 		{
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				std::string password;
@@ -420,7 +420,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					auto transaction (wallet->wallets.tx_begin_write ());
 					if (!wallet->enter_password (transaction, password))
 					{
-						nano::raw_key key;
+						btcb::raw_key key;
 						if (!key.data.decode_hex (vm["key"].as<std::string> ()))
 						{
 							wallet->store.insert_adhoc (transaction, key);
@@ -428,38 +428,38 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 						else
 						{
 							std::cerr << "Invalid key\n";
-							ec = nano::error_cli::invalid_arguments;
+							ec = btcb::error_cli::invalid_arguments;
 						}
 					}
 					else
 					{
 						std::cerr << "Invalid password\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Wallet doesn't exist\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_add command requires one <wallet> option and one <key> option and optionally one <password> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_change_seed"))
 	{
 		if (vm.count ("wallet") == 1 && (vm.count ("seed") == 1 || vm.count ("key") == 1))
 		{
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				std::string password;
@@ -474,19 +474,19 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					auto transaction (wallet->wallets.tx_begin_write ());
 					if (!wallet->enter_password (transaction, password))
 					{
-						nano::raw_key seed;
+						btcb::raw_key seed;
 						if (vm.count ("seed"))
 						{
 							if (seed.data.decode_hex (vm["seed"].as<std::string> ()))
 							{
 								std::cerr << "Invalid seed\n";
-								ec = nano::error_cli::invalid_arguments;
+								ec = btcb::error_cli::invalid_arguments;
 							}
 						}
 						else if (seed.data.decode_hex (vm["key"].as<std::string> ()))
 						{
 							std::cerr << "Invalid key seed\n";
-							ec = nano::error_cli::invalid_arguments;
+							ec = btcb::error_cli::invalid_arguments;
 						}
 						if (!ec)
 						{
@@ -497,60 +497,60 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					else
 					{
 						std::cerr << "Invalid password\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Wallet doesn't exist\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_change_seed command requires one <wallet> option and one <seed> option and optionally one <password> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_create"))
 	{
-		nano::raw_key seed_key;
+		btcb::raw_key seed_key;
 		if (vm.count ("seed") == 1)
 		{
 			if (seed_key.data.decode_hex (vm["seed"].as<std::string> ()))
 			{
 				std::cerr << "Invalid seed\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else if (vm.count ("seed") > 1)
 		{
 			std::cerr << "wallet_create command allows one optional <seed> parameter\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 		else if (vm.count ("key") == 1)
 		{
 			if (seed_key.data.decode_hex (vm["key"].as<std::string> ()))
 			{
 				std::cerr << "Invalid seed key\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else if (vm.count ("key") > 1)
 		{
 			std::cerr << "wallet_create command allows one optional <key> seed parameter\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 		if (!ec)
 		{
 			inactive_node node (data_path);
-			nano::keypair wallet_key;
+			btcb::keypair wallet_key;
 			auto wallet (node.node->wallets.create (wallet_key.pub));
 			if (wallet != nullptr)
 			{
@@ -562,7 +562,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					if (error)
 					{
 						std::cerr << "Password change error\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				if (vm.count ("seed") || vm.count ("key"))
@@ -575,7 +575,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 			else
 			{
 				std::cerr << "Wallet creation error\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 	}
@@ -588,7 +588,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 			{
 				password = vm["password"].as<std::string> ();
 			}
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				inactive_node node (data_path);
@@ -598,17 +598,17 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					auto transaction (existing->second->wallets.tx_begin_write ());
 					if (!existing->second->enter_password (transaction, password))
 					{
-						nano::raw_key seed;
+						btcb::raw_key seed;
 						existing->second->store.seed (seed, transaction);
 						std::cout << boost::str (boost::format ("Seed: %1%\n") % seed.data.to_string ());
 						for (auto i (existing->second->store.begin (transaction)), m (existing->second->store.end ()); i != m; ++i)
 						{
-							nano::account account (i->first);
-							nano::raw_key key;
+							btcb::account account (i->first);
+							btcb::raw_key key;
 							auto error (existing->second->store.fetch (transaction, account, key));
 							assert (!error);
 							std::cout << boost::str (boost::format ("Pub: %1% Prv: %2%\n") % account.to_account () % key.data.to_string ());
-							if (nano::pub_key (key.data) != account)
+							if (btcb::pub_key (key.data) != account)
 							{
 								std::cerr << boost::str (boost::format ("Invalid private key %1%\n") % key.data.to_string ());
 							}
@@ -617,32 +617,32 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					else
 					{
 						std::cerr << "Invalid password\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Wallet doesn't exist\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_decrypt_unsafe requires one <wallet> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_destroy"))
 	{
 		if (vm.count ("wallet") == 1)
 		{
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				inactive_node node (data_path);
@@ -653,19 +653,19 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 				else
 				{
 					std::cerr << "Wallet doesn't exist\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_destroy requires one <wallet> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_import"))
@@ -691,7 +691,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 				}
 				if (vm.count ("wallet") == 1)
 				{
-					nano::uint256_union wallet_id;
+					btcb::uint256_union wallet_id;
 					if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 					{
 						inactive_node node (data_path);
@@ -712,7 +712,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 								if (existing->second->import (contents.str (), password))
 								{
 									std::cerr << "Unable to import wallet\n";
-									ec = nano::error_cli::invalid_arguments;
+									ec = btcb::error_cli::invalid_arguments;
 								}
 								else
 								{
@@ -722,7 +722,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 							else
 							{
 								std::cerr << boost::str (boost::format ("Invalid password for wallet %1%\nNew wallet should have empty (default) password or passwords for new wallet & json file should match\n") % wallet_id.to_string ());
-								ec = nano::error_cli::invalid_arguments;
+								ec = btcb::error_cli::invalid_arguments;
 							}
 						}
 						else
@@ -730,7 +730,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 							if (!forced)
 							{
 								std::cerr << "Wallet doesn't exist\n";
-								ec = nano::error_cli::invalid_arguments;
+								ec = btcb::error_cli::invalid_arguments;
 							}
 							else
 							{
@@ -738,12 +738,12 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 								{
 									std::lock_guard<std::mutex> lock (node.node->wallets.mutex);
 									auto transaction (node.node->wallets.tx_begin_write ());
-									nano::wallet wallet (error, transaction, node.node->wallets, wallet_id.to_string (), contents.str ());
+									btcb::wallet wallet (error, transaction, node.node->wallets, wallet_id.to_string (), contents.str ());
 								}
 								if (error)
 								{
 									std::cerr << "Unable to import wallet\n";
-									ec = nano::error_cli::invalid_arguments;
+									ec = btcb::error_cli::invalid_arguments;
 								}
 								else
 								{
@@ -758,25 +758,25 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 					else
 					{
 						std::cerr << "Invalid wallet id\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "wallet_import requires one <wallet> option\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Unable to open <file>\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_import requires one <file> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_list"))
@@ -788,7 +788,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 			auto transaction (i->second->wallets.tx_begin_read ());
 			for (auto j (i->second->store.begin (transaction)), m (i->second->store.end ()); j != m; ++j)
 			{
-				std::cout << nano::uint256_union (j->first).to_account () << '\n';
+				std::cout << btcb::uint256_union (j->first).to_account () << '\n';
 			}
 		}
 	}
@@ -797,13 +797,13 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 		if (vm.count ("wallet") == 1 && vm.count ("account") == 1)
 		{
 			inactive_node node (data_path);
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				auto wallet (node.node->wallets.items.find (wallet_id));
 				if (wallet != node.node->wallets.items.end ())
 				{
-					nano::account account_id;
+					btcb::account account_id;
 					if (!account_id.decode_account (vm["account"].as<std::string> ()))
 					{
 						auto transaction (wallet->second->wallets.tx_begin_write ());
@@ -815,38 +815,38 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 						else
 						{
 							std::cerr << "Account not found in wallet\n";
-							ec = nano::error_cli::invalid_arguments;
+							ec = btcb::error_cli::invalid_arguments;
 						}
 					}
 					else
 					{
 						std::cerr << "Invalid account id\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Wallet not found\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_remove command requires one <wallet> and one <account> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_representative_get"))
 	{
 		if (vm.count ("wallet") == 1)
 		{
-			nano::uint256_union wallet_id;
+			btcb::uint256_union wallet_id;
 			if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 			{
 				inactive_node node (data_path);
@@ -860,19 +860,19 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 				else
 				{
 					std::cerr << "Wallet not found\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "Invalid wallet id\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_representative_get requires one <wallet> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("wallet_representative_set"))
@@ -881,10 +881,10 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 		{
 			if (vm.count ("account") == 1)
 			{
-				nano::uint256_union wallet_id;
+				btcb::uint256_union wallet_id;
 				if (!wallet_id.decode_hex (vm["wallet"].as<std::string> ()))
 				{
-					nano::account account;
+					btcb::account account;
 					if (!account.decode_account (vm["account"].as<std::string> ()))
 					{
 						inactive_node node (data_path);
@@ -897,31 +897,31 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 						else
 						{
 							std::cerr << "Wallet not found\n";
-							ec = nano::error_cli::invalid_arguments;
+							ec = btcb::error_cli::invalid_arguments;
 						}
 					}
 					else
 					{
 						std::cerr << "Invalid account\n";
-						ec = nano::error_cli::invalid_arguments;
+						ec = btcb::error_cli::invalid_arguments;
 					}
 				}
 				else
 				{
 					std::cerr << "Invalid wallet id\n";
-					ec = nano::error_cli::invalid_arguments;
+					ec = btcb::error_cli::invalid_arguments;
 				}
 			}
 			else
 			{
 				std::cerr << "wallet_representative_set requires one <account> option\n";
-				ec = nano::error_cli::invalid_arguments;
+				ec = btcb::error_cli::invalid_arguments;
 			}
 		}
 		else
 		{
 			std::cerr << "wallet_representative_set requires one <wallet> option\n";
-			ec = nano::error_cli::invalid_arguments;
+			ec = btcb::error_cli::invalid_arguments;
 		}
 	}
 	else if (vm.count ("vote_dump") == 1)
@@ -936,7 +936,7 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 	}
 	else
 	{
-		ec = nano::error_cli::unknown_command;
+		ec = btcb::error_cli::unknown_command;
 	}
 
 	return ec;
@@ -944,16 +944,16 @@ std::error_code nano::handle_node_options (boost::program_options::variables_map
 
 namespace
 {
-void reset_confirmation_heights (nano::block_store & store)
+void reset_confirmation_heights (btcb::block_store & store)
 {
 	// First do a clean sweep
 	auto transaction (store.tx_begin_write ());
 	store.confirmation_height_clear (transaction);
 
 	// Then make sure the confirmation height of the genesis account open block is 1
-	nano::network_params network_params;
+	btcb::network_params network_params;
 	auto const & genesis_account = network_params.ledger.genesis_account;
-	nano::account_info account_info;
+	btcb::account_info account_info;
 	auto error = store.account_get (transaction, genesis_account, account_info);
 	release_assert (!error);
 	account_info.confirmation_height = 1;

@@ -1,10 +1,10 @@
-#include <nano/node/lmdb_txn_tracker.hpp>
+#include <btcb/node/lmdb_txn_tracker.hpp>
 
 #include <boost/polymorphic_cast.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/logger_mt.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/secure/blockstore.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/logger_mt.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/secure/blockstore.hpp>
 
 // Some builds (mac) fail due to "Boost.Stacktrace requires `_Unwind_Backtrace` function".
 #ifndef _WIN32
@@ -29,29 +29,29 @@ namespace
 class matches_txn
 {
 public:
-	matches_txn (const nano::transaction_impl * transaction_impl_a) :
+	matches_txn (const btcb::transaction_impl * transaction_impl_a) :
 	transaction_impl (transaction_impl_a)
 	{
 	}
 
-	bool operator() (nano::mdb_txn_stats const & mdb_txn_stats)
+	bool operator() (btcb::mdb_txn_stats const & mdb_txn_stats)
 	{
 		return (mdb_txn_stats.transaction_impl == transaction_impl);
 	}
 
 private:
-	const nano::transaction_impl * transaction_impl;
+	const btcb::transaction_impl * transaction_impl;
 };
 }
 
-nano::mdb_txn_tracker::mdb_txn_tracker (nano::logger_mt & logger_a, nano::txn_tracking_config const & txn_tracking_config_a, std::chrono::milliseconds block_processor_batch_max_time_a) :
+btcb::mdb_txn_tracker::mdb_txn_tracker (btcb::logger_mt & logger_a, btcb::txn_tracking_config const & txn_tracking_config_a, std::chrono::milliseconds block_processor_batch_max_time_a) :
 logger (logger_a),
 txn_tracking_config (txn_tracking_config_a),
 block_processor_batch_max_time (block_processor_batch_max_time_a)
 {
 }
 
-void nano::mdb_txn_tracker::serialize_json (boost::property_tree::ptree & json, std::chrono::milliseconds min_read_time, std::chrono::milliseconds min_write_time)
+void btcb::mdb_txn_tracker::serialize_json (boost::property_tree::ptree & json, std::chrono::milliseconds min_read_time, std::chrono::milliseconds min_write_time)
 {
 	// Copying is cheap compared to generating the stack trace strings, so reduce time holding the mutex
 	std::vector<mdb_txn_stats> copy_stats;
@@ -77,7 +77,7 @@ void nano::mdb_txn_tracker::serialize_json (boost::property_tree::ptree & json, 
 
 		if ((stat.is_write () && time_held_open >= min_write_time) || (!stat.is_write () && time_held_open >= min_read_time))
 		{
-			nano::jsonconfig mdb_lock_config;
+			btcb::jsonconfig mdb_lock_config;
 
 			mdb_lock_config.put ("thread", stat.thread_name);
 			mdb_lock_config.put ("time_held_open", time_held_open.count ());
@@ -86,7 +86,7 @@ void nano::mdb_txn_tracker::serialize_json (boost::property_tree::ptree & json, 
 			boost::property_tree::ptree stacktrace_config;
 			for (auto frame : *stat.stacktrace)
 			{
-				nano::jsonconfig frame_json;
+				btcb::jsonconfig frame_json;
 				frame_json.put ("name", frame.name ());
 				frame_json.put ("address", frame.address ());
 				frame_json.put ("source_file", frame.source_file ());
@@ -94,14 +94,14 @@ void nano::mdb_txn_tracker::serialize_json (boost::property_tree::ptree & json, 
 				stacktrace_config.push_back (std::make_pair ("", frame_json.get_tree ()));
 			}
 
-			nano::jsonconfig stack (stacktrace_config);
+			btcb::jsonconfig stack (stacktrace_config);
 			mdb_lock_config.put_child ("stacktrace", stack);
 			json.push_back (std::make_pair ("", mdb_lock_config.get_tree ()));
 		}
 	}
 }
 
-void nano::mdb_txn_tracker::output_finished (nano::mdb_txn_stats const & mdb_txn_stats) const
+void btcb::mdb_txn_tracker::output_finished (btcb::mdb_txn_stats const & mdb_txn_stats) const
 {
 	// Only output them if transactions were held for longer than a certain period of time
 	auto is_write = mdb_txn_stats.is_write ();
@@ -110,7 +110,7 @@ void nano::mdb_txn_tracker::output_finished (nano::mdb_txn_stats const & mdb_txn
 	auto should_ignore = false;
 	// Reduce noise in log files by removing any entries from the block processor (if enabled) which are less than the max batch time (+ a few second buffer) because these are expected writes during bootstrapping.
 	auto is_below_max_time = time_open <= (block_processor_batch_max_time + std::chrono::seconds (3));
-	bool is_blk_processing_thread = mdb_txn_stats.thread_name == nano::thread_role::get_string (nano::thread_role::name::block_processing);
+	bool is_blk_processing_thread = mdb_txn_stats.thread_name == btcb::thread_role::get_string (btcb::thread_role::name::block_processing);
 	if (txn_tracking_config.ignore_writes_below_block_processor_max_time && is_blk_processing_thread && is_write && is_below_max_time)
 	{
 		should_ignore = true;
@@ -123,7 +123,7 @@ void nano::mdb_txn_tracker::output_finished (nano::mdb_txn_stats const & mdb_txn
 	}
 }
 
-void nano::mdb_txn_tracker::add (const nano::transaction_impl * transaction_impl)
+void btcb::mdb_txn_tracker::add (const btcb::transaction_impl * transaction_impl)
 {
 	std::lock_guard<std::mutex> guard (mutex);
 	// clang-format off
@@ -133,7 +133,7 @@ void nano::mdb_txn_tracker::add (const nano::transaction_impl * transaction_impl
 }
 
 /** Can be called without error if transaction does not exist */
-void nano::mdb_txn_tracker::erase (const nano::transaction_impl * transaction_impl)
+void btcb::mdb_txn_tracker::erase (const btcb::transaction_impl * transaction_impl)
 {
 	std::lock_guard<std::mutex> guard (mutex);
 	// clang-format off
@@ -147,15 +147,15 @@ void nano::mdb_txn_tracker::erase (const nano::transaction_impl * transaction_im
 	}
 }
 
-nano::mdb_txn_stats::mdb_txn_stats (const nano::transaction_impl * transaction_impl) :
+btcb::mdb_txn_stats::mdb_txn_stats (const btcb::transaction_impl * transaction_impl) :
 transaction_impl (transaction_impl),
-thread_name (nano::thread_role::get_string ()),
+thread_name (btcb::thread_role::get_string ()),
 stacktrace (std::make_shared<boost::stacktrace::stacktrace> ())
 {
 	timer.start ();
 }
 
-bool nano::mdb_txn_stats::is_write () const
+bool btcb::mdb_txn_stats::is_write () const
 {
-	return (dynamic_cast<const nano::write_transaction_impl *> (transaction_impl) != nullptr);
+	return (dynamic_cast<const btcb::write_transaction_impl *> (transaction_impl) != nullptr);
 }

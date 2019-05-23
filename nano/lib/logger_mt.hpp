@@ -8,7 +8,7 @@
 #include <chrono>
 #include <mutex>
 
-namespace nano
+namespace btcb
 {
 enum class severity_level
 {
@@ -20,7 +20,7 @@ enum class severity_level
 // Attribute value tag type
 struct severity_tag;
 
-inline boost::log::formatting_ostream & operator<< (boost::log::formatting_ostream & strm, boost::log::to_log_manip<nano::severity_level, severity_tag> const & manip)
+inline boost::log::formatting_ostream & operator<< (boost::log::formatting_ostream & strm, boost::log::to_log_manip<btcb::severity_level, severity_tag> const & manip)
 {
 	// Needs to match order in the severity_level enum
 	static std::array<const char *, 2> strings = {
@@ -28,13 +28,13 @@ inline boost::log::formatting_ostream & operator<< (boost::log::formatting_ostre
 		"Error: "
 	};
 
-	nano::severity_level level = manip.get ();
+	btcb::severity_level level = manip.get ();
 	assert (static_cast<int> (level) < strings.size ());
 	strm << strings[static_cast<int> (level)];
 	return strm;
 }
 
-namespace nano
+namespace btcb
 {
 // A wrapper around a boost logger object to allow minimum
 // time spaced output to prevent logging happening too quickly.
@@ -53,7 +53,7 @@ private:
 	}
 
 	template <typename... LogItems>
-	void output (nano::severity_level severity_level, LogItems &&... log_items)
+	void output (btcb::severity_level severity_level, LogItems &&... log_items)
 	{
 		boost::log::record rec = boost_logger_mt.open_record (boost::log::keywords::severity = severity_level);
 		if (rec)
@@ -81,7 +81,7 @@ public:
 	 * @params severity_level The severity level that this log message should have.
 	 */
 	template <typename... LogItems>
-	void always_log (nano::severity_level severity_level, LogItems &&... log_items)
+	void always_log (btcb::severity_level severity_level, LogItems &&... log_items)
 	{
 		output (severity_level, std::forward<LogItems> (log_items)...);
 	}
@@ -92,7 +92,7 @@ public:
 	template <typename... LogItems>
 	void always_log (LogItems &&... log_items)
 	{
-		always_log (nano::severity_level::normal, std::forward<LogItems> (log_items)...);
+		always_log (btcb::severity_level::normal, std::forward<LogItems> (log_items)...);
 	}
 
 	/*
@@ -101,7 +101,7 @@ public:
 	 * @return true if nothing was logged
 	 */
 	template <typename... LogItems>
-	bool try_log (nano::severity_level severity_level, LogItems &&... log_items)
+	bool try_log (btcb::severity_level severity_level, LogItems &&... log_items)
 	{
 		auto error (true);
 		auto time_now = std::chrono::steady_clock::now ();
@@ -123,7 +123,7 @@ public:
 	template <typename... LogItems>
 	bool try_log (LogItems &&... log_items)
 	{
-		return try_log (nano::severity_level::normal, std::forward<LogItems> (log_items)...);
+		return try_log (btcb::severity_level::normal, std::forward<LogItems> (log_items)...);
 	}
 
 	std::chrono::milliseconds min_log_delta{ 0 };

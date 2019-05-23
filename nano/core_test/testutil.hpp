@@ -7,7 +7,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <condition_variable>
 #include <mutex>
-#include <nano/lib/timer.hpp>
+#include <btcb/lib/timer.hpp>
 #include <string>
 
 #define GTEST_TEST_ERROR_CODE(expression, text, actual, expected, fail)                       \
@@ -30,19 +30,19 @@
 	GTEST_FATAL_FAILURE_)
 
 /* Convenience globals for core_test */
-namespace nano
+namespace btcb
 {
 using uint128_t = boost::multiprecision::uint128_t;
 class keypair;
 union uint256_union;
-extern nano::keypair const & zero_key;
-extern nano::keypair const & test_genesis_key;
-extern std::string const & nano_test_genesis;
+extern btcb::keypair const & zero_key;
+extern btcb::keypair const & test_genesis_key;
+extern std::string const & btcb_test_genesis;
 extern std::string const & genesis_block;
-extern nano::uint256_union const & nano_test_account;
-extern nano::uint256_union const & genesis_account;
-extern nano::uint256_union const & burn_account;
-extern nano::uint128_t const & genesis_amount;
+extern btcb::uint256_union const & btcb_test_account;
+extern btcb::uint256_union const & genesis_account;
+extern btcb::uint256_union const & burn_account;
+extern btcb::uint128_t const & genesis_amount;
 
 class stringstream_mt_sink : public boost::iostreams::sink
 {
@@ -140,7 +140,7 @@ namespace util
 		template <typename UNIT>
 		bool await_count_for (UNIT deadline_duration_a)
 		{
-			nano::timer<UNIT> timer (nano::timer_state::started);
+			btcb::timer<UNIT> timer (btcb::timer_state::started);
 			bool error = true;
 			while (error && timer.before_deadline (deadline_duration_a))
 			{

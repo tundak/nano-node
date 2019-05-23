@@ -1,11 +1,11 @@
 #include <boost/endian/conversion.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/json_error_response.hpp>
-#include <nano/lib/logger_mt.hpp>
-#include <nano/lib/rpc_handler_interface.hpp>
-#include <nano/lib/rpcconfig.hpp>
-#include <nano/rpc/rpc_handler.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/json_error_response.hpp>
+#include <btcb/lib/logger_mt.hpp>
+#include <btcb/lib/rpc_handler_interface.hpp>
+#include <btcb/lib/rpcconfig.hpp>
+#include <btcb/rpc/rpc_handler.hpp>
 #include <unordered_set>
 
 namespace
@@ -15,7 +15,7 @@ std::unordered_set<std::string> rpc_control_impl_set = create_rpc_control_impls 
 std::string filter_request (boost::property_tree::ptree tree_a);
 }
 
-nano::rpc_handler::rpc_handler (nano::rpc_config const & rpc_config, std::string const & body_a, std::string const & request_id_a, std::function<void(std::string const &)> const & response_a, nano::rpc_handler_interface & rpc_handler_interface_a, nano::logger_mt & logger) :
+btcb::rpc_handler::rpc_handler (btcb::rpc_config const & rpc_config, std::string const & body_a, std::string const & request_id_a, std::function<void(std::string const &)> const & response_a, btcb::rpc_handler_interface & rpc_handler_interface_a, btcb::logger_mt & logger) :
 body (body_a),
 request_id (request_id_a),
 response (response_a),
@@ -25,7 +25,7 @@ logger (logger)
 {
 }
 
-void nano::rpc_handler::process_request ()
+void btcb::rpc_handler::process_request ()
 {
 	try
 	{
@@ -58,7 +58,7 @@ void nano::rpc_handler::process_request ()
 			logger.always_log (boost::str (boost::format ("%1% ") % request_id), filter_request (request));
 
 			// Check if this is a RPC command which requires RPC enabled control
-			std::error_code rpc_control_disabled_ec = nano::error_rpc::rpc_control_disabled;
+			std::error_code rpc_control_disabled_ec = btcb::error_rpc::rpc_control_disabled;
 
 			bool error = false;
 			auto found = rpc_control_impl_set.find (action);

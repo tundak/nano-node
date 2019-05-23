@@ -4,17 +4,17 @@
 
 #include <crypto/cryptopp/osrng.h>
 
-namespace nano
+namespace btcb
 {
 using uint128_t = boost::multiprecision::uint128_t;
 using uint256_t = boost::multiprecision::uint256_t;
 using uint512_t = boost::multiprecision::uint512_t;
 // SI dividers
-nano::uint128_t const Gxrb_ratio = nano::uint128_t ("1000000000000000000000000000000000"); // 10^33
-nano::uint128_t const Mxrb_ratio = nano::uint128_t ("1000000000000000000000000000000"); // 10^30
-nano::uint128_t const kxrb_ratio = nano::uint128_t ("1000000000000000000000000000"); // 10^27
-nano::uint128_t const xrb_ratio = nano::uint128_t ("1000000000000000000000000"); // 10^24
-nano::uint128_t const raw_ratio = nano::uint128_t ("1"); // 10^0
+btcb::uint128_t const Gxrb_ratio = btcb::uint128_t ("1000000000000000000000000000000000"); // 10^33
+btcb::uint128_t const Mxrb_ratio = btcb::uint128_t ("1000000000000000000000000000000"); // 10^30
+btcb::uint128_t const kxrb_ratio = btcb::uint128_t ("1000000000000000000000000000"); // 10^27
+btcb::uint128_t const xrb_ratio = btcb::uint128_t ("1000000000000000000000000"); // 10^24
+btcb::uint128_t const raw_ratio = btcb::uint128_t ("1"); // 10^0
 
 union uint128_union final
 {
@@ -26,19 +26,19 @@ public:
 	 */
 	uint128_union (std::string const &);
 	uint128_union (uint64_t);
-	uint128_union (nano::uint128_t const &);
-	bool operator== (nano::uint128_union const &) const;
-	bool operator!= (nano::uint128_union const &) const;
-	bool operator< (nano::uint128_union const &) const;
-	bool operator> (nano::uint128_union const &) const;
+	uint128_union (btcb::uint128_t const &);
+	bool operator== (btcb::uint128_union const &) const;
+	bool operator!= (btcb::uint128_union const &) const;
+	bool operator< (btcb::uint128_union const &) const;
+	bool operator> (btcb::uint128_union const &) const;
 	void encode_hex (std::string &) const;
 	bool decode_hex (std::string const &);
 	void encode_dec (std::string &) const;
 	bool decode_dec (std::string const &, bool = false);
-	bool decode_dec (std::string const &, nano::uint128_t);
-	std::string format_balance (nano::uint128_t scale, int precision, bool group_digits);
-	std::string format_balance (nano::uint128_t scale, int precision, bool group_digits, const std::locale & locale);
-	nano::uint128_t number () const;
+	bool decode_dec (std::string const &, btcb::uint128_t);
+	std::string format_balance (btcb::uint128_t scale, int precision, bool group_digits);
+	std::string format_balance (btcb::uint128_t scale, int precision, bool group_digits, const std::locale & locale);
+	btcb::uint128_t number () const;
 	void clear ();
 	bool is_zero () const;
 	std::string to_string () const;
@@ -60,13 +60,13 @@ union uint256_union final
 	 */
 	uint256_union (std::string const &);
 	uint256_union (uint64_t);
-	uint256_union (nano::uint256_t const &);
-	void encrypt (nano::raw_key const &, nano::raw_key const &, uint128_union const &);
-	uint256_union & operator^= (nano::uint256_union const &);
-	uint256_union operator^ (nano::uint256_union const &) const;
-	bool operator== (nano::uint256_union const &) const;
-	bool operator!= (nano::uint256_union const &) const;
-	bool operator< (nano::uint256_union const &) const;
+	uint256_union (btcb::uint256_t const &);
+	void encrypt (btcb::raw_key const &, btcb::raw_key const &, uint128_union const &);
+	uint256_union & operator^= (btcb::uint256_union const &);
+	uint256_union operator^ (btcb::uint256_union const &) const;
+	bool operator== (btcb::uint256_union const &) const;
+	bool operator!= (btcb::uint256_union const &) const;
+	bool operator< (btcb::uint256_union const &) const;
 	void encode_hex (std::string &) const;
 	bool decode_hex (std::string const &);
 	void encode_dec (std::string &) const;
@@ -82,7 +82,7 @@ union uint256_union final
 	void clear ();
 	bool is_zero () const;
 	std::string to_string () const;
-	nano::uint256_t number () const;
+	btcb::uint256_t number () const;
 };
 // All keys and hashes are 256 bit.
 using block_hash = uint256_union;
@@ -94,19 +94,19 @@ class raw_key final
 {
 public:
 	~raw_key ();
-	void decrypt (nano::uint256_union const &, nano::raw_key const &, uint128_union const &);
-	bool operator== (nano::raw_key const &) const;
-	bool operator!= (nano::raw_key const &) const;
-	nano::uint256_union data;
+	void decrypt (btcb::uint256_union const &, btcb::raw_key const &, uint128_union const &);
+	bool operator== (btcb::raw_key const &) const;
+	bool operator!= (btcb::raw_key const &) const;
+	btcb::uint256_union data;
 };
 union uint512_union final
 {
 	uint512_union () = default;
-	uint512_union (nano::uint256_union const &, nano::uint256_union const &);
-	uint512_union (nano::uint512_t const &);
-	bool operator== (nano::uint512_union const &) const;
-	bool operator!= (nano::uint512_union const &) const;
-	nano::uint512_union & operator^= (nano::uint512_union const &);
+	uint512_union (btcb::uint256_union const &, btcb::uint256_union const &);
+	uint512_union (btcb::uint512_t const &);
+	bool operator== (btcb::uint512_union const &) const;
+	bool operator!= (btcb::uint512_union const &) const;
+	btcb::uint512_union & operator^= (btcb::uint512_union const &);
 	void encode_hex (std::string &) const;
 	bool decode_hex (std::string const &);
 	std::array<uint8_t, 64> bytes;
@@ -115,17 +115,17 @@ union uint512_union final
 	std::array<uint256_union, 2> uint256s;
 	void clear ();
 	bool is_zero () const;
-	nano::uint512_t number () const;
+	btcb::uint512_t number () const;
 	std::string to_string () const;
 };
 using signature = uint512_union;
 using qualified_root = uint512_union;
 
-nano::uint512_union sign_message (nano::raw_key const &, nano::public_key const &, nano::uint256_union const &);
-bool validate_message (nano::public_key const &, nano::uint256_union const &, nano::uint512_union const &);
+btcb::uint512_union sign_message (btcb::raw_key const &, btcb::public_key const &, btcb::uint256_union const &);
+bool validate_message (btcb::public_key const &, btcb::uint256_union const &, btcb::uint512_union const &);
 bool validate_message_batch (const unsigned char **, size_t *, const unsigned char **, const unsigned char **, size_t, int *);
-void deterministic_key (nano::uint256_union const &, uint32_t, nano::uint256_union &);
-nano::public_key pub_key (nano::private_key const &);
+void deterministic_key (btcb::uint256_union const &, uint32_t, btcb::uint256_union &);
+btcb::public_key pub_key (btcb::private_key const &);
 
 /* Conversion methods */
 std::string to_string_hex (uint64_t const);
@@ -147,25 +147,25 @@ namespace difficulty
 namespace std
 {
 template <>
-struct hash<::nano::uint256_union>
+struct hash<::btcb::uint256_union>
 {
-	size_t operator() (::nano::uint256_union const & data_a) const
+	size_t operator() (::btcb::uint256_union const & data_a) const
 	{
 		return *reinterpret_cast<size_t const *> (data_a.bytes.data ());
 	}
 };
 template <>
-struct hash<::nano::uint256_t>
+struct hash<::btcb::uint256_t>
 {
-	size_t operator() (::nano::uint256_t const & number_a) const
+	size_t operator() (::btcb::uint256_t const & number_a) const
 	{
 		return number_a.convert_to<size_t> ();
 	}
 };
 template <>
-struct hash<::nano::uint512_union>
+struct hash<::btcb::uint512_union>
 {
-	size_t operator() (::nano::uint512_union const & data_a) const
+	size_t operator() (::btcb::uint512_union const & data_a) const
 	{
 		return *reinterpret_cast<size_t const *> (data_a.bytes.data ());
 	}

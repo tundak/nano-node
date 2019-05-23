@@ -1,16 +1,16 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/rpcconfig.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/nano_wallet/icon.hpp>
-#include <nano/node/cli.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/json_handler.hpp>
-#include <nano/node/node_rpc_config.hpp>
-#include <nano/node/working.hpp>
-#include <nano/qt/qt.hpp>
-#include <nano/rpc/rpc.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/rpcconfig.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/btcb_wallet/icon.hpp>
+#include <btcb/node/cli.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/json_handler.hpp>
+#include <btcb/node/node_rpc_config.hpp>
+#include <btcb/node/working.hpp>
+#include <btcb/qt/qt.hpp>
+#include <btcb/rpc/rpc.hpp>
 
 #include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
@@ -30,17 +30,17 @@ class qt_wallet_config
 public:
 	qt_wallet_config (boost::filesystem::path const & data_path_a)
 	{
-		nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+		btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 		assert (!wallet.is_zero ());
 	}
-	bool upgrade_json (unsigned version_a, nano::jsonconfig & json)
+	bool upgrade_json (unsigned version_a, btcb::jsonconfig & json)
 	{
 		json.put ("version", json_version ());
 		switch (version_a)
 		{
 			case 1:
 			{
-				nano::account account;
+				btcb::account account;
 				account.decode_account (json.get<std::string> ("account"));
 				json.erase ("account");
 				json.put ("account", account.to_account ());
@@ -48,7 +48,7 @@ public:
 			}
 			case 2:
 			{
-				nano::jsonconfig rpc_l;
+				btcb::jsonconfig rpc_l;
 				rpc.serialize_json (rpc_l);
 				json.put ("rpc_enable", "false");
 				json.put_child ("rpc", rpc_l);
@@ -64,7 +64,7 @@ public:
 				auto opencl_l (json.get_optional_child ("opencl"));
 				if (!opencl_l)
 				{
-					nano::jsonconfig opencl_l;
+					btcb::jsonconfig opencl_l;
 					opencl.serialize_json (opencl_l);
 					json.put_child ("opencl", opencl_l);
 				}
@@ -77,7 +77,7 @@ public:
 		return version_a < json_version ();
 	}
 
-	nano::error deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+	btcb::error deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 	{
 		if (!json.empty ())
 		{
@@ -120,7 +120,7 @@ public:
 			}
 			if (wallet.is_zero ())
 			{
-				nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+				btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 				upgraded_a = true;
 			}
 		}
@@ -132,24 +132,24 @@ public:
 		return json.get_error ();
 	}
 
-	void serialize_json (nano::jsonconfig & json)
+	void serialize_json (btcb::jsonconfig & json)
 	{
 		std::string wallet_string;
 		wallet.encode_hex (wallet_string);
 		json.put ("version", json_version ());
 		json.put ("wallet", wallet_string);
 		json.put ("account", account.to_account ());
-		nano::jsonconfig node_l;
+		btcb::jsonconfig node_l;
 		node.enable_voting = false;
 		node.bootstrap_connections_max = 4;
 		node.serialize_json (node_l);
 		json.put_child ("node", node_l);
 		json.put ("rpc_enable", rpc_enable);
-		nano::jsonconfig rpc_l;
+		btcb::jsonconfig rpc_l;
 		rpc.serialize_json (rpc_l);
 		json.put_child ("rpc", rpc_l);
 		json.put ("opencl_enable", opencl_enable);
-		nano::jsonconfig opencl_l;
+		btcb::jsonconfig opencl_l;
 		opencl.serialize_json (opencl_l);
 		json.put_child ("opencl", opencl_l);
 	}
@@ -160,7 +160,7 @@ public:
 		stream_a.seekp (0);
 		try
 		{
-			nano::jsonconfig json;
+			btcb::jsonconfig json;
 			serialize_json (json);
 			json.write (stream_a);
 		}
@@ -172,13 +172,13 @@ public:
 		return result;
 	}
 
-	nano::uint256_union wallet;
-	nano::account account{ 0 };
-	nano::node_config node;
+	btcb::uint256_union wallet;
+	btcb::account account{ 0 };
+	btcb::node_config node;
 	bool rpc_enable{ false };
-	nano::node_rpc_config rpc;
+	btcb::node_rpc_config rpc;
 	bool opencl_enable{ false };
-	nano::opencl_config opencl;
+	btcb::opencl_config opencl;
 	boost::filesystem::path data_path;
 	int json_version () const
 	{
@@ -190,7 +190,7 @@ namespace
 {
 void show_error (std::string const & message_a)
 {
-	QMessageBox message (QMessageBox::Critical, "Error starting Nano", message_a.c_str ());
+	QMessageBox message (QMessageBox::Critical, "Error starting Btcb", message_a.c_str ());
 	message.setModal (true);
 	message.show ();
 	message.exec ();
@@ -200,7 +200,7 @@ bool update_config (qt_wallet_config & config_a, boost::filesystem::path const &
 	auto account (config_a.account);
 	auto wallet (config_a.wallet);
 	auto error (false);
-	nano::jsonconfig config;
+	btcb::jsonconfig config;
 	if (!config.read_and_update (config_a, config_path_a))
 	{
 		if (account != config_a.account || wallet != config_a.wallet)
@@ -212,7 +212,7 @@ bool update_config (qt_wallet_config & config_a, boost::filesystem::path const &
 			std::fstream config_file;
 			config_file.open (config_path_a.string (), std::ios_base::out | std::ios_base::trunc);
 			boost::system::error_code error_chmod;
-			nano::set_secure_perm_file (config_path_a, error_chmod);
+			btcb::set_secure_perm_file (config_path_a, error_chmod);
 			error = config_a.serialize_json_stream (config_file);
 		}
 	}
@@ -222,10 +222,10 @@ bool update_config (qt_wallet_config & config_a, boost::filesystem::path const &
 
 int run_wallet (QApplication & application, int argc, char * const * argv, boost::filesystem::path const & data_path)
 {
-	nano_qt::eventloop_processor processor;
+	btcb_qt::eventloop_processor processor;
 	boost::system::error_code error_chmod;
 	boost::filesystem::create_directories (data_path);
-	nano::set_secure_perm_directory (data_path, error_chmod);
+	btcb::set_secure_perm_directory (data_path, error_chmod);
 	QPixmap pixmap (":/logo.png");
 	QSplashScreen * splash = new QSplashScreen (pixmap);
 	splash->show ();
@@ -233,32 +233,32 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 	splash->showMessage (QSplashScreen::tr ("Remember - Back Up Your Wallet Seed"), Qt::AlignBottom | Qt::AlignHCenter, Qt::darkGray);
 	application.processEvents ();
 	qt_wallet_config config (data_path);
-	auto config_path (nano::get_config_path (data_path));
+	auto config_path (btcb::get_config_path (data_path));
 	int result (0);
-	nano::jsonconfig json;
+	btcb::jsonconfig json;
 	auto error (json.read_and_update (config, config_path));
-	nano::set_secure_perm_file (config_path, error_chmod);
+	btcb::set_secure_perm_file (config_path, error_chmod);
 	if (!error)
 	{
 		config.node.logging.init (data_path);
-		nano::logger_mt logger{ config.node.logging.min_time_between_log_output };
+		btcb::logger_mt logger{ config.node.logging.min_time_between_log_output };
 
 		boost::asio::io_context io_ctx;
-		nano::thread_runner runner (io_ctx, config.node.io_threads);
+		btcb::thread_runner runner (io_ctx, config.node.io_threads);
 
-		std::shared_ptr<nano::node> node;
-		std::shared_ptr<nano_qt::wallet> gui;
-		nano::set_application_icon (application);
-		auto opencl (nano::opencl_work::create (config.opencl_enable, config.opencl, logger));
-		nano::work_pool work (config.node.work_threads, config.node.pow_sleep_interval, opencl ? [&opencl](nano::uint256_union const & root_a, uint64_t difficulty_a) {
+		std::shared_ptr<btcb::node> node;
+		std::shared_ptr<btcb_qt::wallet> gui;
+		btcb::set_application_icon (application);
+		auto opencl (btcb::opencl_work::create (config.opencl_enable, config.opencl, logger));
+		btcb::work_pool work (config.node.work_threads, config.node.pow_sleep_interval, opencl ? [&opencl](btcb::uint256_union const & root_a, uint64_t difficulty_a) {
 			return opencl->generate_work (root_a, difficulty_a);
 		}
-		                                                                                       : std::function<boost::optional<uint64_t> (nano::uint256_union const &, uint64_t)> (nullptr));
-		nano::alarm alarm (io_ctx);
-		nano::node_init init;
-		nano::node_flags flags;
+		                                                                                       : std::function<boost::optional<uint64_t> (btcb::uint256_union const &, uint64_t)> (nullptr));
+		btcb::alarm alarm (io_ctx);
+		btcb::node_init init;
+		btcb::node_flags flags;
 
-		node = std::make_shared<nano::node> (init, io_ctx, data_path, alarm, config.node, work, flags);
+		node = std::make_shared<btcb::node> (init, io_ctx, data_path, alarm, config.node, work, flags);
 		if (!init.error ())
 		{
 			auto wallet (node->wallets.open (config.wallet));
@@ -281,7 +281,7 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 				auto existing (wallet->store.begin (transaction));
 				if (existing != wallet->store.end ())
 				{
-					nano::uint256_union account (existing->first);
+					btcb::uint256_union account (existing->first);
 					config.account = account;
 				}
 				else
@@ -292,26 +292,26 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 			assert (wallet->exists (config.account));
 			update_config (config, config_path);
 			node->start ();
-			nano::ipc::ipc_server ipc (*node, config.rpc);
+			btcb::ipc::ipc_server ipc (*node, config.rpc);
 
 #if BOOST_PROCESS_SUPPORTED
 			std::unique_ptr<boost::process::child> rpc_process;
 #endif
-			std::unique_ptr<nano::rpc> rpc;
-			std::unique_ptr<nano::rpc_handler_interface> rpc_handler;
+			std::unique_ptr<btcb::rpc> rpc;
+			std::unique_ptr<btcb::rpc_handler_interface> rpc_handler;
 			if (config.rpc_enable)
 			{
 				if (!config.rpc.child_process.enable)
 				{
 					// Launch rpc in-process
-					nano::rpc_config rpc_config;
-					auto error = nano::read_and_update_rpc_config (data_path, rpc_config);
+					btcb::rpc_config rpc_config;
+					auto error = btcb::read_and_update_rpc_config (data_path, rpc_config);
 					if (error)
 					{
 						throw std::runtime_error ("Could not deserialize rpc_config file");
 					}
-					rpc_handler = std::make_unique<nano::inprocess_rpc_handler> (*node, config.rpc);
-					rpc = nano::get_rpc (io_ctx, rpc_config, *rpc_handler);
+					rpc_handler = std::make_unique<btcb::inprocess_rpc_handler> (*node, config.rpc);
+					rpc = btcb::get_rpc (io_ctx, rpc_config, *rpc_handler);
 					rpc->start ();
 				}
 				else
@@ -345,8 +345,8 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 #endif
 				runner.stop_event_processing ();
 			});
-			application.postEvent (&processor, new nano_qt::eventloop_event ([&]() {
-				gui = std::make_shared<nano_qt::wallet> (application, processor, *node, wallet, config.account);
+			application.postEvent (&processor, new btcb_qt::eventloop_event ([&]() {
+				gui = std::make_shared<btcb_qt::wallet> (application, processor, *node, wallet, config.account);
 				splash->close ();
 				gui->start ();
 				gui->client_window->show ();
@@ -371,14 +371,14 @@ int run_wallet (QApplication & application, int argc, char * const * argv, boost
 
 int main (int argc, char * const * argv)
 {
-	nano::set_umask ();
+	btcb::set_umask ();
 
 	try
 	{
 		QApplication application (argc, const_cast<char **> (argv));
 		boost::program_options::options_description description ("Command line options");
 		description.add_options () ("help", "Print out options");
-		nano::add_node_options (description);
+		btcb::add_node_options (description);
 		boost::program_options::variables_map vm;
 		boost::program_options::store (boost::program_options::command_line_parser (argc, argv).options (description).allow_unregistered ().run (), vm);
 		boost::program_options::notify (vm);
@@ -387,7 +387,7 @@ int main (int argc, char * const * argv)
 		auto network (vm.find ("network"));
 		if (network != vm.end ())
 		{
-			auto err (nano::network_constants::set_active_network (network->second.as<std::string> ()));
+			auto err (btcb::network_constants::set_active_network (network->second.as<std::string> ()));
 			if (err)
 			{
 				std::cerr << err.get_message () << std::endl;
@@ -398,14 +398,14 @@ int main (int argc, char * const * argv)
 		if (!vm.count ("data_path"))
 		{
 			std::string error_string;
-			if (!nano::migrate_working_path (error_string))
+			if (!btcb::migrate_working_path (error_string))
 			{
 				throw std::runtime_error (error_string);
 			}
 		}
 
-		auto ec = nano::handle_node_options (vm);
-		if (ec == nano::error_cli::unknown_command)
+		auto ec = btcb::handle_node_options (vm);
+		if (ec == btcb::error_cli::unknown_command)
 		{
 			if (vm.count ("help") != 0)
 			{
@@ -423,7 +423,7 @@ int main (int argc, char * const * argv)
 					}
 					else
 					{
-						data_path = nano::working_path ();
+						data_path = btcb::working_path ();
 					}
 					result = run_wallet (application, argc, argv, data_path);
 				}

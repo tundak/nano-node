@@ -1,10 +1,10 @@
 #include <algorithm>
 #include <boost/property_tree/json_parser.hpp>
 #include <chrono>
-#include <nano/node/node.hpp>
-#include <nano/node/websocket.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/websocket.hpp>
 
-nano::websocket::confirmation_options::confirmation_options (boost::property_tree::ptree const & options_a, nano::node & node_a) :
+btcb::websocket::confirmation_options::confirmation_options (boost::property_tree::ptree const & options_a, btcb::node & node_a) :
 node (node_a),
 all_local_accounts (options_a.get<bool> ("all_local_accounts", false))
 {
@@ -13,7 +13,7 @@ all_local_accounts (options_a.get<bool> ("all_local_accounts", false))
 	{
 		for (auto account_l : *accounts_l)
 		{
-			nano::account result_l (0);
+			btcb::account result_l (0);
 			if (!result_l.decode_account (account_l.second.data ()))
 			{
 				// Do not insert the given raw data to keep old prefix support
@@ -32,7 +32,7 @@ all_local_accounts (options_a.get<bool> ("all_local_accounts", false))
 	}
 }
 
-bool nano::websocket::confirmation_options::should_filter (nano::websocket::message const & message_a) const
+bool btcb::websocket::confirmation_options::should_filter (btcb::websocket::message const & message_a) const
 {
 	bool should_filter_l (true);
 	auto destination_opt_l (message_a.contents.get_optional<std::string> ("message.block.link_as_account"));
@@ -42,7 +42,7 @@ bool nano::websocket::confirmation_options::should_filter (nano::websocket::mess
 		if (all_local_accounts)
 		{
 			auto transaction_l (node.wallets.tx_begin_read ());
-			nano::account source_l (0), destination_l (0);
+			btcb::account source_l (0), destination_l (0);
 			auto decode_source_ok_l (!source_l.decode_account (source_text_l));
 			auto decode_destination_ok_l (!destination_l.decode_account (destination_opt_l.get ()));
 			assert (decode_source_ok_l && decode_destination_ok_l);
@@ -59,7 +59,7 @@ bool nano::websocket::confirmation_options::should_filter (nano::websocket::mess
 	return should_filter_l;
 }
 
-nano::websocket::vote_options::vote_options (boost::property_tree::ptree const & options_a, nano::node & node_a) :
+btcb::websocket::vote_options::vote_options (boost::property_tree::ptree const & options_a, btcb::node & node_a) :
 node (node_a)
 {
 	auto representatives_l (options_a.get_child_optional ("representatives"));
@@ -67,7 +67,7 @@ node (node_a)
 	{
 		for (auto representative_l : *representatives_l)
 		{
-			nano::account result_l (0);
+			btcb::account result_l (0);
 			if (!result_l.decode_account (representative_l.second.data ()))
 			{
 				// Do not insert the given raw data to keep old prefix support
@@ -86,7 +86,7 @@ node (node_a)
 	}
 }
 
-bool nano::websocket::vote_options::should_filter (nano::websocket::message const & message_a) const
+bool btcb::websocket::vote_options::should_filter (btcb::websocket::message const & message_a) const
 {
 	bool should_filter_l (true);
 	auto representative_text_l (message_a.contents.get<std::string> ("message.account"));
@@ -97,14 +97,14 @@ bool nano::websocket::vote_options::should_filter (nano::websocket::message cons
 	return should_filter_l;
 }
 
-nano::websocket::session::session (nano::websocket::listener & listener_a, socket_type socket_a) :
+btcb::websocket::session::session (btcb::websocket::listener & listener_a, socket_type socket_a) :
 ws_listener (listener_a), ws (std::move (socket_a)), strand (ws.get_executor ())
 {
 	ws.text (true);
 	ws_listener.get_node ().logger.try_log ("Websocket: session started");
 }
 
-nano::websocket::session::~session ()
+btcb::websocket::session::~session ()
 {
 	{
 		std::unique_lock<std::mutex> lk (subscriptions_mutex);
@@ -115,7 +115,7 @@ nano::websocket::session::~session ()
 	}
 }
 
-void nano::websocket::session::handshake ()
+void btcb::websocket::session::handshake ()
 {
 	auto this_l (shared_from_this ());
 	ws.async_accept ([this_l](boost::system::error_code const & ec) {
@@ -131,7 +131,7 @@ void nano::websocket::session::handshake ()
 	});
 }
 
-void nano::websocket::session::close ()
+void btcb::websocket::session::close ()
 {
 	ws_listener.get_node ().logger.try_log ("Websocket: session closing");
 
@@ -148,12 +148,12 @@ void nano::websocket::session::close ()
 	// clang-format on
 }
 
-void nano::websocket::session::write (nano::websocket::message message_a)
+void btcb::websocket::session::write (btcb::websocket::message message_a)
 {
 	// clang-format off
 	std::unique_lock<std::mutex> lk (subscriptions_mutex);
 	auto subscription (subscriptions.find (message_a.topic));
-	if (message_a.topic == nano::websocket::topic::ack || (subscription != subscriptions.end () && !subscription->second->should_filter (message_a)))
+	if (message_a.topic == btcb::websocket::topic::ack || (subscription != subscriptions.end () && !subscription->second->should_filter (message_a)))
 	{
 		lk.unlock ();
 		auto this_l (shared_from_this ());
@@ -170,7 +170,7 @@ void nano::websocket::session::write (nano::websocket::message message_a)
 	// clang-format on
 }
 
-void nano::websocket::session::write_queued_messages ()
+void btcb::websocket::session::write_queued_messages ()
 {
 	auto msg (send_queue.front ());
 	auto msg_str (msg.to_string ());
@@ -192,7 +192,7 @@ void nano::websocket::session::write_queued_messages ()
 	// clang-format on
 }
 
-void nano::websocket::session::read ()
+void btcb::websocket::session::read ()
 {
 	auto this_l (shared_from_this ());
 
@@ -233,36 +233,36 @@ void nano::websocket::session::read ()
 
 namespace
 {
-nano::websocket::topic to_topic (std::string topic_a)
+btcb::websocket::topic to_topic (std::string topic_a)
 {
-	nano::websocket::topic topic = nano::websocket::topic::invalid;
+	btcb::websocket::topic topic = btcb::websocket::topic::invalid;
 	if (topic_a == "confirmation")
 	{
-		topic = nano::websocket::topic::confirmation;
+		topic = btcb::websocket::topic::confirmation;
 	}
 	else if (topic_a == "vote")
 	{
-		topic = nano::websocket::topic::vote;
+		topic = btcb::websocket::topic::vote;
 	}
 	else if (topic_a == "ack")
 	{
-		topic = nano::websocket::topic::ack;
+		topic = btcb::websocket::topic::ack;
 	}
 	return topic;
 }
 
-std::string from_topic (nano::websocket::topic topic_a)
+std::string from_topic (btcb::websocket::topic topic_a)
 {
 	std::string topic = "invalid";
-	if (topic_a == nano::websocket::topic::confirmation)
+	if (topic_a == btcb::websocket::topic::confirmation)
 	{
 		topic = "confirmation";
 	}
-	else if (topic_a == nano::websocket::topic::vote)
+	else if (topic_a == btcb::websocket::topic::vote)
 	{
 		topic = "vote";
 	}
-	else if (topic_a == nano::websocket::topic::ack)
+	else if (topic_a == btcb::websocket::topic::ack)
 	{
 		topic = "ack";
 	}
@@ -270,10 +270,10 @@ std::string from_topic (nano::websocket::topic topic_a)
 }
 }
 
-void nano::websocket::session::send_ack (std::string action_a, std::string id_a)
+void btcb::websocket::session::send_ack (std::string action_a, std::string id_a)
 {
 	auto milli_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now ().time_since_epoch ()).count ();
-	nano::websocket::message msg (nano::websocket::topic::ack);
+	btcb::websocket::message msg (btcb::websocket::topic::ack);
 	boost::property_tree::ptree & message_l = msg.contents;
 	message_l.add ("ack", action_a);
 	message_l.add ("time", std::to_string (milli_since_epoch));
@@ -284,33 +284,33 @@ void nano::websocket::session::send_ack (std::string action_a, std::string id_a)
 	write (msg);
 }
 
-void nano::websocket::session::handle_message (boost::property_tree::ptree const & message_a)
+void btcb::websocket::session::handle_message (boost::property_tree::ptree const & message_a)
 {
 	std::string action (message_a.get<std::string> ("action", ""));
 	auto topic_l (to_topic (message_a.get<std::string> ("topic", "")));
 	auto ack_l (message_a.get<bool> ("ack", false));
 	auto id_l (message_a.get<std::string> ("id", ""));
 	auto action_succeeded (false);
-	if (action == "subscribe" && topic_l != nano::websocket::topic::invalid)
+	if (action == "subscribe" && topic_l != btcb::websocket::topic::invalid)
 	{
 		auto options_l (message_a.get_child_optional ("options"));
 		std::lock_guard<std::mutex> lk (subscriptions_mutex);
-		if (topic_l == nano::websocket::topic::confirmation)
+		if (topic_l == btcb::websocket::topic::confirmation)
 		{
-			subscriptions.insert (std::make_pair (topic_l, options_l ? std::make_unique<nano::websocket::confirmation_options> (options_l.get (), ws_listener.get_node ()) : std::make_unique<nano::websocket::options> ()));
+			subscriptions.insert (std::make_pair (topic_l, options_l ? std::make_unique<btcb::websocket::confirmation_options> (options_l.get (), ws_listener.get_node ()) : std::make_unique<btcb::websocket::options> ()));
 		}
-		else if (topic_l == nano::websocket::topic::vote)
+		else if (topic_l == btcb::websocket::topic::vote)
 		{
-			subscriptions.insert (std::make_pair (topic_l, options_l ? std::make_unique<nano::websocket::vote_options> (options_l.get (), ws_listener.get_node ()) : std::make_unique<nano::websocket::options> ()));
+			subscriptions.insert (std::make_pair (topic_l, options_l ? std::make_unique<btcb::websocket::vote_options> (options_l.get (), ws_listener.get_node ()) : std::make_unique<btcb::websocket::options> ()));
 		}
 		else
 		{
-			subscriptions.insert (std::make_pair (topic_l, std::make_unique<nano::websocket::options> ()));
+			subscriptions.insert (std::make_pair (topic_l, std::make_unique<btcb::websocket::options> ()));
 		}
 		ws_listener.increase_subscription_count (topic_l);
 		action_succeeded = true;
 	}
-	else if (action == "unsubscribe" && topic_l != nano::websocket::topic::invalid)
+	else if (action == "unsubscribe" && topic_l != btcb::websocket::topic::invalid)
 	{
 		std::lock_guard<std::mutex> lk (subscriptions_mutex);
 		if (subscriptions.erase (topic_l))
@@ -325,7 +325,7 @@ void nano::websocket::session::handle_message (boost::property_tree::ptree const
 	}
 }
 
-void nano::websocket::listener::stop ()
+void btcb::websocket::listener::stop ()
 {
 	stopped = true;
 	acceptor.close ();
@@ -342,7 +342,7 @@ void nano::websocket::listener::stop ()
 	sessions.clear ();
 }
 
-nano::websocket::listener::listener (nano::node & node_a, boost::asio::ip::tcp::endpoint endpoint_a) :
+btcb::websocket::listener::listener (btcb::node & node_a, boost::asio::ip::tcp::endpoint endpoint_a) :
 node (node_a),
 acceptor (node_a.io_ctx),
 socket (node_a.io_ctx)
@@ -360,7 +360,7 @@ socket (node_a.io_ctx)
 	}
 }
 
-void nano::websocket::listener::run ()
+void btcb::websocket::listener::run ()
 {
 	if (acceptor.is_open ())
 	{
@@ -368,7 +368,7 @@ void nano::websocket::listener::run ()
 	}
 }
 
-void nano::websocket::listener::accept ()
+void btcb::websocket::listener::accept ()
 {
 	auto this_l (shared_from_this ());
 	acceptor.async_accept (socket,
@@ -377,7 +377,7 @@ void nano::websocket::listener::accept ()
 	});
 }
 
-void nano::websocket::listener::on_accept (boost::system::error_code ec)
+void btcb::websocket::listener::on_accept (boost::system::error_code ec)
 {
 	if (ec)
 	{
@@ -386,7 +386,7 @@ void nano::websocket::listener::on_accept (boost::system::error_code ec)
 	else
 	{
 		// Create the session and initiate websocket handshake
-		auto session (std::make_shared<nano::websocket::session> (*this, std::move (socket)));
+		auto session (std::make_shared<btcb::websocket::session> (*this, std::move (socket)));
 		sessions_mutex.lock ();
 		sessions.push_back (session);
 		// Clean up expired sessions
@@ -401,7 +401,7 @@ void nano::websocket::listener::on_accept (boost::system::error_code ec)
 	}
 }
 
-void nano::websocket::listener::broadcast (nano::websocket::message message_a)
+void btcb::websocket::listener::broadcast (btcb::websocket::message message_a)
 {
 	std::lock_guard<std::mutex> lk (sessions_mutex);
 	for (auto & weak_session : sessions)
@@ -414,26 +414,26 @@ void nano::websocket::listener::broadcast (nano::websocket::message message_a)
 	}
 }
 
-bool nano::websocket::listener::any_subscribers (nano::websocket::topic const & topic_a)
+bool btcb::websocket::listener::any_subscribers (btcb::websocket::topic const & topic_a)
 {
 	return topic_subscription_count[static_cast<std::size_t> (topic_a)] > 0;
 }
 
-void nano::websocket::listener::increase_subscription_count (nano::websocket::topic const & topic_a)
+void btcb::websocket::listener::increase_subscription_count (btcb::websocket::topic const & topic_a)
 {
 	topic_subscription_count[static_cast<std::size_t> (topic_a)] += 1;
 }
 
-void nano::websocket::listener::decrease_subscription_count (nano::websocket::topic const & topic_a)
+void btcb::websocket::listener::decrease_subscription_count (btcb::websocket::topic const & topic_a)
 {
 	auto & count (topic_subscription_count[static_cast<std::size_t> (topic_a)]);
 	release_assert (count > 0);
 	count -= 1;
 }
 
-nano::websocket::message nano::websocket::message_builder::block_confirmed (std::shared_ptr<nano::block> block_a, nano::account const & account_a, nano::amount const & amount_a, std::string subtype)
+btcb::websocket::message btcb::websocket::message_builder::block_confirmed (std::shared_ptr<btcb::block> block_a, btcb::account const & account_a, btcb::amount const & amount_a, std::string subtype)
 {
-	nano::websocket::message message_l (nano::websocket::topic::confirmation);
+	btcb::websocket::message message_l (btcb::websocket::topic::confirmation);
 	set_common_fields (message_l);
 
 	// Block confirmation properties
@@ -453,9 +453,9 @@ nano::websocket::message nano::websocket::message_builder::block_confirmed (std:
 	return message_l;
 }
 
-nano::websocket::message nano::websocket::message_builder::vote_received (std::shared_ptr<nano::vote> vote_a)
+btcb::websocket::message btcb::websocket::message_builder::vote_received (std::shared_ptr<btcb::vote> vote_a)
 {
-	nano::websocket::message message_l (nano::websocket::topic::vote);
+	btcb::websocket::message message_l (btcb::websocket::topic::vote);
 	set_common_fields (message_l);
 
 	// Vote information
@@ -465,7 +465,7 @@ nano::websocket::message nano::websocket::message_builder::vote_received (std::s
 	return message_l;
 }
 
-void nano::websocket::message_builder::set_common_fields (nano::websocket::message & message_a)
+void btcb::websocket::message_builder::set_common_fields (btcb::websocket::message & message_a)
 {
 	using namespace std::chrono;
 	auto milli_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds> (std::chrono::system_clock::now ().time_since_epoch ()).count ();
@@ -475,7 +475,7 @@ void nano::websocket::message_builder::set_common_fields (nano::websocket::messa
 	message_a.contents.add ("time", std::to_string (milli_since_epoch));
 }
 
-std::shared_ptr<std::string> nano::websocket::message::to_string () const
+std::shared_ptr<std::string> btcb::websocket::message::to_string () const
 {
 	std::ostringstream ostream;
 	boost::property_tree::write_json (ostream, contents);

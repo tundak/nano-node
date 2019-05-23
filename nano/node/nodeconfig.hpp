@@ -1,19 +1,19 @@
 #pragma once
 
 #include <chrono>
-#include <nano/lib/config.hpp>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/numbers.hpp>
-#include <nano/node/diagnosticsconfig.hpp>
-#include <nano/node/ipcconfig.hpp>
-#include <nano/node/logging.hpp>
-#include <nano/node/stats.hpp>
-#include <nano/node/websocketconfig.hpp>
-#include <nano/secure/common.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/node/diagnosticsconfig.hpp>
+#include <btcb/node/ipcconfig.hpp>
+#include <btcb/node/logging.hpp>
+#include <btcb/node/stats.hpp>
+#include <btcb/node/websocketconfig.hpp>
+#include <btcb/secure/common.hpp>
 #include <vector>
 
-namespace nano
+namespace btcb
 {
 /**
  * Node configuration
@@ -22,21 +22,21 @@ class node_config
 {
 public:
 	node_config ();
-	node_config (uint16_t, nano::logging const &);
-	nano::error serialize_json (nano::jsonconfig &) const;
-	nano::error deserialize_json (bool &, nano::jsonconfig &);
-	bool upgrade_json (unsigned, nano::jsonconfig &);
-	nano::account random_representative ();
-	nano::network_params network_params;
+	node_config (uint16_t, btcb::logging const &);
+	btcb::error serialize_json (btcb::jsonconfig &) const;
+	btcb::error deserialize_json (bool &, btcb::jsonconfig &);
+	bool upgrade_json (unsigned, btcb::jsonconfig &);
+	btcb::account random_representative ();
+	btcb::network_params network_params;
 	uint16_t peering_port{ 0 };
-	nano::logging logging;
+	btcb::logging logging;
 	std::vector<std::pair<std::string, uint16_t>> work_peers;
 	std::vector<std::string> preconfigured_peers;
-	std::vector<nano::account> preconfigured_representatives;
+	std::vector<btcb::account> preconfigured_representatives;
 	unsigned bootstrap_fraction_numerator{ 1 };
-	nano::amount receive_minimum{ nano::xrb_ratio };
-	nano::amount vote_minimum{ nano::Gxrb_ratio };
-	nano::amount online_weight_minimum{ 60000 * nano::Gxrb_ratio };
+	btcb::amount receive_minimum{ btcb::xrb_ratio };
+	btcb::amount vote_minimum{ btcb::Gxrb_ratio };
+	btcb::amount online_weight_minimum{ 60000 * btcb::Gxrb_ratio };
 	unsigned online_weight_quorum{ 50 };
 	unsigned password_fanout{ 1024 };
 	unsigned io_threads{ std::max<unsigned> (4, boost::thread::hardware_concurrency ()) };
@@ -46,17 +46,17 @@ public:
 	bool enable_voting{ false };
 	unsigned bootstrap_connections{ 4 };
 	unsigned bootstrap_connections_max{ 64 };
-	nano::websocket::config websocket_config;
-	nano::diagnostics_config diagnostics_config;
+	btcb::websocket::config websocket_config;
+	btcb::diagnostics_config diagnostics_config;
 	std::string callback_address;
 	uint16_t callback_port{ 0 };
 	std::string callback_target;
 	int lmdb_max_dbs{ 128 };
 	bool allow_local_peers{ !network_params.network.is_live_network () }; // disable by default for live network
-	nano::stat_config stat_config;
-	nano::ipc::ipc_config ipc_config;
-	nano::uint256_union epoch_block_link;
-	nano::account epoch_block_signer;
+	btcb::stat_config stat_config;
+	btcb::ipc::ipc_config ipc_config;
+	btcb::uint256_union epoch_block_link;
+	btcb::account epoch_block_signer;
 	boost::asio::ip::address_v6 external_address{ boost::asio::ip::address_v6{} };
 	uint16_t external_port{ 0 };
 	std::chrono::milliseconds block_processor_batch_max_time{ std::chrono::milliseconds (5000) };

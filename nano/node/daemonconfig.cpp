@@ -1,33 +1,33 @@
-#include <nano/lib/config.hpp>
-#include <nano/node/daemonconfig.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/node/daemonconfig.hpp>
 
-nano::daemon_config::daemon_config (boost::filesystem::path const & data_path_a) :
+btcb::daemon_config::daemon_config (boost::filesystem::path const & data_path_a) :
 data_path (data_path_a)
 {
 }
 
-nano::error nano::daemon_config::serialize_json (nano::jsonconfig & json)
+btcb::error btcb::daemon_config::serialize_json (btcb::jsonconfig & json)
 {
 	json.put ("version", json_version ());
 	json.put ("rpc_enable", rpc_enable);
 
-	nano::jsonconfig rpc_l;
+	btcb::jsonconfig rpc_l;
 	rpc.serialize_json (rpc_l);
 	json.put_child ("rpc", rpc_l);
 
-	nano::jsonconfig node_l;
+	btcb::jsonconfig node_l;
 	node.serialize_json (node_l);
-	nano::jsonconfig node (node_l);
+	btcb::jsonconfig node (node_l);
 	json.put_child ("node", node);
 
 	json.put ("opencl_enable", opencl_enable);
-	nano::jsonconfig opencl_l;
+	btcb::jsonconfig opencl_l;
 	opencl.serialize_json (opencl_l);
 	json.put_child ("opencl", opencl_l);
 	return json.get_error ();
 }
 
-nano::error nano::daemon_config::deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+btcb::error btcb::daemon_config::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 {
 	try
 	{
@@ -74,7 +74,7 @@ nano::error nano::daemon_config::deserialize_json (bool & upgraded_a, nano::json
 	return json.get_error ();
 }
 
-bool nano::daemon_config::upgrade_json (unsigned version_a, nano::jsonconfig & json)
+bool btcb::daemon_config::upgrade_json (unsigned version_a, btcb::jsonconfig & json)
 {
 	json.put ("version", json_version ());
 	switch (version_a)
@@ -90,7 +90,7 @@ bool nano::daemon_config::upgrade_json (unsigned version_a, nano::jsonconfig & j
 			auto opencl_l (json.get_optional_child ("opencl"));
 			if (!opencl_l)
 			{
-				nano::jsonconfig opencl_l;
+				btcb::jsonconfig opencl_l;
 				opencl.serialize_json (opencl_l);
 				json.put_child ("opencl", opencl_l);
 			}
@@ -103,15 +103,15 @@ bool nano::daemon_config::upgrade_json (unsigned version_a, nano::jsonconfig & j
 	return version_a < json_version ();
 }
 
-namespace nano
+namespace btcb
 {
-nano::error read_and_update_daemon_config (boost::filesystem::path const & data_path, nano::daemon_config & config_a)
+btcb::error read_and_update_daemon_config (boost::filesystem::path const & data_path, btcb::daemon_config & config_a)
 {
 	boost::system::error_code error_chmod;
-	nano::jsonconfig json;
-	auto config_path = nano::get_config_path (data_path);
+	btcb::jsonconfig json;
+	auto config_path = btcb::get_config_path (data_path);
 	auto error (json.read_and_update (config_a, config_path));
-	nano::set_secure_perm_file (config_path, error_chmod);
+	btcb::set_secure_perm_file (config_path, error_chmod);
 	return error;
 }
 }

@@ -1,17 +1,17 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <chrono>
 #include <gtest/gtest.h>
-#include <nano/core_test/testutil.hpp>
-#include <nano/node/logging.hpp>
-#include <nano/secure/utility.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/node/logging.hpp>
+#include <btcb/secure/utility.hpp>
 #include <regex>
 
 using namespace std::chrono_literals;
 
 TEST (logging, serialization)
 {
-	auto path (nano::unique_path ());
-	nano::logging logging1;
+	auto path (btcb::unique_path ());
+	btcb::logging logging1;
 	logging1.init (path);
 	logging1.ledger_logging_value = !logging1.ledger_logging_value;
 	logging1.ledger_duplicate_logging_value = !logging1.ledger_duplicate_logging_value;
@@ -29,9 +29,9 @@ TEST (logging, serialization)
 	logging1.log_to_cerr_value = !logging1.log_to_cerr_value;
 	logging1.max_size = 10;
 	logging1.min_time_between_log_output = 100ms;
-	nano::jsonconfig tree;
+	btcb::jsonconfig tree;
 	logging1.serialize_json (tree);
-	nano::logging logging2;
+	btcb::logging logging2;
 	logging2.init (path);
 	bool upgraded (false);
 	ASSERT_FALSE (logging2.deserialize_json (upgraded, tree));
@@ -56,13 +56,13 @@ TEST (logging, serialization)
 
 TEST (logging, upgrade_v1_v2)
 {
-	auto path1 (nano::unique_path ());
-	auto path2 (nano::unique_path ());
-	nano::logging logging1;
+	auto path1 (btcb::unique_path ());
+	auto path2 (btcb::unique_path ());
+	btcb::logging logging1;
 	logging1.init (path1);
-	nano::logging logging2;
+	btcb::logging logging2;
 	logging2.init (path2);
-	nano::jsonconfig tree;
+	btcb::jsonconfig tree;
 	logging1.serialize_json (tree);
 	tree.erase ("version");
 	tree.erase ("vote");
@@ -74,13 +74,13 @@ TEST (logging, upgrade_v1_v2)
 
 TEST (logging, upgrade_v6_v7)
 {
-	auto path1 (nano::unique_path ());
-	auto path2 (nano::unique_path ());
-	nano::logging logging1;
+	auto path1 (btcb::unique_path ());
+	auto path2 (btcb::unique_path ());
+	btcb::logging logging1;
 	logging1.init (path1);
-	nano::logging logging2;
+	btcb::logging logging2;
 	logging2.init (path2);
-	nano::jsonconfig tree;
+	btcb::jsonconfig tree;
 	logging1.serialize_json (tree);
 	tree.erase ("version");
 	tree.erase ("min_time_between_output");
@@ -95,11 +95,11 @@ TEST (logging, upgrade_v6_v7)
 
 TEST (logger, changing_time_interval)
 {
-	auto path1 (nano::unique_path ());
-	nano::logging logging;
+	auto path1 (btcb::unique_path ());
+	btcb::logging logging;
 	logging.init (path1);
 	logging.min_time_between_log_output = 0ms;
-	nano::logger_mt my_logger (logging.min_time_between_log_output);
+	btcb::logger_mt my_logger (logging.min_time_between_log_output);
 	auto error (my_logger.try_log ("logger.changing_time_interval1"));
 	ASSERT_FALSE (error);
 	my_logger.min_log_delta = 20s;
@@ -109,10 +109,10 @@ TEST (logger, changing_time_interval)
 
 TEST (logger, try_log)
 {
-	auto path1 (nano::unique_path ());
+	auto path1 (btcb::unique_path ());
 	std::stringstream ss;
-	nano::boost_log_cerr_redirect redirect_cerr (ss.rdbuf ());
-	nano::logger_mt my_logger (100ms);
+	btcb::boost_log_cerr_redirect redirect_cerr (ss.rdbuf ());
+	btcb::logger_mt my_logger (100ms);
 	auto output1 = "logger.try_log1";
 	auto error (my_logger.try_log (output1));
 	ASSERT_FALSE (error);
@@ -134,10 +134,10 @@ TEST (logger, try_log)
 
 TEST (logger, always_log)
 {
-	auto path1 (nano::unique_path ());
+	auto path1 (btcb::unique_path ());
 	std::stringstream ss;
-	nano::boost_log_cerr_redirect redirect_cerr (ss.rdbuf ());
-	nano::logger_mt my_logger (20s); // Make time interval effectively unreachable
+	btcb::boost_log_cerr_redirect redirect_cerr (ss.rdbuf ());
+	btcb::logger_mt my_logger (20s); // Make time interval effectively unreachable
 	auto output1 = "logger.always_log1";
 	auto error (my_logger.try_log (output1));
 	ASSERT_FALSE (error);

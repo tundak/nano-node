@@ -1,14 +1,14 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/format.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/json_error_response.hpp>
-#include <nano/lib/logger_mt.hpp>
-#include <nano/lib/rpc_handler_interface.hpp>
-#include <nano/lib/rpcconfig.hpp>
-#include <nano/rpc/rpc_connection.hpp>
-#include <nano/rpc/rpc_handler.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/json_error_response.hpp>
+#include <btcb/lib/logger_mt.hpp>
+#include <btcb/lib/rpc_handler_interface.hpp>
+#include <btcb/lib/rpcconfig.hpp>
+#include <btcb/rpc/rpc_connection.hpp>
+#include <btcb/rpc/rpc_handler.hpp>
 
-nano::rpc_connection::rpc_connection (nano::rpc_config const & rpc_config, boost::asio::io_context & io_ctx, nano::logger_mt & logger, nano::rpc_handler_interface & rpc_handler_interface) :
+btcb::rpc_connection::rpc_connection (btcb::rpc_config const & rpc_config, boost::asio::io_context & io_ctx, btcb::logger_mt & logger, btcb::rpc_handler_interface & rpc_handler_interface) :
 socket (io_ctx),
 io_ctx (io_ctx),
 logger (logger),
@@ -18,12 +18,12 @@ rpc_handler_interface (rpc_handler_interface)
 	responded.clear ();
 }
 
-void nano::rpc_connection::parse_connection ()
+void btcb::rpc_connection::parse_connection ()
 {
 	read ();
 }
 
-void nano::rpc_connection::prepare_head (unsigned version, boost::beast::http::status status)
+void btcb::rpc_connection::prepare_head (unsigned version, boost::beast::http::status status)
 {
 	res.version (version);
 	res.result (status);
@@ -35,7 +35,7 @@ void nano::rpc_connection::prepare_head (unsigned version, boost::beast::http::s
 	res.set (boost::beast::http::field::connection, "close");
 }
 
-void nano::rpc_connection::write_result (std::string body, unsigned version, boost::beast::http::status status)
+void btcb::rpc_connection::write_result (std::string body, unsigned version, boost::beast::http::status status)
 {
 	if (!responded.test_and_set ())
 	{
@@ -50,7 +50,7 @@ void nano::rpc_connection::write_result (std::string body, unsigned version, boo
 	}
 }
 
-void nano::rpc_connection::read ()
+void btcb::rpc_connection::read ()
 {
 	auto this_l (shared_from_this ());
 	auto header_parser (std::make_shared<boost::beast::http::request_parser<boost::beast::http::empty_body>> ());
@@ -63,7 +63,7 @@ void nano::rpc_connection::read ()
 				auto continue_response (std::make_shared<boost::beast::http::response<boost::beast::http::empty_body>> ());
 				continue_response->version (11);
 				continue_response->result (boost::beast::http::status::continue_);
-				continue_response->set (boost::beast::http::field::server, "nano");
+				continue_response->set (boost::beast::http::field::server, "btcb");
 				boost::beast::http::async_write (this_l->socket, *continue_response, [this_l, continue_response](boost::system::error_code const & ec, size_t bytes_transferred) {});
 			}
 
@@ -85,7 +85,7 @@ void nano::rpc_connection::read ()
 	});
 }
 
-void nano::rpc_connection::parse_request (std::shared_ptr<boost::beast::http::request_parser<boost::beast::http::empty_body>> header_parser)
+void btcb::rpc_connection::parse_request (std::shared_ptr<boost::beast::http::request_parser<boost::beast::http::empty_body>> header_parser)
 {
 	auto this_l (shared_from_this ());
 	auto body_parser (std::make_shared<boost::beast::http::request_parser<boost::beast::http::string_body>> (std::move (*header_parser)));
@@ -112,7 +112,7 @@ void nano::rpc_connection::parse_request (std::shared_ptr<boost::beast::http::re
 				{
 					case boost::beast::http::verb::post:
 					{
-						auto handler (std::make_shared<nano::rpc_handler> (this_l->rpc_config, req.body (), request_id, response_handler, this_l->rpc_handler_interface, this_l->logger));
+						auto handler (std::make_shared<btcb::rpc_handler> (this_l->rpc_config, req.body (), request_id, response_handler, this_l->rpc_handler_interface, this_l->logger));
 						handler->process_request ();
 						break;
 					}
@@ -140,7 +140,7 @@ void nano::rpc_connection::parse_request (std::shared_ptr<boost::beast::http::re
 	});
 }
 
-void nano::rpc_connection::write_completion_handler (std::shared_ptr<nano::rpc_connection> rpc_connection)
+void btcb::rpc_connection::write_completion_handler (std::shared_ptr<btcb::rpc_connection> rpc_connection)
 {
 	// Intentional no-op
 }

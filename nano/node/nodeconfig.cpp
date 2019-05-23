@@ -1,11 +1,11 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/rpcconfig.hpp>
-#include <nano/node/nodeconfig.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/rpcconfig.hpp>
+#include <btcb/node/nodeconfig.hpp>
 // NOTE: to reduce compile times, this include can be replaced by more narrow includes
-// once nano::network is factored out of node.{c|h}pp
-#include <nano/node/node.hpp>
+// once btcb::network is factored out of node.{c|h}pp
+#include <btcb/node/node.hpp>
 
 namespace
 {
@@ -16,12 +16,12 @@ const char * default_beta_peer_network = "peering-beta.nano.org";
 const char * default_live_peer_network = "peering.nano.org";
 }
 
-nano::node_config::node_config () :
-node_config (0, nano::logging ())
+btcb::node_config::node_config () :
+node_config (0, btcb::logging ())
 {
 }
 
-nano::node_config::node_config (uint16_t peering_port_a, nano::logging const & logging_a) :
+btcb::node_config::node_config (uint16_t peering_port_a, btcb::logging const & logging_a) :
 peering_port (peering_port_a),
 logging (logging_a)
 {
@@ -36,11 +36,11 @@ logging (logging_a)
 	epoch_block_signer = network_params.ledger.genesis_account;
 	switch (network_params.network.network ())
 	{
-		case nano::nano_networks::nano_test_network:
+		case btcb::btcb_networks::btcb_test_network:
 			enable_voting = true;
 			preconfigured_representatives.push_back (network_params.ledger.genesis_account);
 			break;
-		case nano::nano_networks::nano_beta_network:
+		case btcb::btcb_networks::btcb_beta_network:
 			preconfigured_peers.push_back (default_beta_peer_network);
 			preconfigured_representatives.emplace_back ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F");
 			preconfigured_representatives.emplace_back ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071");
@@ -48,7 +48,7 @@ logging (logging_a)
 			preconfigured_representatives.emplace_back ("259A40A92FA42E2240805DE8618EC4627F0BA41937160B4CFF7F5335FD1933DF");
 			preconfigured_representatives.emplace_back ("259A40FF3262E273EC451E873C4CDF8513330425B38860D882A16BCC74DA9B73");
 			break;
-		case nano::nano_networks::nano_live_network:
+		case btcb::btcb_networks::btcb_live_network:
 			preconfigured_peers.push_back (default_live_peer_network);
 			preconfigured_representatives.emplace_back ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF");
 			preconfigured_representatives.emplace_back ("67556D31DDFC2A440BF6147501449B4CB9572278D034EE686A6BEE29851681DF");
@@ -65,31 +65,31 @@ logging (logging_a)
 	}
 }
 
-nano::error nano::node_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::node_config::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("version", json_version ());
 	json.put ("peering_port", peering_port);
 	json.put ("bootstrap_fraction_numerator", bootstrap_fraction_numerator);
 	json.put ("receive_minimum", receive_minimum.to_string_dec ());
 
-	nano::jsonconfig logging_l;
+	btcb::jsonconfig logging_l;
 	logging.serialize_json (logging_l);
 	json.put_child ("logging", logging_l);
 
-	nano::jsonconfig work_peers_l;
+	btcb::jsonconfig work_peers_l;
 	for (auto i (work_peers.begin ()), n (work_peers.end ()); i != n; ++i)
 	{
 		work_peers_l.push (boost::str (boost::format ("%1%:%2%") % i->first % i->second));
 	}
 	json.put_child ("work_peers", work_peers_l);
-	nano::jsonconfig preconfigured_peers_l;
+	btcb::jsonconfig preconfigured_peers_l;
 	for (auto i (preconfigured_peers.begin ()), n (preconfigured_peers.end ()); i != n; ++i)
 	{
 		preconfigured_peers_l.push (*i);
 	}
 	json.put_child (preconfigured_peers_key, preconfigured_peers_l);
 
-	nano::jsonconfig preconfigured_representatives_l;
+	btcb::jsonconfig preconfigured_representatives_l;
 	for (auto i (preconfigured_representatives.begin ()), n (preconfigured_representatives.end ()); i != n; ++i)
 	{
 		preconfigured_representatives_l.push (i->to_account ());
@@ -120,20 +120,20 @@ nano::error nano::node_config::serialize_json (nano::jsonconfig & json) const
 	json.put ("external_address", external_address.to_string ());
 	json.put ("external_port", external_port);
 	json.put ("tcp_incoming_connections_max", tcp_incoming_connections_max);
-	nano::jsonconfig websocket_l;
+	btcb::jsonconfig websocket_l;
 	websocket_config.serialize_json (websocket_l);
 	json.put_child ("websocket", websocket_l);
-	nano::jsonconfig ipc_l;
+	btcb::jsonconfig ipc_l;
 	ipc_config.serialize_json (ipc_l);
 	json.put_child ("ipc", ipc_l);
-	nano::jsonconfig diagnostics_l;
+	btcb::jsonconfig diagnostics_l;
 	diagnostics_config.serialize_json (diagnostics_l);
 	json.put_child ("diagnostics", diagnostics_l);
 
 	return json.get_error ();
 }
 
-bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & json)
+bool btcb::node_config::upgrade_json (unsigned version_a, btcb::jsonconfig & json)
 {
 	json.put ("version", json_version ());
 	switch (version_a)
@@ -141,9 +141,9 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 		case 1:
 		{
 			auto reps_l (json.get_required_child ("preconfigured_representatives"));
-			nano::jsonconfig reps;
+			btcb::jsonconfig reps;
 			reps_l.array_entries<std::string> ([&reps](std::string entry) {
-				nano::uint256_union account;
+				btcb::uint256_union account;
 				account.decode_account (entry);
 				reps.push (account.to_account ());
 			});
@@ -152,17 +152,17 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 		}
 		case 2:
 		{
-			json.put ("inactive_supply", nano::uint128_union (0).to_string_dec ());
+			json.put ("inactive_supply", btcb::uint128_union (0).to_string_dec ());
 			json.put ("password_fanout", std::to_string (1024));
 			json.put ("io_threads", std::to_string (io_threads));
 			json.put ("work_threads", std::to_string (work_threads));
 		}
 		case 3:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", nano::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", btcb::xrb_ratio.convert_to<std::string> ());
 		case 4:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", nano::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", btcb::xrb_ratio.convert_to<std::string> ());
 		case 5:
 			json.put ("enable_voting", enable_voting);
 			json.erase ("packet_delay_microseconds");
@@ -178,8 +178,8 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 		case 8:
 			json.put ("bootstrap_connections_max", "64");
 		case 9:
-			json.put ("state_block_parse_canary", nano::block_hash (0).to_string ());
-			json.put ("state_block_generate_canary", nano::block_hash (0).to_string ());
+			json.put ("state_block_parse_canary", btcb::block_hash (0).to_string ());
+			json.put ("state_block_generate_canary", btcb::block_hash (0).to_string ());
 		case 10:
 			json.put ("online_weight_minimum", online_weight_minimum.to_string_dec ());
 			json.put ("online_weight_quorom", std::to_string (online_weight_quorum));
@@ -207,7 +207,7 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 
 			// Update to the new preconfigured_peers url for rebrand if it is found (rai -> nano)
 			auto peers_l (json.get_required_child (preconfigured_peers_key));
-			nano::jsonconfig peers;
+			btcb::jsonconfig peers;
 			peers_l.array_entries<std::string> ([&peers](std::string entry) {
 				if (entry == "rai-beta.raiblocks.net")
 				{
@@ -224,7 +224,7 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 			json.replace_child (preconfigured_peers_key, peers);
 			json.put ("vote_minimum", vote_minimum.to_string_dec ());
 
-			nano::jsonconfig ipc_l;
+			btcb::jsonconfig ipc_l;
 			ipc_config.serialize_json (ipc_l);
 			json.put_child ("ipc", ipc_l);
 
@@ -233,10 +233,10 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 		}
 		case 16:
 		{
-			nano::jsonconfig websocket_l;
+			btcb::jsonconfig websocket_l;
 			websocket_config.serialize_json (websocket_l);
 			json.put_child ("websocket", websocket_l);
-			nano::jsonconfig diagnostics_l;
+			btcb::jsonconfig diagnostics_l;
 			diagnostics_config.serialize_json (diagnostics_l);
 			json.put_child ("diagnostics", diagnostics_l);
 			json.put ("tcp_io_timeout", tcp_io_timeout.count ());
@@ -254,7 +254,7 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 	return version_a < json_version ();
 }
 
-nano::error nano::node_config::deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+btcb::error btcb::node_config::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 {
 	try
 	{
@@ -266,7 +266,7 @@ nano::error nano::node_config::deserialize_json (bool & upgraded_a, nano::jsonco
 			auto work_peers_l (json.get_optional_child ("work_peers"));
 			if (!work_peers_l)
 			{
-				nano::jsonconfig empty;
+				btcb::jsonconfig empty;
 				json.put_child ("work_peers", empty);
 			}
 			upgraded_a = true;
@@ -304,7 +304,7 @@ nano::error nano::node_config::deserialize_json (bool & upgraded_a, nano::jsonco
 		auto preconfigured_representatives_l (json.get_required_child ("preconfigured_representatives"));
 		preconfigured_representatives.clear ();
 		preconfigured_representatives_l.array_entries<std::string> ([this, &json](std::string entry) {
-			nano::account representative (0);
+			btcb::account representative (0);
 			if (representative.decode_account (entry))
 			{
 				json.get_error ().set ("Invalid representative account: " + entry);
@@ -413,10 +413,10 @@ nano::error nano::node_config::deserialize_json (bool & upgraded_a, nano::jsonco
 	return json.get_error ();
 }
 
-nano::account nano::node_config::random_representative ()
+btcb::account btcb::node_config::random_representative ()
 {
 	assert (!preconfigured_representatives.empty ());
-	size_t index (nano::random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (preconfigured_representatives.size () - 1)));
+	size_t index (btcb::random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (preconfigured_representatives.size () - 1)));
 	auto result (preconfigured_representatives[index]);
 	return result;
 }

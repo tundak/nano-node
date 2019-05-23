@@ -1,12 +1,12 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/nano_node/daemon.hpp>
-#include <nano/node/cli.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/json_handler.hpp>
-#include <nano/node/node.hpp>
-#include <nano/node/payment_observer_processor.hpp>
-#include <nano/node/testing.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/btcb_node/daemon.hpp>
+#include <btcb/node/cli.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/json_handler.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/payment_observer_processor.hpp>
+#include <btcb/node/testing.hpp>
 #include <sstream>
 
 #include <argon2.h>
@@ -16,7 +16,7 @@
 
 namespace
 {
-void update_flags (nano::node_flags & flags_a, boost::program_options::variables_map const & vm)
+void update_flags (btcb::node_flags & flags_a, boost::program_options::variables_map const & vm)
 {
 	auto batch_size_it = vm.find ("batch_size");
 	if (batch_size_it != vm.end ())
@@ -57,10 +57,10 @@ void update_flags (nano::node_flags & flags_a, boost::program_options::variables
 
 int main (int argc, char * const * argv)
 {
-	nano::set_umask ();
+	btcb::set_umask ();
 
 	boost::program_options::options_description description ("Command line options");
-	nano::add_node_options (description);
+	btcb::add_node_options (description);
 
 	// clang-format off
 	description.add_options ()
@@ -95,8 +95,8 @@ int main (int argc, char * const * argv)
 		("debug_verify_profile_batch", "Profile batch signature verification")
 		("debug_profile_bootstrap", "Profile bootstrap style blocks processing (at least 10GB of free storage space required)")
 		("debug_profile_sign", "Profile signature generation")
-		("debug_profile_process", "Profile active blocks processing (only for nano_test_network)")
-		("debug_profile_votes", "Profile votes processing (only for nano_test_network)")
+		("debug_profile_process", "Profile active blocks processing (only for btcb_test_network)")
+		("debug_profile_votes", "Profile votes processing (only for btcb_test_network)")
 		("debug_random_feed", "Generates output to RNG test suites")
 		("debug_rpc", "Read an RPC command from stdin and invoke it. Network operations will have no effect.")
 		("debug_validate_blocks", "Check all blocks for correct hash, signature, work value")
@@ -125,7 +125,7 @@ int main (int argc, char * const * argv)
 	auto network (vm.find ("network"));
 	if (network != vm.end ())
 	{
-		auto err (nano::network_constants::set_active_network (network->second.as<std::string> ()));
+		auto err (btcb::network_constants::set_active_network (network->second.as<std::string> ()));
 		if (err)
 		{
 			std::cerr << err.get_message () << std::endl;
@@ -137,7 +137,7 @@ int main (int argc, char * const * argv)
 	if (data_path_it == vm.end ())
 	{
 		std::string error_string;
-		if (!nano::migrate_working_path (error_string))
+		if (!btcb::migrate_working_path (error_string))
 		{
 			std::cerr << error_string << std::endl;
 
@@ -145,20 +145,20 @@ int main (int argc, char * const * argv)
 		}
 	}
 
-	boost::filesystem::path data_path ((data_path_it != vm.end ()) ? data_path_it->second.as<std::string> () : nano::working_path ());
-	auto ec = nano::handle_node_options (vm);
-	if (ec == nano::error_cli::unknown_command)
+	boost::filesystem::path data_path ((data_path_it != vm.end ()) ? data_path_it->second.as<std::string> () : btcb::working_path ());
+	auto ec = btcb::handle_node_options (vm);
+	if (ec == btcb::error_cli::unknown_command)
 	{
 		if (vm.count ("daemon") > 0)
 		{
-			nano_daemon::daemon daemon;
-			nano::node_flags flags;
+			btcb_daemon::daemon daemon;
+			btcb::node_flags flags;
 			update_flags (flags, vm);
 			daemon.run (data_path, flags);
 		}
 		else if (vm.count ("debug_block_count"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
 			std::cout << boost::str (boost::format ("Block count: %1%\n") % node.node->store.block_count (transaction).sum ());
 		}
@@ -167,39 +167,39 @@ int main (int argc, char * const * argv)
 			auto key_it = vm.find ("key");
 			if (key_it != vm.end ())
 			{
-				nano::uint256_union key;
+				btcb::uint256_union key;
 				if (!key.decode_hex (key_it->second.as<std::string> ()))
 				{
-					nano::keypair genesis (key.to_string ());
-					nano::work_pool work (std::numeric_limits<unsigned>::max ());
+					btcb::keypair genesis (key.to_string ());
+					btcb::work_pool work (std::numeric_limits<unsigned>::max ());
 					std::cout << "Genesis: " << genesis.prv.data.to_string () << "\n"
 					          << "Public: " << genesis.pub.to_string () << "\n"
 					          << "Account: " << genesis.pub.to_account () << "\n";
-					nano::keypair landing;
+					btcb::keypair landing;
 					std::cout << "Landing: " << landing.prv.data.to_string () << "\n"
 					          << "Public: " << landing.pub.to_string () << "\n"
 					          << "Account: " << landing.pub.to_account () << "\n";
 					for (auto i (0); i != 32; ++i)
 					{
-						nano::keypair rep;
+						btcb::keypair rep;
 						std::cout << "Rep" << i << ": " << rep.prv.data.to_string () << "\n"
 						          << "Public: " << rep.pub.to_string () << "\n"
 						          << "Account: " << rep.pub.to_account () << "\n";
 					}
-					nano::uint128_t balance (std::numeric_limits<nano::uint128_t>::max ());
-					nano::open_block genesis_block (genesis.pub, genesis.pub, genesis.pub, genesis.prv, genesis.pub, work.generate (genesis.pub));
+					btcb::uint128_t balance (std::numeric_limits<btcb::uint128_t>::max ());
+					btcb::open_block genesis_block (genesis.pub, genesis.pub, genesis.pub, genesis.prv, genesis.pub, work.generate (genesis.pub));
 					std::cout << genesis_block.to_json ();
 					std::cout.flush ();
-					nano::block_hash previous (genesis_block.hash ());
+					btcb::block_hash previous (genesis_block.hash ());
 					for (auto i (0); i != 8; ++i)
 					{
-						nano::uint128_t yearly_distribution (nano::uint128_t (1) << (127 - (i == 7 ? 6 : i)));
+						btcb::uint128_t yearly_distribution (btcb::uint128_t (1) << (127 - (i == 7 ? 6 : i)));
 						auto weekly_distribution (yearly_distribution / 52);
 						for (auto j (0); j != 52; ++j)
 						{
 							assert (balance > weekly_distribution);
 							balance = balance < (weekly_distribution * 2) ? 0 : balance - weekly_distribution;
-							nano::send_block send (previous, landing.pub, balance, genesis.prv, genesis.pub, work.generate (previous));
+							btcb::send_block send (previous, landing.pub, balance, genesis.prv, genesis.pub, work.generate (previous));
 							previous = send.hash ();
 							std::cout << send.to_json ();
 							std::cout.flush ();
@@ -220,7 +220,7 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_dump_online_weight"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto current (node.node->online_reps.online_stake ());
 			std::cout << boost::str (boost::format ("Online Weight %1%\n") % current);
 			auto transaction (node.node->store.tx_begin_read ());
@@ -236,21 +236,21 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_dump_representatives"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
-			nano::uint128_t total;
+			btcb::uint128_t total;
 			for (auto i (node.node->store.representation_begin (transaction)), n (node.node->store.representation_end ()); i != n; ++i)
 			{
-				nano::account account (i->first);
+				btcb::account account (i->first);
 				auto amount (node.node->store.representation_get (transaction, account));
 				total += amount;
 				std::cout << boost::str (boost::format ("%1% %2% %3%\n") % account.to_account () % amount.convert_to<std::string> () % total.convert_to<std::string> ());
 			}
-			std::map<nano::account, nano::uint128_t> calculated;
+			std::map<btcb::account, btcb::uint128_t> calculated;
 			for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
 			{
-				nano::account_info info (i->second);
-				nano::block_hash rep_block (node.node->ledger.representative_calculated (transaction, info.head));
+				btcb::account_info info (i->second);
+				btcb::block_hash rep_block (node.node->ledger.representative_calculated (transaction, info.head));
 				auto block (node.node->store.block_get (transaction, rep_block));
 				calculated[block->representative ()] += info.balance.number ();
 			}
@@ -263,12 +263,12 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_dump_frontier_unchecked_dependents"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			std::cout << "Outputting any frontier hashes which have associated key hashes in the unchecked table (may take some time)...\n";
 
 			// Cache the account heads to make searching quicker against unchecked keys.
 			auto transaction (node.node->store.tx_begin_read ());
-			std::unordered_set<nano::block_hash> frontier_hashes;
+			std::unordered_set<btcb::block_hash> frontier_hashes;
 			for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
 			{
 				frontier_hashes.insert (i->second.head);
@@ -286,21 +286,21 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_account_count"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
 			std::cout << boost::str (boost::format ("Frontier count: %1%\n") % node.node->store.account_count (transaction));
 		}
 		else if (vm.count ("debug_mass_activity"))
 		{
-			nano::system system (24000, 1);
+			btcb::system system (24000, 1);
 			uint32_t count (1000000);
 			system.generate_mass_activity (count, *system.nodes[0]);
 		}
 		else if (vm.count ("debug_profile_kdf"))
 		{
-			nano::network_params network_params;
-			nano::uint256_union result;
-			nano::uint256_union salt (0);
+			btcb::network_params network_params;
+			btcb::uint256_union result;
+			btcb::uint256_union salt (0);
 			std::string password ("");
 			while (true)
 			{
@@ -320,8 +320,8 @@ int main (int argc, char * const * argv)
 				pow_rate_limiter = std::chrono::nanoseconds (boost::lexical_cast<uint64_t> (pow_sleep_interval_it->second.as<std::string> ()));
 			}
 
-			nano::work_pool work (std::numeric_limits<unsigned>::max (), pow_rate_limiter);
-			nano::change_block block (0, 0, nano::keypair ().prv, 0, 0);
+			btcb::work_pool work (std::numeric_limits<unsigned>::max (), pow_rate_limiter);
+			btcb::change_block block (0, 0, btcb::keypair ().prv, 0, 0);
 			std::cerr << "Starting generation profiling\n";
 			while (true)
 			{
@@ -334,9 +334,9 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_opencl"))
 		{
-			nano::network_constants network_constants;
+			btcb::network_constants network_constants;
 			bool error (false);
-			nano::opencl_environment environment (error);
+			btcb::opencl_environment environment (error);
 			if (!error)
 			{
 				unsigned short platform (0);
@@ -385,7 +385,7 @@ int main (int argc, char * const * argv)
 				auto difficulty_it = vm.find ("difficulty");
 				if (difficulty_it != vm.end ())
 				{
-					if (nano::from_string_hex (difficulty_it->second.as<std::string> (), difficulty))
+					if (btcb::from_string_hex (difficulty_it->second.as<std::string> (), difficulty))
 					{
 						std::cerr << "Invalid difficulty\n";
 						result = -1;
@@ -404,13 +404,13 @@ int main (int argc, char * const * argv)
 						error |= device >= environment.platforms[platform].devices.size ();
 						if (!error)
 						{
-							nano::logger_mt logger;
-							auto opencl (nano::opencl_work::create (true, { platform, device, threads }, logger));
-							nano::work_pool work_pool (std::numeric_limits<unsigned>::max (), std::chrono::nanoseconds (0), opencl ? [&opencl](nano::uint256_union const & root_a, uint64_t difficulty_a) {
+							btcb::logger_mt logger;
+							auto opencl (btcb::opencl_work::create (true, { platform, device, threads }, logger));
+							btcb::work_pool work_pool (std::numeric_limits<unsigned>::max (), std::chrono::nanoseconds (0), opencl ? [&opencl](btcb::uint256_union const & root_a, uint64_t difficulty_a) {
 								return opencl->generate_work (root_a, difficulty_a);
 							}
-							                                                                                                       : std::function<boost::optional<uint64_t> (nano::uint256_union const &, uint64_t)> (nullptr));
-							nano::change_block block (0, 0, nano::keypair ().prv, 0, 0);
+							                                                                                                       : std::function<boost::optional<uint64_t> (btcb::uint256_union const &, uint64_t)> (nullptr));
+							btcb::change_block block (0, 0, btcb::keypair ().prv, 0, 0);
 							std::cerr << boost::str (boost::format ("Starting OpenCL generation profiling. Platform: %1%. Device: %2%. Threads: %3%. Difficulty: %4$#x\n") % platform % device % threads % difficulty);
 							for (uint64_t i (0); true; ++i)
 							{
@@ -444,8 +444,8 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_verify"))
 		{
-			nano::work_pool work (std::numeric_limits<unsigned>::max ());
-			nano::change_block block (0, 0, nano::keypair ().prv, 0, 0);
+			btcb::work_pool work (std::numeric_limits<unsigned>::max ());
+			btcb::change_block block (0, 0, btcb::keypair ().prv, 0, 0);
 			std::cerr << "Starting verification profiling\n";
 			while (true)
 			{
@@ -455,7 +455,7 @@ int main (int argc, char * const * argv)
 				{
 					block.hashables.previous.qwords[0] += 1;
 					block.block_work_set (t);
-					nano::work_validate (block);
+					btcb::work_validate (block);
 				}
 				auto end1 (std::chrono::high_resolution_clock::now ());
 				std::cerr << boost::str (boost::format ("%|1$ 12d|\n") % std::chrono::duration_cast<std::chrono::microseconds> (end1 - begin1).count ());
@@ -463,24 +463,24 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_verify_profile"))
 		{
-			nano::keypair key;
-			nano::uint256_union message;
-			nano::uint512_union signature;
-			signature = nano::sign_message (key.prv, key.pub, message);
+			btcb::keypair key;
+			btcb::uint256_union message;
+			btcb::uint512_union signature;
+			signature = btcb::sign_message (key.prv, key.pub, message);
 			auto begin (std::chrono::high_resolution_clock::now ());
 			for (auto i (0u); i < 1000; ++i)
 			{
-				nano::validate_message (key.pub, message, signature);
+				btcb::validate_message (key.pub, message, signature);
 			}
 			auto end (std::chrono::high_resolution_clock::now ());
 			std::cerr << "Signature verifications " << std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count () << std::endl;
 		}
 		else if (vm.count ("debug_verify_profile_batch"))
 		{
-			nano::keypair key;
+			btcb::keypair key;
 			size_t batch_count (1000);
-			nano::uint256_union message;
-			nano::uint512_union signature (nano::sign_message (key.prv, key.pub, message));
+			btcb::uint256_union message;
+			btcb::uint512_union signature (btcb::sign_message (key.prv, key.pub, message));
 			std::vector<unsigned char const *> messages (batch_count, message.bytes.data ());
 			std::vector<size_t> lengths (batch_count, sizeof (message));
 			std::vector<unsigned char const *> pub_keys (batch_count, key.pub.bytes.data ());
@@ -488,7 +488,7 @@ int main (int argc, char * const * argv)
 			std::vector<int> verifications;
 			verifications.resize (batch_count);
 			auto begin (std::chrono::high_resolution_clock::now ());
-			nano::validate_message_batch (messages.data (), lengths.data (), pub_keys.data (), signatures.data (), batch_count, verifications.data ());
+			btcb::validate_message_batch (messages.data (), lengths.data (), pub_keys.data (), signatures.data (), batch_count, verifications.data ());
 			auto end (std::chrono::high_resolution_clock::now ());
 			std::cerr << "Batch signature verifications " << std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count () << std::endl;
 		}
@@ -497,12 +497,12 @@ int main (int argc, char * const * argv)
 			std::cerr << "Starting blocks signing profiling\n";
 			while (true)
 			{
-				nano::keypair key;
-				nano::block_hash latest (0);
+				btcb::keypair key;
+				btcb::block_hash latest (0);
 				auto begin1 (std::chrono::high_resolution_clock::now ());
 				for (uint64_t balance (0); balance < 1000; ++balance)
 				{
-					nano::send_block send (latest, key.pub, balance, key.prv, key.pub, 0);
+					btcb::send_block send (latest, key.pub, balance, key.prv, key.pub, 0);
 					latest = send.hash ();
 				}
 				auto end1 (std::chrono::high_resolution_clock::now ());
@@ -511,28 +511,28 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_process"))
 		{
-			nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
-			nano::network_params test_params;
-			nano::block_builder builder;
+			btcb::network_constants::set_active_network (btcb::btcb_networks::btcb_test_network);
+			btcb::network_params test_params;
+			btcb::block_builder builder;
 			size_t num_accounts (100000);
 			size_t num_interations (5); // 100,000 * 5 * 2 = 1,000,000 blocks
 			size_t max_blocks (2 * num_accounts * num_interations + num_accounts * 2); //  1,000,000 + 2* 100,000 = 1,200,000 blocks
 			std::cerr << boost::str (boost::format ("Starting pregenerating %1% blocks\n") % max_blocks);
-			nano::system system (24000, 1);
-			nano::node_init init;
-			nano::work_pool work (std::numeric_limits<unsigned>::max ());
-			nano::logging logging;
-			auto path (nano::unique_path ());
+			btcb::system system (24000, 1);
+			btcb::node_init init;
+			btcb::work_pool work (std::numeric_limits<unsigned>::max ());
+			btcb::logging logging;
+			auto path (btcb::unique_path ());
 			logging.init (path);
-			auto node (std::make_shared<nano::node> (init, system.io_ctx, 24001, path, system.alarm, logging, work));
-			nano::block_hash genesis_latest (node->latest (test_params.ledger.test_genesis_key.pub));
-			nano::uint128_t genesis_balance (std::numeric_limits<nano::uint128_t>::max ());
+			auto node (std::make_shared<btcb::node> (init, system.io_ctx, 24001, path, system.alarm, logging, work));
+			btcb::block_hash genesis_latest (node->latest (test_params.ledger.test_genesis_key.pub));
+			btcb::uint128_t genesis_balance (std::numeric_limits<btcb::uint128_t>::max ());
 			// Generating keys
-			std::vector<nano::keypair> keys (num_accounts);
-			std::vector<nano::block_hash> frontiers (num_accounts);
-			std::vector<nano::uint128_t> balances (num_accounts, 1000000000);
+			std::vector<btcb::keypair> keys (num_accounts);
+			std::vector<btcb::block_hash> frontiers (num_accounts);
+			std::vector<btcb::uint128_t> balances (num_accounts, 1000000000);
 			// Generating blocks
-			std::deque<std::shared_ptr<nano::block>> blocks;
+			std::deque<std::shared_ptr<btcb::block>> blocks;
 			for (auto i (0); i != num_accounts; ++i)
 			{
 				genesis_balance = genesis_balance - 1000000000;
@@ -623,25 +623,25 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_votes"))
 		{
-			nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
-			nano::network_params test_params;
-			nano::block_builder builder;
+			btcb::network_constants::set_active_network (btcb::btcb_networks::btcb_test_network);
+			btcb::network_params test_params;
+			btcb::block_builder builder;
 			size_t num_elections (40000);
 			size_t num_representatives (25);
 			size_t max_votes (num_elections * num_representatives); // 40,000 * 25 = 1,000,000 votes
 			std::cerr << boost::str (boost::format ("Starting pregenerating %1% votes\n") % max_votes);
-			nano::system system (24000, 1);
-			nano::node_init init;
-			nano::work_pool work (std::numeric_limits<unsigned>::max ());
-			nano::logging logging;
-			auto path (nano::unique_path ());
+			btcb::system system (24000, 1);
+			btcb::node_init init;
+			btcb::work_pool work (std::numeric_limits<unsigned>::max ());
+			btcb::logging logging;
+			auto path (btcb::unique_path ());
 			logging.init (path);
-			auto node (std::make_shared<nano::node> (init, system.io_ctx, 24001, path, system.alarm, logging, work));
-			nano::block_hash genesis_latest (node->latest (test_params.ledger.test_genesis_key.pub));
-			nano::uint128_t genesis_balance (std::numeric_limits<nano::uint128_t>::max ());
+			auto node (std::make_shared<btcb::node> (init, system.io_ctx, 24001, path, system.alarm, logging, work));
+			btcb::block_hash genesis_latest (node->latest (test_params.ledger.test_genesis_key.pub));
+			btcb::uint128_t genesis_balance (std::numeric_limits<btcb::uint128_t>::max ());
 			// Generating keys
-			std::vector<nano::keypair> keys (num_representatives);
-			nano::uint128_t balance ((node->config.online_weight_minimum.number () / num_representatives) + 1);
+			std::vector<btcb::keypair> keys (num_representatives);
+			btcb::uint128_t balance ((node->config.online_weight_minimum.number () / num_representatives) + 1);
 			for (auto i (0); i != num_representatives; ++i)
 			{
 				auto transaction (node->store.tx_begin_write ());
@@ -673,11 +673,11 @@ int main (int argc, char * const * argv)
 				node->ledger.process (transaction, *open);
 			}
 			// Generating blocks
-			std::deque<std::shared_ptr<nano::block>> blocks;
+			std::deque<std::shared_ptr<btcb::block>> blocks;
 			for (auto i (0); i != num_elections; ++i)
 			{
 				genesis_balance = genesis_balance - 1;
-				nano::keypair destination;
+				btcb::keypair destination;
 
 				auto send = builder.state ()
 				            .account (test_params.ledger.test_genesis_key.pub)
@@ -693,13 +693,13 @@ int main (int argc, char * const * argv)
 				blocks.push_back (std::move (send));
 			}
 			// Generating votes
-			std::deque<std::shared_ptr<nano::vote>> votes;
+			std::deque<std::shared_ptr<btcb::vote>> votes;
 			for (auto j (0); j != num_representatives; ++j)
 			{
 				uint64_t sequence (1);
 				for (auto & i : blocks)
 				{
-					auto vote (std::make_shared<nano::vote> (keys[j].pub, keys[j].prv, sequence, std::vector<nano::block_hash> (1, i->hash ())));
+					auto vote (std::make_shared<btcb::vote> (keys[j].pub, keys[j].prv, sequence, std::vector<btcb::block_hash> (1, i->hash ())));
 					votes.push_back (vote);
 					sequence++;
 				}
@@ -718,7 +718,7 @@ int main (int argc, char * const * argv)
 			while (!votes.empty ())
 			{
 				auto vote (votes.front ());
-				auto channel (std::make_shared<nano::transport::channel_udp> (node->network.udp_channels, node->network.endpoint ()));
+				auto channel (std::make_shared<btcb::transport::channel_udp> (node->network.udp_channels, node->network.endpoint ()));
 				node->vote_processor.vote (vote, channel);
 				votes.pop_front ();
 			}
@@ -739,12 +739,12 @@ int main (int argc, char * const * argv)
 			 *
 			 * Example, running the entire dieharder test suite:
 			 *
-			 *   ./nano_node --debug_random_feed | dieharder -a -g 200
+			 *   ./btcb_node --debug_random_feed | dieharder -a -g 200
 			 */
-			nano::raw_key seed;
+			btcb::raw_key seed;
 			for (;;)
 			{
-				nano::random_pool::generate_block (seed.data.bytes.data (), seed.data.bytes.size ());
+				btcb::random_pool::generate_block (seed.data.bytes.data (), seed.data.bytes.size ());
 				std::cout.write (reinterpret_cast<const char *> (seed.data.bytes.data ()), seed.data.bytes.size ());
 			}
 		}
@@ -763,15 +763,15 @@ int main (int argc, char * const * argv)
 				std::exit (0);
 			});
 
-			nano::inactive_node inactive_node_l (data_path);
-			nano::node_rpc_config config;
-			nano::ipc::ipc_server server (*inactive_node_l.node, config);
-			nano::json_handler handler_l (*inactive_node_l.node, config, command_l.str (), response_handler_l);
+			btcb::inactive_node inactive_node_l (data_path);
+			btcb::node_rpc_config config;
+			btcb::ipc::ipc_server server (*inactive_node_l.node, config);
+			btcb::json_handler handler_l (*inactive_node_l.node, config, command_l.str (), response_handler_l);
 			handler_l.process_request ();
 		}
 		else if (vm.count ("debug_validate_blocks"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
 			std::cout << boost::str (boost::format ("Performing blocks hash, signature, work validation...\n"));
 			size_t count (0);
@@ -782,8 +782,8 @@ int main (int argc, char * const * argv)
 				{
 					std::cout << boost::str (boost::format ("%1% accounts validated\n") % count);
 				}
-				nano::account_info info (i->second);
-				nano::account account (i->first);
+				btcb::account_info info (i->second);
+				btcb::account account (i->first);
 
 				if (info.confirmation_height > info.block_count)
 				{
@@ -791,8 +791,8 @@ int main (int argc, char * const * argv)
 				}
 
 				auto hash (info.open_block);
-				nano::block_hash calculated_hash (0);
-				nano::block_sideband sideband;
+				btcb::block_hash calculated_hash (0);
+				btcb::block_sideband sideband;
 				uint64_t height (0);
 				uint64_t previous_timestamp (0);
 				while (!hash.is_zero ())
@@ -800,7 +800,7 @@ int main (int argc, char * const * argv)
 					// Retrieving block data
 					auto block (node.node->store.block_get (transaction, hash, &sideband));
 					// Check for state & open blocks if account field is correct
-					if (block->type () == nano::block_type::open || block->type () == nano::block_type::state)
+					if (block->type () == btcb::block_type::open || block->type () == btcb::block_type::state)
 					{
 						if (block->account () != account)
 						{
@@ -828,10 +828,10 @@ int main (int argc, char * const * argv)
 					{
 						bool invalid (true);
 						// Epoch blocks
-						if (!node.node->ledger.epoch_link.is_zero () && block->type () == nano::block_type::state)
+						if (!node.node->ledger.epoch_link.is_zero () && block->type () == btcb::block_type::state)
 						{
-							auto & state_block (static_cast<nano::state_block &> (*block.get ()));
-							nano::amount prev_balance (0);
+							auto & state_block (static_cast<btcb::state_block &> (*block.get ()));
+							btcb::amount prev_balance (0);
 							if (!state_block.hashables.previous.is_zero ())
 							{
 								prev_balance = node.node->ledger.balance (transaction, state_block.hashables.previous);
@@ -847,9 +847,9 @@ int main (int argc, char * const * argv)
 						}
 					}
 					// Check if block work value is correct
-					if (nano::work_validate (*block.get ()))
+					if (btcb::work_validate (*block.get ()))
 					{
-						std::cerr << boost::str (boost::format ("Invalid work for block %1% value: %2%\n") % hash.to_string () % nano::to_string_hex (block->block_work ()));
+						std::cerr << boost::str (boost::format ("Invalid work for block %1% value: %2%\n") % hash.to_string () % btcb::to_string_hex (block->block_work ()));
 					}
 					// Check if sideband height is correct
 					++height;
@@ -884,8 +884,8 @@ int main (int argc, char * const * argv)
 				{
 					std::cout << boost::str (boost::format ("%1% pending blocks validated\n") % count);
 				}
-				nano::pending_key key (i->first);
-				nano::pending_info info (i->second);
+				btcb::pending_key key (i->first);
+				btcb::pending_info info (i->second);
 				// Check block existance
 				auto block (node.node->store.block_get (transaction, key.hash));
 				if (block == nullptr)
@@ -895,15 +895,15 @@ int main (int argc, char * const * argv)
 				else
 				{
 					// Check if pending destination is correct
-					nano::account destination (0);
-					if (auto state = dynamic_cast<nano::state_block *> (block.get ()))
+					btcb::account destination (0);
+					if (auto state = dynamic_cast<btcb::state_block *> (block.get ()))
 					{
 						if (node.node->ledger.is_send (transaction, *state))
 						{
 							destination = state->hashables.link;
 						}
 					}
-					else if (auto send = dynamic_cast<nano::send_block *> (block.get ()))
+					else if (auto send = dynamic_cast<btcb::send_block *> (block.get ()))
 					{
 						destination = send->hashables.destination;
 					}
@@ -933,21 +933,21 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_bootstrap"))
 		{
-			nano::inactive_node node2 (nano::unique_path (), 24001);
+			btcb::inactive_node node2 (btcb::unique_path (), 24001);
 			update_flags (node2.node->flags, vm);
-			nano::genesis genesis;
+			btcb::genesis genesis;
 			auto begin (std::chrono::high_resolution_clock::now ());
 			uint64_t block_count (0);
 			size_t count (0);
 			{
-				nano::inactive_node node (data_path, 24000);
+				btcb::inactive_node node (data_path, 24000);
 				auto transaction (node.node->store.tx_begin_read ());
 				block_count = node.node->store.block_count (transaction).sum ();
 				std::cout << boost::str (boost::format ("Performing bootstrap emulation, %1% blocks in ledger...") % block_count) << std::endl;
 				for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
 				{
-					nano::account account (i->first);
-					nano::account_info info (i->second);
+					btcb::account account (i->first);
+					btcb::account_info info (i->second);
 					auto hash (info.head);
 					while (!hash.is_zero ())
 					{
@@ -960,7 +960,7 @@ int main (int argc, char * const * argv)
 							{
 								std::cout << boost::str (boost::format ("%1% blocks retrieved") % count) << std::endl;
 							}
-							nano::unchecked_info unchecked_info (block, account, 0, nano::signature_verification::unknown);
+							btcb::unchecked_info unchecked_info (block, account, 0, btcb::signature_verification::unknown);
 							node2.node->block_processor.add (unchecked_info);
 							// Retrieving previous block hash
 							hash = block->previous ();
@@ -984,28 +984,28 @@ int main (int argc, char * const * argv)
 			auto end (std::chrono::high_resolution_clock::now ());
 			auto time (std::chrono::duration_cast<std::chrono::microseconds> (end - begin).count ());
 			auto seconds (time / 1000000);
-			nano::remove_temporary_directories ();
+			btcb::remove_temporary_directories ();
 			std::cout << boost::str (boost::format ("%|1$ 12d| seconds \n%2% blocks per second") % seconds % (block_count / seconds)) << std::endl;
 		}
 		else if (vm.count ("debug_peers"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
 
 			for (auto i (node.node->store.peers_begin (transaction)), n (node.node->store.peers_end ()); i != n; ++i)
 			{
-				std::cout << boost::str (boost::format ("%1%\n") % nano::endpoint (boost::asio::ip::address_v6 (i->first.address_bytes ()), i->first.port ()));
+				std::cout << boost::str (boost::format ("%1%\n") % btcb::endpoint (boost::asio::ip::address_v6 (i->first.address_bytes ()), i->first.port ()));
 			}
 		}
 		else if (vm.count ("debug_cemented_block_count"))
 		{
-			nano::inactive_node node (data_path);
+			btcb::inactive_node node (data_path);
 			auto transaction (node.node->store.tx_begin_read ());
 
 			uint64_t sum = 0;
 			for (auto i (node.node->store.latest_begin (transaction)), n (node.node->store.latest_end ()); i != n; ++i)
 			{
-				nano::account_info info (i->second);
+				btcb::account_info info (i->second);
 				sum += info.confirmation_height;
 			}
 			std::cout << "Total cemented block count: " << sum << std::endl;
@@ -1013,24 +1013,24 @@ int main (int argc, char * const * argv)
 		else if (vm.count ("debug_sys_logging"))
 		{
 #ifdef BOOST_WINDOWS
-			if (!nano::event_log_reg_entry_exists () && !nano::is_windows_elevated ())
+			if (!btcb::event_log_reg_entry_exists () && !btcb::is_windows_elevated ())
 			{
-				std::cerr << "The event log requires the HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Nano\\Nano registry entry, run again as administator to create it.\n";
+				std::cerr << "The event log requires the HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\Btcb\\Btcb registry entry, run again as administator to create it.\n";
 				return 1;
 			}
 #endif
-			nano::inactive_node node (data_path);
-			node.node->logger.always_log (nano::severity_level::error, "Testing system logger");
+			btcb::inactive_node node (data_path);
+			node.node->logger.always_log (btcb::severity_level::error, "Testing system logger");
 		}
 		else if (vm.count ("version"))
 		{
-			if (NANO_VERSION_PATCH == 0)
+			if (BTCB_VERSION_PATCH == 0)
 			{
-				std::cout << "Version " << NANO_MAJOR_MINOR_VERSION << std::endl;
+				std::cout << "Version " << BTCB_MAJOR_MINOR_VERSION << std::endl;
 			}
 			else
 			{
-				std::cout << "Version " << NANO_MAJOR_MINOR_RC_VERSION << std::endl;
+				std::cout << "Version " << BTCB_MAJOR_MINOR_RC_VERSION << std::endl;
 			}
 		}
 		else

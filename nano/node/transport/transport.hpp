@@ -2,19 +2,19 @@
 
 #include <boost/asio/buffer.hpp>
 
-#include <nano/node/common.hpp>
-#include <nano/node/stats.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/stats.hpp>
 
-namespace nano
+namespace btcb
 {
 namespace transport
 {
 	class message;
-	nano::endpoint map_endpoint_to_v6 (nano::endpoint const &);
-	nano::endpoint map_tcp_to_endpoint (nano::tcp_endpoint const &);
-	nano::tcp_endpoint map_endpoint_to_tcp (nano::endpoint const &);
+	btcb::endpoint map_endpoint_to_v6 (btcb::endpoint const &);
+	btcb::endpoint map_tcp_to_endpoint (btcb::tcp_endpoint const &);
+	btcb::tcp_endpoint map_endpoint_to_tcp (btcb::endpoint const &);
 	// Unassigned, reserved, self
-	bool reserved_address (nano::endpoint const &, bool = false);
+	bool reserved_address (btcb::endpoint const &, bool = false);
 	// Maximum number of peers per IP
 	static size_t constexpr max_peers_per_ip = 10;
 	static std::chrono::seconds constexpr syn_cookie_cutoff = std::chrono::seconds (5);
@@ -27,17 +27,17 @@ namespace transport
 	class channel
 	{
 	public:
-		channel (nano::node &);
+		channel (btcb::node &);
 		virtual ~channel () = default;
 		virtual size_t hash_code () const = 0;
-		virtual bool operator== (nano::transport::channel const &) const = 0;
-		void send (nano::message const &, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr);
-		virtual void send_buffer (std::shared_ptr<std::vector<uint8_t>>, nano::stat::detail, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr) = 0;
-		virtual std::function<void(boost::system::error_code const &, size_t)> callback (std::shared_ptr<std::vector<uint8_t>>, nano::stat::detail, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr) const = 0;
+		virtual bool operator== (btcb::transport::channel const &) const = 0;
+		void send (btcb::message const &, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr);
+		virtual void send_buffer (std::shared_ptr<std::vector<uint8_t>>, btcb::stat::detail, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr) = 0;
+		virtual std::function<void(boost::system::error_code const &, size_t)> callback (std::shared_ptr<std::vector<uint8_t>>, btcb::stat::detail, std::function<void(boost::system::error_code const &, size_t)> const & = nullptr) const = 0;
 		virtual std::string to_string () const = 0;
-		virtual nano::endpoint get_endpoint () const = 0;
-		virtual nano::tcp_endpoint get_tcp_endpoint () const = 0;
-		virtual nano::transport::transport_type get_type () const = 0;
+		virtual btcb::endpoint get_endpoint () const = 0;
+		virtual btcb::tcp_endpoint get_tcp_endpoint () const = 0;
+		virtual btcb::transport::transport_type get_type () const = 0;
 
 		std::chrono::steady_clock::time_point get_last_bootstrap_attempt () const
 		{
@@ -75,13 +75,13 @@ namespace transport
 			last_packet_sent = time_a;
 		}
 
-		boost::optional<nano::account> get_node_id () const
+		boost::optional<btcb::account> get_node_id () const
 		{
 			std::lock_guard<std::mutex> lk (channel_mutex);
 			return node_id;
 		}
 
-		void set_node_id (nano::account node_id_a)
+		void set_node_id (btcb::account node_id_a)
 		{
 			std::lock_guard<std::mutex> lk (channel_mutex);
 			node_id = node_id_a;
@@ -103,29 +103,29 @@ namespace transport
 		std::chrono::steady_clock::time_point last_bootstrap_attempt{ std::chrono::steady_clock::time_point () };
 		std::chrono::steady_clock::time_point last_packet_received{ std::chrono::steady_clock::time_point () };
 		std::chrono::steady_clock::time_point last_packet_sent{ std::chrono::steady_clock::time_point () };
-		boost::optional<nano::account> node_id{ boost::none };
-		std::atomic<unsigned> network_version{ nano::protocol_version };
+		boost::optional<btcb::account> node_id{ boost::none };
+		std::atomic<unsigned> network_version{ btcb::protocol_version };
 
 	protected:
-		nano::node & node;
+		btcb::node & node;
 	};
 } // namespace transport
-} // namespace nano
+} // namespace btcb
 
 namespace std
 {
 template <>
-struct hash<::nano::transport::channel>
+struct hash<::btcb::transport::channel>
 {
-	size_t operator() (::nano::transport::channel const & channel_a) const
+	size_t operator() (::btcb::transport::channel const & channel_a) const
 	{
 		return channel_a.hash_code ();
 	}
 };
 template <>
-struct equal_to<std::reference_wrapper<::nano::transport::channel const>>
+struct equal_to<std::reference_wrapper<::btcb::transport::channel const>>
 {
-	bool operator() (std::reference_wrapper<::nano::transport::channel const> const & lhs, std::reference_wrapper<::nano::transport::channel const> const & rhs) const
+	bool operator() (std::reference_wrapper<::btcb::transport::channel const> const & lhs, std::reference_wrapper<::btcb::transport::channel const> const & rhs) const
 	{
 		return lhs.get () == rhs.get ();
 	}
@@ -135,20 +135,20 @@ struct equal_to<std::reference_wrapper<::nano::transport::channel const>>
 namespace boost
 {
 template <>
-struct hash<::nano::transport::channel>
+struct hash<::btcb::transport::channel>
 {
-	size_t operator() (::nano::transport::channel const & channel_a) const
+	size_t operator() (::btcb::transport::channel const & channel_a) const
 	{
-		std::hash<::nano::transport::channel> hash;
+		std::hash<::btcb::transport::channel> hash;
 		return hash (channel_a);
 	}
 };
 template <>
-struct hash<std::reference_wrapper<::nano::transport::channel const>>
+struct hash<std::reference_wrapper<::btcb::transport::channel const>>
 {
-	size_t operator() (std::reference_wrapper<::nano::transport::channel const> const & channel_a) const
+	size_t operator() (std::reference_wrapper<::btcb::transport::channel const> const & channel_a) const
 	{
-		std::hash<::nano::transport::channel> hash;
+		std::hash<::btcb::transport::channel> hash;
 		return hash (channel_a.get ());
 	}
 };

@@ -6,10 +6,10 @@
 #include <boost/optional.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <fstream>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/utility.hpp>
 
-namespace nano
+namespace btcb
 {
 /** Type trait to determine if T is compatible with boost's lexical_cast */
 template <class T>
@@ -38,29 +38,29 @@ template <> inline std::string type_desc<boost::asio::ip::address_v6> (void) { r
 // clang-format on
 
 /** Manages a node in a boost configuration tree. */
-class jsonconfig : public nano::error_aware<>
+class jsonconfig : public btcb::error_aware<>
 {
 public:
 	jsonconfig () :
 	tree (tree_default)
 	{
-		error = std::make_shared<nano::error> ();
+		error = std::make_shared<btcb::error> ();
 	}
 
-	jsonconfig (boost::property_tree::ptree & tree_a, std::shared_ptr<nano::error> error_a = nullptr) :
+	jsonconfig (boost::property_tree::ptree & tree_a, std::shared_ptr<btcb::error> error_a = nullptr) :
 	tree (tree_a), error (error_a)
 	{
 		if (!error)
 		{
-			error = std::make_shared<nano::error> ();
+			error = std::make_shared<btcb::error> ();
 		}
 	}
 
 	/**
 	 * Reads a json object from the stream 
-	 * @return nano::error&, including a descriptive error message if the config file is malformed.
+	 * @return btcb::error&, including a descriptive error message if the config file is malformed.
 	 */
-	nano::error & read (boost::filesystem::path const & path_a)
+	btcb::error & read (boost::filesystem::path const & path_a)
 	{
 		std::fstream stream;
 		open_or_create (stream, path_a.string ());
@@ -85,10 +85,10 @@ public:
 
 	/**
 	 * Reads a json object from the stream and if it was changed, write the object back to the stream.
-	 * @return nano::error&, including a descriptive error message if the config file is malformed.
+	 * @return btcb::error&, including a descriptive error message if the config file is malformed.
 	 */
 	template <typename T>
-	nano::error & read_and_update (T & object, boost::filesystem::path const & path_a)
+	btcb::error & read_and_update (T & object, boost::filesystem::path const & path_a)
 	{
 		auto file_exists (boost::filesystem::exists (path_a));
 		read (path_a);
@@ -145,7 +145,7 @@ public:
 			std::ofstream stream (path_a);
 
 			// Set permissions before opening otherwise Windows only has read permissions
-			nano::set_secure_perm_file (path_a);
+			btcb::set_secure_perm_file (path_a);
 		}
 
 		stream_a.open (path_a);
@@ -195,19 +195,19 @@ public:
 		auto child = tree.get_child_optional (key_a);
 		if (!child)
 		{
-			*error = nano::error_config::missing_value;
+			*error = btcb::error_config::missing_value;
 			error->set_message ("Missing configuration node: " + key_a);
 		}
 		return child ? jsonconfig (child.get (), error) : *this;
 	}
 
-	jsonconfig & put_child (std::string const & key_a, nano::jsonconfig & conf_a)
+	jsonconfig & put_child (std::string const & key_a, btcb::jsonconfig & conf_a)
 	{
 		tree.add_child (key_a, conf_a.get_tree ());
 		return *this;
 	}
 
-	jsonconfig & replace_child (std::string const & key_a, nano::jsonconfig & conf_a)
+	jsonconfig & replace_child (std::string const & key_a, btcb::jsonconfig & conf_a)
 	{
 		tree.erase (key_a);
 		put_child (key_a, conf_a);
@@ -266,7 +266,7 @@ public:
 
 	/**
 	 * Get optional value, using the current value of \p target as the default if \p key is missing.
-	 * @return May return nano::error_config::invalid_value
+	 * @return May return btcb::error_config::invalid_value
 	 */
 	template <typename T>
 	jsonconfig & get_optional (std::string const & key, T & target)
@@ -299,7 +299,7 @@ public:
 
 	/**
 	 * Get value of required key
-	 * @note May set nano::error_config::missing_value if \p key is missing, nano::error_config::invalid_value if value is invalid.
+	 * @note May set btcb::error_config::missing_value if \p key is missing, btcb::error_config::invalid_value if value is invalid.
 	 */
 	template <typename T>
 	T get (std::string const & key)
@@ -311,7 +311,7 @@ public:
 
 	/**
 	 * Get required value.
-	 * @note May set nano::error_config::missing_value if \p key is missing, nano::error_config::invalid_value if value is invalid.
+	 * @note May set btcb::error_config::missing_value if \p key is missing, btcb::error_config::invalid_value if value is invalid.
 	 */
 	template <typename T>
 	jsonconfig & get_required (std::string const & key, T & target)
@@ -326,7 +326,7 @@ public:
 		auto_error_message = auto_a;
 	}
 
-	nano::error & get_error () override
+	btcb::error & get_error () override
 	{
 		return *error;
 	}
@@ -358,7 +358,7 @@ protected:
 			construct_error_message<T> (optional, key);
 		}
 	}
-	template <typename T, typename = std::enable_if_t<nano::is_lexical_castable<T>::value>>
+	template <typename T, typename = std::enable_if_t<btcb::is_lexical_castable<T>::value>>
 	jsonconfig & get_config (bool optional, std::string key, T & target, T default_value = T ())
 	{
 		try
@@ -366,14 +366,14 @@ protected:
 			auto val (tree.get<std::string> (key));
 			if (!boost::conversion::try_lexical_convert<T> (val, target))
 			{
-				conditionally_set_error<T> (nano::error_config::invalid_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::invalid_value, optional, key);
 			}
 		}
 		catch (boost::property_tree::ptree_bad_path const &)
 		{
 			if (!optional)
 			{
-				conditionally_set_error<T> (nano::error_config::missing_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::missing_value, optional, key);
 			}
 			else
 			{
@@ -397,7 +397,7 @@ protected:
 			auto val (tree.get<std::string> (key));
 			if (!boost::conversion::try_lexical_convert<int64_t> (val, tmp) || tmp < 0 || tmp > 255)
 			{
-				conditionally_set_error<T> (nano::error_config::invalid_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::invalid_value, optional, key);
 			}
 			else
 			{
@@ -408,7 +408,7 @@ protected:
 		{
 			if (!optional)
 			{
-				conditionally_set_error<T> (nano::error_config::missing_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::missing_value, optional, key);
 			}
 			else
 			{
@@ -436,7 +436,7 @@ protected:
 			}
 			else if (!*error)
 			{
-				conditionally_set_error<T> (nano::error_config::invalid_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::invalid_value, optional, key);
 			}
 		};
 		try
@@ -448,7 +448,7 @@ protected:
 		{
 			if (!optional)
 			{
-				conditionally_set_error<T> (nano::error_config::missing_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::missing_value, optional, key);
 			}
 			else
 			{
@@ -472,14 +472,14 @@ protected:
 			target = boost::asio::ip::address_v6::from_string (address_l, bec);
 			if (bec)
 			{
-				conditionally_set_error<T> (nano::error_config::invalid_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::invalid_value, optional, key);
 			}
 		}
 		catch (boost::property_tree::ptree_bad_path const &)
 		{
 			if (!optional)
 			{
-				conditionally_set_error<T> (nano::error_config::missing_value, optional, key);
+				conditionally_set_error<T> (btcb::error_config::missing_value, optional, key);
 			}
 			else
 			{
@@ -496,7 +496,7 @@ private:
 	/** If set, automatically construct error messages based on parameters and type information. */
 	bool auto_error_message{ true };
 
-	/** We're a nano::error_aware type. Child nodes share the error state. */
-	std::shared_ptr<nano::error> error;
+	/** We're a btcb::error_aware type. Child nodes share the error state. */
+	std::shared_ptr<btcb::error> error;
 };
 }

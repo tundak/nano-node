@@ -14,8 +14,8 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <nano/lib/blocks.hpp>
-#include <nano/lib/numbers.hpp>
+#include <btcb/lib/blocks.hpp>
+#include <btcb/lib/numbers.hpp>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -31,7 +31,7 @@ using socket_type = boost::asio::basic_stream_socket<boost::asio::ip::tcp, boost
 #define beast_buffers boost::beast::make_printable
 #endif
 
-namespace nano
+namespace btcb
 {
 class node;
 namespace websocket
@@ -57,17 +57,17 @@ namespace websocket
 	class message final
 	{
 	public:
-		message (nano::websocket::topic topic_a) :
+		message (btcb::websocket::topic topic_a) :
 		topic (topic_a)
 		{
 		}
-		message (nano::websocket::topic topic_a, boost::property_tree::ptree & tree_a) :
+		message (btcb::websocket::topic topic_a, boost::property_tree::ptree & tree_a) :
 		topic (topic_a), contents (tree_a)
 		{
 		}
 
 		std::shared_ptr<std::string> to_string () const;
-		nano::websocket::topic topic;
+		btcb::websocket::topic topic;
 		boost::property_tree::ptree contents;
 	};
 
@@ -75,8 +75,8 @@ namespace websocket
 	class message_builder final
 	{
 	public:
-		message block_confirmed (std::shared_ptr<nano::block> block_a, nano::account const & account_a, nano::amount const & amount_a, std::string subtype);
-		message vote_received (std::shared_ptr<nano::vote> vote_a);
+		message block_confirmed (std::shared_ptr<btcb::block> block_a, btcb::account const & account_a, btcb::amount const & amount_a, std::string subtype);
+		message vote_received (std::shared_ptr<btcb::vote> vote_a);
 
 	private:
 		/** Set the common fields for messages: timestamp and topic. */
@@ -111,7 +111,7 @@ namespace websocket
 	{
 	public:
 		confirmation_options ();
-		confirmation_options (boost::property_tree::ptree const & options_a, nano::node & node_a);
+		confirmation_options (boost::property_tree::ptree const & options_a, btcb::node & node_a);
 
 		/**
 		 * Checks if a message should be filtered for given block confirmation options.
@@ -121,7 +121,7 @@ namespace websocket
 		bool should_filter (message const & message_a) const override;
 
 	private:
-		nano::node & node;
+		btcb::node & node;
 		bool all_local_accounts{ false };
 		std::unordered_set<std::string> accounts;
 	};
@@ -135,7 +135,7 @@ namespace websocket
 	{
 	public:
 		vote_options ();
-		vote_options (boost::property_tree::ptree const & options_a, nano::node & node_a);
+		vote_options (boost::property_tree::ptree const & options_a, btcb::node & node_a);
 
 		/**
 		 * Checks if a message should be filtered for given vote received options.
@@ -145,7 +145,7 @@ namespace websocket
 		bool should_filter (message const & message_a) const override;
 
 	private:
-		nano::node & node;
+		btcb::node & node;
 		std::unordered_set<std::string> representatives;
 	};
 
@@ -154,7 +154,7 @@ namespace websocket
 	{
 	public:
 		/** Constructor that takes ownership over \p socket_a */
-		explicit session (nano::websocket::listener & listener_a, socket_type socket_a);
+		explicit session (btcb::websocket::listener & listener_a, socket_type socket_a);
 		~session ();
 
 		/** Perform Websocket handshake and start reading messages */
@@ -167,11 +167,11 @@ namespace websocket
 		void read ();
 
 		/** Enqueue \p message_a for writing to the websockets */
-		void write (nano::websocket::message message_a);
+		void write (btcb::websocket::message message_a);
 
 	private:
 		/** The owning listener */
-		nano::websocket::listener & ws_listener;
+		btcb::websocket::listener & ws_listener;
 		/** Websocket */
 		boost::beast::websocket::stream<socket_type> ws;
 		/** Buffer for received messages */
@@ -206,7 +206,7 @@ namespace websocket
 	class listener final : public std::enable_shared_from_this<listener>
 	{
 	public:
-		listener (nano::node & node_a, boost::asio::ip::tcp::endpoint endpoint_a);
+		listener (btcb::node & node_a, boost::asio::ip::tcp::endpoint endpoint_a);
 
 		/** Start accepting connections */
 		void run ();
@@ -217,9 +217,9 @@ namespace websocket
 		void stop ();
 
 		/** Broadcast \p message to all session subscribing to the message topic. */
-		void broadcast (nano::websocket::message message_a);
+		void broadcast (btcb::websocket::message message_a);
 
-		nano::node & get_node () const
+		btcb::node & get_node () const
 		{
 			return node;
 		}
@@ -228,14 +228,14 @@ namespace websocket
 		 * Per-topic subscribers check. Relies on all sessions correctly increasing and
 		 * decreasing the subscriber counts themselves.
 		 */
-		bool any_subscribers (nano::websocket::topic const & topic_a);
+		bool any_subscribers (btcb::websocket::topic const & topic_a);
 		/** Adds to subscription count of a specific topic*/
-		void increase_subscription_count (nano::websocket::topic const & topic_a);
+		void increase_subscription_count (btcb::websocket::topic const & topic_a);
 		/** Removes from subscription count of a specific topic*/
-		void decrease_subscription_count (nano::websocket::topic const & topic_a);
+		void decrease_subscription_count (btcb::websocket::topic const & topic_a);
 
 	private:
-		nano::node & node;
+		btcb::node & node;
 		boost::asio::ip::tcp::acceptor acceptor;
 		socket_type socket;
 		std::mutex sessions_mutex;

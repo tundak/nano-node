@@ -1,12 +1,12 @@
-#include <nano/node/common.hpp>
-#include <nano/node/wallet.hpp>
-#include <nano/secure/blockstore.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/wallet.hpp>
+#include <btcb/secure/blockstore.hpp>
 
 #include <boost/polymorphic_cast.hpp>
 
 #include <boost/endian/conversion.hpp>
 
-nano::block_sideband::block_sideband (nano::block_type type_a, nano::account const & account_a, nano::block_hash const & successor_a, nano::amount const & balance_a, uint64_t height_a, uint64_t timestamp_a) :
+btcb::block_sideband::block_sideband (btcb::block_type type_a, btcb::account const & account_a, btcb::block_hash const & successor_a, btcb::amount const & balance_a, uint64_t height_a, uint64_t timestamp_a) :
 type (type_a),
 successor (successor_a),
 account (account_a),
@@ -16,19 +16,19 @@ timestamp (timestamp_a)
 {
 }
 
-size_t nano::block_sideband::size (nano::block_type type_a)
+size_t btcb::block_sideband::size (btcb::block_type type_a)
 {
 	size_t result (0);
 	result += sizeof (successor);
-	if (type_a != nano::block_type::state && type_a != nano::block_type::open)
+	if (type_a != btcb::block_type::state && type_a != btcb::block_type::open)
 	{
 		result += sizeof (account);
 	}
-	if (type_a != nano::block_type::open)
+	if (type_a != btcb::block_type::open)
 	{
 		result += sizeof (height);
 	}
-	if (type_a == nano::block_type::receive || type_a == nano::block_type::change || type_a == nano::block_type::open)
+	if (type_a == btcb::block_type::receive || type_a == btcb::block_type::change || type_a == btcb::block_type::open)
 	{
 		result += sizeof (balance);
 	}
@@ -36,48 +36,48 @@ size_t nano::block_sideband::size (nano::block_type type_a)
 	return result;
 }
 
-void nano::block_sideband::serialize (nano::stream & stream_a) const
+void btcb::block_sideband::serialize (btcb::stream & stream_a) const
 {
-	nano::write (stream_a, successor.bytes);
-	if (type != nano::block_type::state && type != nano::block_type::open)
+	btcb::write (stream_a, successor.bytes);
+	if (type != btcb::block_type::state && type != btcb::block_type::open)
 	{
-		nano::write (stream_a, account.bytes);
+		btcb::write (stream_a, account.bytes);
 	}
-	if (type != nano::block_type::open)
+	if (type != btcb::block_type::open)
 	{
-		nano::write (stream_a, boost::endian::native_to_big (height));
+		btcb::write (stream_a, boost::endian::native_to_big (height));
 	}
-	if (type == nano::block_type::receive || type == nano::block_type::change || type == nano::block_type::open)
+	if (type == btcb::block_type::receive || type == btcb::block_type::change || type == btcb::block_type::open)
 	{
-		nano::write (stream_a, balance.bytes);
+		btcb::write (stream_a, balance.bytes);
 	}
-	nano::write (stream_a, boost::endian::native_to_big (timestamp));
+	btcb::write (stream_a, boost::endian::native_to_big (timestamp));
 }
 
-bool nano::block_sideband::deserialize (nano::stream & stream_a)
+bool btcb::block_sideband::deserialize (btcb::stream & stream_a)
 {
 	bool result (false);
 	try
 	{
-		nano::read (stream_a, successor.bytes);
-		if (type != nano::block_type::state && type != nano::block_type::open)
+		btcb::read (stream_a, successor.bytes);
+		if (type != btcb::block_type::state && type != btcb::block_type::open)
 		{
-			nano::read (stream_a, account.bytes);
+			btcb::read (stream_a, account.bytes);
 		}
-		if (type != nano::block_type::open)
+		if (type != btcb::block_type::open)
 		{
-			nano::read (stream_a, height);
+			btcb::read (stream_a, height);
 			boost::endian::big_to_native_inplace (height);
 		}
 		else
 		{
 			height = 1;
 		}
-		if (type == nano::block_type::receive || type == nano::block_type::change || type == nano::block_type::open)
+		if (type == btcb::block_type::receive || type == btcb::block_type::change || type == btcb::block_type::open)
 		{
-			nano::read (stream_a, balance.bytes);
+			btcb::read (stream_a, balance.bytes);
 		}
-		nano::read (stream_a, timestamp);
+		btcb::read (stream_a, timestamp);
 		boost::endian::big_to_native_inplace (timestamp);
 	}
 	catch (std::runtime_error &)
@@ -88,13 +88,13 @@ bool nano::block_sideband::deserialize (nano::stream & stream_a)
 	return result;
 }
 
-nano::summation_visitor::summation_visitor (nano::transaction const & transaction_a, nano::block_store const & store_a) :
+btcb::summation_visitor::summation_visitor (btcb::transaction const & transaction_a, btcb::block_store const & store_a) :
 transaction (transaction_a),
 store (store_a)
 {
 }
 
-void nano::summation_visitor::send_block (nano::send_block const & block_a)
+void btcb::summation_visitor::send_block (btcb::send_block const & block_a)
 {
 	assert (current->type != summation_type::invalid && current != nullptr);
 	if (current->type == summation_type::amount)
@@ -110,7 +110,7 @@ void nano::summation_visitor::send_block (nano::send_block const & block_a)
 	}
 }
 
-void nano::summation_visitor::state_block (nano::state_block const & block_a)
+void btcb::summation_visitor::state_block (btcb::state_block const & block_a)
 {
 	assert (current->type != summation_type::invalid && current != nullptr);
 	sum_set (block_a.hashables.balance.number ());
@@ -125,7 +125,7 @@ void nano::summation_visitor::state_block (nano::state_block const & block_a)
 	}
 }
 
-void nano::summation_visitor::receive_block (nano::receive_block const & block_a)
+void btcb::summation_visitor::receive_block (btcb::receive_block const & block_a)
 {
 	assert (current->type != summation_type::invalid && current != nullptr);
 	if (current->type == summation_type::amount)
@@ -134,7 +134,7 @@ void nano::summation_visitor::receive_block (nano::receive_block const & block_a
 	}
 	else
 	{
-		nano::block_info block_info;
+		btcb::block_info block_info;
 		if (!store.block_info_get (transaction, block_a.hash (), block_info))
 		{
 			sum_add (block_info.balance.number ());
@@ -148,7 +148,7 @@ void nano::summation_visitor::receive_block (nano::receive_block const & block_a
 	}
 }
 
-void nano::summation_visitor::open_block (nano::open_block const & block_a)
+void btcb::summation_visitor::open_block (btcb::open_block const & block_a)
 {
 	assert (current->type != summation_type::invalid && current != nullptr);
 	if (current->type == summation_type::amount)
@@ -170,7 +170,7 @@ void nano::summation_visitor::open_block (nano::open_block const & block_a)
 	}
 }
 
-void nano::summation_visitor::change_block (nano::change_block const & block_a)
+void btcb::summation_visitor::change_block (btcb::change_block const & block_a)
 {
 	assert (current->type != summation_type::invalid && current != nullptr);
 	if (current->type == summation_type::amount)
@@ -180,7 +180,7 @@ void nano::summation_visitor::change_block (nano::change_block const & block_a)
 	}
 	else
 	{
-		nano::block_info block_info;
+		btcb::block_info block_info;
 		if (!store.block_info_get (transaction, block_a.hash (), block_info))
 		{
 			sum_add (block_info.balance.number ());
@@ -193,25 +193,25 @@ void nano::summation_visitor::change_block (nano::change_block const & block_a)
 	}
 }
 
-nano::summation_visitor::frame nano::summation_visitor::push (nano::summation_visitor::summation_type type_a, nano::block_hash const & hash_a)
+btcb::summation_visitor::frame btcb::summation_visitor::push (btcb::summation_visitor::summation_type type_a, btcb::block_hash const & hash_a)
 {
 	frames.emplace (type_a, type_a == summation_type::balance ? hash_a : 0, type_a == summation_type::amount ? hash_a : 0);
 	return frames.top ();
 }
 
-void nano::summation_visitor::sum_add (nano::uint128_t addend_a)
+void btcb::summation_visitor::sum_add (btcb::uint128_t addend_a)
 {
 	current->sum += addend_a;
 	result = current->sum;
 }
 
-void nano::summation_visitor::sum_set (nano::uint128_t value_a)
+void btcb::summation_visitor::sum_set (btcb::uint128_t value_a)
 {
 	current->sum = value_a;
 	result = current->sum;
 }
 
-nano::uint128_t nano::summation_visitor::compute_internal (nano::summation_visitor::summation_type type_a, nano::block_hash const & hash_a)
+btcb::uint128_t btcb::summation_visitor::compute_internal (btcb::summation_visitor::summation_type type_a, btcb::block_hash const & hash_a)
 {
 	push (type_a, hash_a);
 
@@ -276,7 +276,7 @@ nano::uint128_t nano::summation_visitor::compute_internal (nano::summation_visit
 					{
 						if (current->amount_hash == network_params.ledger.genesis_account)
 						{
-							sum_set (std::numeric_limits<nano::uint128_t>::max ());
+							sum_set (std::numeric_limits<btcb::uint128_t>::max ());
 							current->amount_hash = 0;
 						}
 						else
@@ -303,7 +303,7 @@ nano::uint128_t nano::summation_visitor::compute_internal (nano::summation_visit
 	return result;
 }
 
-void nano::summation_visitor::epilogue ()
+void btcb::summation_visitor::epilogue ()
 {
 	if (!current->awaiting_result)
 	{
@@ -315,24 +315,24 @@ void nano::summation_visitor::epilogue ()
 	}
 }
 
-nano::uint128_t nano::summation_visitor::compute_amount (nano::block_hash const & block_hash)
+btcb::uint128_t btcb::summation_visitor::compute_amount (btcb::block_hash const & block_hash)
 {
 	return compute_internal (summation_type::amount, block_hash);
 }
 
-nano::uint128_t nano::summation_visitor::compute_balance (nano::block_hash const & block_hash)
+btcb::uint128_t btcb::summation_visitor::compute_balance (btcb::block_hash const & block_hash)
 {
 	return compute_internal (summation_type::balance, block_hash);
 }
 
-nano::representative_visitor::representative_visitor (nano::transaction const & transaction_a, nano::block_store & store_a) :
+btcb::representative_visitor::representative_visitor (btcb::transaction const & transaction_a, btcb::block_store & store_a) :
 transaction (transaction_a),
 store (store_a),
 result (0)
 {
 }
 
-void nano::representative_visitor::compute (nano::block_hash const & hash_a)
+void btcb::representative_visitor::compute (btcb::block_hash const & hash_a)
 {
 	current = hash_a;
 	while (result.is_zero ())
@@ -343,73 +343,73 @@ void nano::representative_visitor::compute (nano::block_hash const & hash_a)
 	}
 }
 
-void nano::representative_visitor::send_block (nano::send_block const & block_a)
+void btcb::representative_visitor::send_block (btcb::send_block const & block_a)
 {
 	current = block_a.previous ();
 }
 
-void nano::representative_visitor::receive_block (nano::receive_block const & block_a)
+void btcb::representative_visitor::receive_block (btcb::receive_block const & block_a)
 {
 	current = block_a.previous ();
 }
 
-void nano::representative_visitor::open_block (nano::open_block const & block_a)
+void btcb::representative_visitor::open_block (btcb::open_block const & block_a)
 {
 	result = block_a.hash ();
 }
 
-void nano::representative_visitor::change_block (nano::change_block const & block_a)
+void btcb::representative_visitor::change_block (btcb::change_block const & block_a)
 {
 	result = block_a.hash ();
 }
 
-void nano::representative_visitor::state_block (nano::state_block const & block_a)
+void btcb::representative_visitor::state_block (btcb::state_block const & block_a)
 {
 	result = block_a.hash ();
 }
 
-nano::read_transaction::read_transaction (std::unique_ptr<nano::read_transaction_impl> read_transaction_impl) :
+btcb::read_transaction::read_transaction (std::unique_ptr<btcb::read_transaction_impl> read_transaction_impl) :
 impl (std::move (read_transaction_impl))
 {
 }
 
-void * nano::read_transaction::get_handle () const
+void * btcb::read_transaction::get_handle () const
 {
 	return impl->get_handle ();
 }
 
-void nano::read_transaction::reset () const
+void btcb::read_transaction::reset () const
 {
 	impl->reset ();
 }
 
-void nano::read_transaction::renew () const
+void btcb::read_transaction::renew () const
 {
 	impl->renew ();
 }
 
-void nano::read_transaction::refresh () const
+void btcb::read_transaction::refresh () const
 {
 	reset ();
 	renew ();
 }
 
-nano::write_transaction::write_transaction (std::unique_ptr<nano::write_transaction_impl> write_transaction_impl) :
+btcb::write_transaction::write_transaction (std::unique_ptr<btcb::write_transaction_impl> write_transaction_impl) :
 impl (std::move (write_transaction_impl))
 {
 }
 
-void * nano::write_transaction::get_handle () const
+void * btcb::write_transaction::get_handle () const
 {
 	return impl->get_handle ();
 }
 
-void nano::write_transaction::commit () const
+void btcb::write_transaction::commit () const
 {
 	impl->commit ();
 }
 
-void nano::write_transaction::renew ()
+void btcb::write_transaction::renew ()
 {
 	impl->renew ();
 }

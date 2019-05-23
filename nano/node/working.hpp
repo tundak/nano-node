@@ -1,8 +1,8 @@
 #pragma once
 
-#include <nano/secure/common.hpp>
+#include <btcb/secure/common.hpp>
 
-namespace nano
+namespace btcb
 {
 boost::filesystem::path app_path ();
 }

@@ -1,10 +1,10 @@
-#include <nano/node/diagnosticsconfig.hpp>
+#include <btcb/node/diagnosticsconfig.hpp>
 
-#include <nano/lib/jsonconfig.hpp>
+#include <btcb/lib/jsonconfig.hpp>
 
-nano::error nano::diagnostics_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::diagnostics_config::serialize_json (btcb::jsonconfig & json) const
 {
-	nano::jsonconfig txn_tracking_l;
+	btcb::jsonconfig txn_tracking_l;
 	txn_tracking_l.put ("enable", txn_tracking.enable);
 	txn_tracking_l.put ("min_read_txn_time", txn_tracking.min_read_txn_time.count ());
 	txn_tracking_l.put ("min_write_txn_time", txn_tracking.min_write_txn_time.count ());
@@ -13,7 +13,7 @@ nano::error nano::diagnostics_config::serialize_json (nano::jsonconfig & json) c
 	return json.get_error ();
 }
 
-nano::error nano::diagnostics_config::deserialize_json (nano::jsonconfig & json)
+btcb::error btcb::diagnostics_config::deserialize_json (btcb::jsonconfig & json)
 {
 	auto txn_tracking_l (json.get_optional_child ("txn_tracking"));
 	if (txn_tracking_l)

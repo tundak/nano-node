@@ -1,11 +1,11 @@
-#include <nano/lib/json_error_response.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/json_handler.hpp>
-#include <nano/node/json_payment_observer.hpp>
-#include <nano/node/node.hpp>
-#include <nano/node/payment_observer_processor.hpp>
+#include <btcb/lib/json_error_response.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/json_handler.hpp>
+#include <btcb/node/json_payment_observer.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/payment_observer_processor.hpp>
 
-nano::json_payment_observer::json_payment_observer (nano::node & node_a, std::function<void(std::string const &)> const & response_a, nano::account const & account_a, nano::amount const & amount_a) :
+btcb::json_payment_observer::json_payment_observer (btcb::node & node_a, std::function<void(std::string const &)> const & response_a, btcb::account const & account_a, btcb::amount const & amount_a) :
 node (node_a),
 account (account_a),
 amount (amount_a),
@@ -14,23 +14,23 @@ response (response_a)
 	completed.clear ();
 }
 
-void nano::json_payment_observer::start (uint64_t timeout)
+void btcb::json_payment_observer::start (uint64_t timeout)
 {
 	auto this_l (shared_from_this ());
 	node.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (timeout), [this_l]() {
-		this_l->complete (nano::payment_status::nothing);
+		this_l->complete (btcb::payment_status::nothing);
 	});
 }
 
-void nano::json_payment_observer::observe ()
+void btcb::json_payment_observer::observe ()
 {
 	if (node.balance (account) >= amount.number ())
 	{
-		complete (nano::payment_status::success);
+		complete (btcb::payment_status::success);
 	}
 }
 
-void nano::json_payment_observer::complete (nano::payment_status status)
+void btcb::json_payment_observer::complete (btcb::payment_status status)
 {
 	auto already (completed.test_and_set ());
 	if (!already)
@@ -41,7 +41,7 @@ void nano::json_payment_observer::complete (nano::payment_status status)
 		}
 		switch (status)
 		{
-			case nano::payment_status::nothing:
+			case btcb::payment_status::nothing:
 			{
 				boost::property_tree::ptree response_l;
 				response_l.put ("deprecated", "1");
@@ -51,7 +51,7 @@ void nano::json_payment_observer::complete (nano::payment_status status)
 				response (ostream.str ());
 				break;
 			}
-			case nano::payment_status::success:
+			case btcb::payment_status::success:
 			{
 				boost::property_tree::ptree response_l;
 				response_l.put ("deprecated", "1");

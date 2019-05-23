@@ -1,11 +1,11 @@
 #pragma once
 
-#include <nano/node/node_observers.hpp>
-#include <nano/node/wallet.hpp>
+#include <btcb/node/node_observers.hpp>
+#include <btcb/node/wallet.hpp>
 #include <string>
 #include <vector>
 
-namespace nano
+namespace btcb
 {
 class node;
 
@@ -19,18 +19,18 @@ enum class payment_status
 	//success_fork, // Amount received but it involved a fork
 	success // Amount received
 };
-class json_payment_observer final : public std::enable_shared_from_this<nano::json_payment_observer>
+class json_payment_observer final : public std::enable_shared_from_this<btcb::json_payment_observer>
 {
 public:
-	json_payment_observer (nano::node &, std::function<void(std::string const &)> const &, nano::account const &, nano::amount const &);
+	json_payment_observer (btcb::node &, std::function<void(std::string const &)> const &, btcb::account const &, btcb::amount const &);
 	void start (uint64_t);
 	void observe ();
-	void complete (nano::payment_status);
+	void complete (btcb::payment_status);
 	std::mutex mutex;
 	std::condition_variable condition;
-	nano::node & node;
-	nano::account account;
-	nano::amount amount;
+	btcb::node & node;
+	btcb::account account;
+	btcb::amount amount;
 	std::function<void(std::string const &)> response;
 	std::atomic_flag completed;
 };

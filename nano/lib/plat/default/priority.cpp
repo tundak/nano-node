@@ -1,5 +1,5 @@
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 
-void nano::work_thread_reprioritize ()
+void btcb::work_thread_reprioritize ()
 {
 }

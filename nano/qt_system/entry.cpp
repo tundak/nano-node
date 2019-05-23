@@ -1,31 +1,31 @@
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/qt/qt.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/qt/qt.hpp>
 
 #include <thread>
 
 int main (int argc, char ** argv)
 {
-	nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
+	btcb::network_constants::set_active_network (btcb::btcb_networks::btcb_test_network);
 	QApplication application (argc, argv);
-	QCoreApplication::setOrganizationName ("Nano");
+	QCoreApplication::setOrganizationName ("Btcb");
 	QCoreApplication::setOrganizationDomain ("nano.org");
-	QCoreApplication::setApplicationName ("Nano Wallet");
-	nano_qt::eventloop_processor processor;
+	QCoreApplication::setApplicationName ("Btcb Wallet");
+	btcb_qt::eventloop_processor processor;
 	static int count (16);
-	nano::system system (24000, count);
-	nano::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
+	btcb::system system (24000, count);
+	btcb::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
 	std::unique_ptr<QTabWidget> client_tabs (new QTabWidget);
-	std::vector<std::unique_ptr<nano_qt::wallet>> guis;
+	std::vector<std::unique_ptr<btcb_qt::wallet>> guis;
 	for (auto i (0); i < count; ++i)
 	{
-		nano::uint256_union wallet_id;
-		nano::random_pool::generate_block (wallet_id.bytes.data (), wallet_id.bytes.size ());
+		btcb::uint256_union wallet_id;
+		btcb::random_pool::generate_block (wallet_id.bytes.data (), wallet_id.bytes.size ());
 		auto wallet (system.nodes[i]->wallets.create (wallet_id));
-		nano::keypair key;
+		btcb::keypair key;
 		wallet->insert_adhoc (key.prv);
-		guis.push_back (std::unique_ptr<nano_qt::wallet> (new nano_qt::wallet (application, processor, *system.nodes[i], wallet, key.pub)));
+		guis.push_back (std::unique_ptr<btcb_qt::wallet> (new btcb_qt::wallet (application, processor, *system.nodes[i], wallet, key.pub)));
 		client_tabs->addTab (guis.back ()->client_window, boost::str (boost::format ("Wallet %1%") % i).c_str ());
 	}
 	client_tabs->show ();

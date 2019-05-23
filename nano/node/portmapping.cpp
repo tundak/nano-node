@@ -1,8 +1,8 @@
-#include <nano/node/node.hpp>
-#include <nano/node/portmapping.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/portmapping.hpp>
 #include <upnpcommands.h>
 
-nano::port_mapping::port_mapping (nano::node & node_a) :
+btcb::port_mapping::port_mapping (btcb::node & node_a) :
 node (node_a),
 devices (nullptr),
 protocols ({ { { "TCP", 0, boost::asio::ip::address_v4::any (), 0 }, { "UDP", 0, boost::asio::ip::address_v4::any (), 0 } } }),
@@ -13,12 +13,12 @@ on (false)
 	data = { { 0 } };
 }
 
-void nano::port_mapping::start ()
+void btcb::port_mapping::start ()
 {
 	check_mapping_loop ();
 }
 
-void nano::port_mapping::refresh_devices ()
+void btcb::port_mapping::refresh_devices ()
 {
 	if (!network_params.network.is_test_network ())
 	{
@@ -48,21 +48,21 @@ void nano::port_mapping::refresh_devices ()
 	}
 }
 
-nano::endpoint nano::port_mapping::external_address ()
+btcb::endpoint btcb::port_mapping::external_address ()
 {
-	nano::endpoint result (boost::asio::ip::address_v6{}, 0);
+	btcb::endpoint result (boost::asio::ip::address_v6{}, 0);
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto & protocol : protocols)
 	{
 		if (protocol.external_port != 0)
 		{
-			result = nano::endpoint (protocol.external_address, protocol.external_port);
+			result = btcb::endpoint (protocol.external_address, protocol.external_port);
 		}
 	}
 	return result;
 }
 
-void nano::port_mapping::refresh_mapping ()
+void btcb::port_mapping::refresh_mapping ()
 {
 	if (!network_params.network.is_test_network ())
 	{
@@ -91,7 +91,7 @@ void nano::port_mapping::refresh_mapping ()
 	}
 }
 
-int nano::port_mapping::check_mapping ()
+int btcb::port_mapping::check_mapping ()
 {
 	int result (3600);
 	if (!network_params.network.is_test_network ())
@@ -136,7 +136,7 @@ int nano::port_mapping::check_mapping ()
 	return result;
 }
 
-void nano::port_mapping::check_mapping_loop ()
+void btcb::port_mapping::check_mapping_loop ()
 {
 	int wait_duration = network_params.portmapping.check_timeout;
 	refresh_devices ();
@@ -167,7 +167,7 @@ void nano::port_mapping::check_mapping_loop ()
 	}
 }
 
-void nano::port_mapping::stop ()
+void btcb::port_mapping::stop ()
 {
 	on = false;
 	std::lock_guard<std::mutex> lock (mutex);

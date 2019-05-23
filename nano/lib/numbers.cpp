@@ -1,7 +1,7 @@
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/numbers.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/numbers.hpp>
 
 #include <crypto/ed25519-donna/ed25519.h>
 
@@ -40,7 +40,7 @@ uint8_t account_decode (char value)
 }
 }
 
-void nano::uint256_union::encode_account (std::string & destination_a) const
+void btcb::uint256_union::encode_account (std::string & destination_a) const
 {
 	assert (destination_a.empty ());
 	destination_a.reserve (65);
@@ -49,42 +49,42 @@ void nano::uint256_union::encode_account (std::string & destination_a) const
 	blake2b_init (&hash, 5);
 	blake2b_update (&hash, bytes.data (), bytes.size ());
 	blake2b_final (&hash, reinterpret_cast<uint8_t *> (&check), 5);
-	nano::uint512_t number_l (number ());
+	btcb::uint512_t number_l (number ());
 	number_l <<= 40;
-	number_l |= nano::uint512_t (check);
+	number_l |= btcb::uint512_t (check);
 	for (auto i (0); i < 60; ++i)
 	{
 		uint8_t r (number_l & static_cast<uint8_t> (0x1f));
 		number_l >>= 5;
 		destination_a.push_back (account_encode (r));
 	}
-	destination_a.append ("_onan"); // nano_
+	destination_a.append ("_onan"); // btcb_
 	std::reverse (destination_a.begin (), destination_a.end ());
 }
 
-std::string nano::uint256_union::to_account () const
+std::string btcb::uint256_union::to_account () const
 {
 	std::string result;
 	encode_account (result);
 	return result;
 }
 
-bool nano::uint256_union::decode_account (std::string const & source_a)
+bool btcb::uint256_union::decode_account (std::string const & source_a)
 {
 	auto error (source_a.size () < 5);
 	if (!error)
 	{
 		auto xrb_prefix (source_a[0] == 'x' && source_a[1] == 'r' && source_a[2] == 'b' && (source_a[3] == '_' || source_a[3] == '-'));
-		auto nano_prefix (source_a[0] == 'n' && source_a[1] == 'a' && source_a[2] == 'n' && source_a[3] == 'o' && (source_a[4] == '_' || source_a[4] == '-'));
-		error = (xrb_prefix && source_a.size () != 64) || (nano_prefix && source_a.size () != 65);
+		auto btcb_prefix (source_a[0] == 'n' && source_a[1] == 'a' && source_a[2] == 'n' && source_a[3] == 'o' && (source_a[4] == '_' || source_a[4] == '-'));
+		error = (xrb_prefix && source_a.size () != 64) || (btcb_prefix && source_a.size () != 65);
 		if (!error)
 		{
-			if (xrb_prefix || nano_prefix)
+			if (xrb_prefix || btcb_prefix)
 			{
 				auto i (source_a.begin () + (xrb_prefix ? 4 : 5));
 				if (*i == '1' || *i == '3')
 				{
-					nano::uint512_t number_l;
+					btcb::uint512_t number_l;
 					for (auto j (source_a.end ()); !error && i != j; ++i)
 					{
 						uint8_t character (*i);
@@ -102,7 +102,7 @@ bool nano::uint256_union::decode_account (std::string const & source_a)
 					}
 					if (!error)
 					{
-						*this = (number_l >> 40).convert_to<nano::uint256_t> ();
+						*this = (number_l >> 40).convert_to<btcb::uint256_t> ();
 						uint64_t check (number_l & static_cast<uint64_t> (0xffffffffff));
 						uint64_t validation (0);
 						blake2b_state hash;
@@ -126,43 +126,43 @@ bool nano::uint256_union::decode_account (std::string const & source_a)
 	return error;
 }
 
-nano::uint256_union::uint256_union (nano::uint256_t const & number_a)
+btcb::uint256_union::uint256_union (btcb::uint256_t const & number_a)
 {
 	bytes.fill (0);
 	boost::multiprecision::export_bits (number_a, bytes.rbegin (), 8, false);
 }
 
-bool nano::uint256_union::operator== (nano::uint256_union const & other_a) const
+bool btcb::uint256_union::operator== (btcb::uint256_union const & other_a) const
 {
 	return bytes == other_a.bytes;
 }
 
 // Construct a uint256_union = AES_ENC_CTR (cleartext, key, iv)
-void nano::uint256_union::encrypt (nano::raw_key const & cleartext, nano::raw_key const & key, uint128_union const & iv)
+void btcb::uint256_union::encrypt (btcb::raw_key const & cleartext, btcb::raw_key const & key, uint128_union const & iv)
 {
 	CryptoPP::AES::Encryption alg (key.data.bytes.data (), sizeof (key.data.bytes));
 	CryptoPP::CTR_Mode_ExternalCipher::Encryption enc (alg, iv.bytes.data ());
 	enc.ProcessData (bytes.data (), cleartext.data.bytes.data (), sizeof (cleartext.data.bytes));
 }
 
-bool nano::uint256_union::is_zero () const
+bool btcb::uint256_union::is_zero () const
 {
 	return qwords[0] == 0 && qwords[1] == 0 && qwords[2] == 0 && qwords[3] == 0;
 }
 
-std::string nano::uint256_union::to_string () const
+std::string btcb::uint256_union::to_string () const
 {
 	std::string result;
 	encode_hex (result);
 	return result;
 }
 
-bool nano::uint256_union::operator< (nano::uint256_union const & other_a) const
+bool btcb::uint256_union::operator< (btcb::uint256_union const & other_a) const
 {
 	return std::memcmp (bytes.data (), other_a.bytes.data (), 32) < 0;
 }
 
-nano::uint256_union & nano::uint256_union::operator^= (nano::uint256_union const & other_a)
+btcb::uint256_union & btcb::uint256_union::operator^= (btcb::uint256_union const & other_a)
 {
 	auto j (other_a.qwords.begin ());
 	for (auto i (qwords.begin ()), n (qwords.end ()); i != n; ++i, ++j)
@@ -172,9 +172,9 @@ nano::uint256_union & nano::uint256_union::operator^= (nano::uint256_union const
 	return *this;
 }
 
-nano::uint256_union nano::uint256_union::operator^ (nano::uint256_union const & other_a) const
+btcb::uint256_union btcb::uint256_union::operator^ (btcb::uint256_union const & other_a) const
 {
-	nano::uint256_union result;
+	btcb::uint256_union result;
 	auto k (result.qwords.begin ());
 	for (auto i (qwords.begin ()), j (other_a.qwords.begin ()), n (qwords.end ()); i != n; ++i, ++j, ++k)
 	{
@@ -183,26 +183,26 @@ nano::uint256_union nano::uint256_union::operator^ (nano::uint256_union const & 
 	return result;
 }
 
-nano::uint256_union::uint256_union (std::string const & hex_a)
+btcb::uint256_union::uint256_union (std::string const & hex_a)
 {
 	auto error (decode_hex (hex_a));
 
 	release_assert (!error);
 }
 
-void nano::uint256_union::clear ()
+void btcb::uint256_union::clear ()
 {
 	qwords.fill (0);
 }
 
-nano::uint256_t nano::uint256_union::number () const
+btcb::uint256_t btcb::uint256_union::number () const
 {
-	nano::uint256_t result;
+	btcb::uint256_t result;
 	boost::multiprecision::import_bits (result, bytes.begin (), bytes.end ());
 	return result;
 }
 
-void nano::uint256_union::encode_hex (std::string & text) const
+void btcb::uint256_union::encode_hex (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -211,14 +211,14 @@ void nano::uint256_union::encode_hex (std::string & text) const
 	text = stream.str ();
 }
 
-bool nano::uint256_union::decode_hex (std::string const & text)
+bool btcb::uint256_union::decode_hex (std::string const & text)
 {
 	auto error (false);
 	if (!text.empty () && text.size () <= 64)
 	{
 		std::stringstream stream (text);
 		stream << std::hex << std::noshowbase;
-		nano::uint256_t number_l;
+		btcb::uint256_t number_l;
 		try
 		{
 			stream >> number_l;
@@ -240,7 +240,7 @@ bool nano::uint256_union::decode_hex (std::string const & text)
 	return error;
 }
 
-void nano::uint256_union::encode_dec (std::string & text) const
+void btcb::uint256_union::encode_dec (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -249,14 +249,14 @@ void nano::uint256_union::encode_dec (std::string & text) const
 	text = stream.str ();
 }
 
-bool nano::uint256_union::decode_dec (std::string const & text)
+bool btcb::uint256_union::decode_dec (std::string const & text)
 {
 	auto error (text.size () > 78 || (text.size () > 1 && text.front () == '0') || (!text.empty () && text.front () == '-'));
 	if (!error)
 	{
 		std::stringstream stream (text);
 		stream << std::dec << std::noshowbase;
-		nano::uint256_t number_l;
+		btcb::uint256_t number_l;
 		try
 		{
 			stream >> number_l;
@@ -274,52 +274,52 @@ bool nano::uint256_union::decode_dec (std::string const & text)
 	return error;
 }
 
-nano::uint256_union::uint256_union (uint64_t value0)
+btcb::uint256_union::uint256_union (uint64_t value0)
 {
-	*this = nano::uint256_t (value0);
+	*this = btcb::uint256_t (value0);
 }
 
-bool nano::uint256_union::operator!= (nano::uint256_union const & other_a) const
+bool btcb::uint256_union::operator!= (btcb::uint256_union const & other_a) const
 {
 	return !(*this == other_a);
 }
 
-bool nano::uint512_union::operator== (nano::uint512_union const & other_a) const
+bool btcb::uint512_union::operator== (btcb::uint512_union const & other_a) const
 {
 	return bytes == other_a.bytes;
 }
 
-nano::uint512_union::uint512_union (nano::uint256_union const & upper, nano::uint256_union const & lower)
+btcb::uint512_union::uint512_union (btcb::uint256_union const & upper, btcb::uint256_union const & lower)
 {
 	uint256s[0] = upper;
 	uint256s[1] = lower;
 }
 
-nano::uint512_union::uint512_union (nano::uint512_t const & number_a)
+btcb::uint512_union::uint512_union (btcb::uint512_t const & number_a)
 {
 	bytes.fill (0);
 	boost::multiprecision::export_bits (number_a, bytes.rbegin (), 8, false);
 }
 
-bool nano::uint512_union::is_zero () const
+bool btcb::uint512_union::is_zero () const
 {
 	return qwords[0] == 0 && qwords[1] == 0 && qwords[2] == 0 && qwords[3] == 0
 	&& qwords[4] == 0 && qwords[5] == 0 && qwords[6] == 0 && qwords[7] == 0;
 }
 
-void nano::uint512_union::clear ()
+void btcb::uint512_union::clear ()
 {
 	bytes.fill (0);
 }
 
-nano::uint512_t nano::uint512_union::number () const
+btcb::uint512_t btcb::uint512_union::number () const
 {
-	nano::uint512_t result;
+	btcb::uint512_t result;
 	boost::multiprecision::import_bits (result, bytes.begin (), bytes.end ());
 	return result;
 }
 
-void nano::uint512_union::encode_hex (std::string & text) const
+void btcb::uint512_union::encode_hex (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -328,14 +328,14 @@ void nano::uint512_union::encode_hex (std::string & text) const
 	text = stream.str ();
 }
 
-bool nano::uint512_union::decode_hex (std::string const & text)
+bool btcb::uint512_union::decode_hex (std::string const & text)
 {
 	auto error (text.size () > 128);
 	if (!error)
 	{
 		std::stringstream stream (text);
 		stream << std::hex << std::noshowbase;
-		nano::uint512_t number_l;
+		btcb::uint512_t number_l;
 		try
 		{
 			stream >> number_l;
@@ -353,130 +353,130 @@ bool nano::uint512_union::decode_hex (std::string const & text)
 	return error;
 }
 
-bool nano::uint512_union::operator!= (nano::uint512_union const & other_a) const
+bool btcb::uint512_union::operator!= (btcb::uint512_union const & other_a) const
 {
 	return !(*this == other_a);
 }
 
-nano::uint512_union & nano::uint512_union::operator^= (nano::uint512_union const & other_a)
+btcb::uint512_union & btcb::uint512_union::operator^= (btcb::uint512_union const & other_a)
 {
 	uint256s[0] ^= other_a.uint256s[0];
 	uint256s[1] ^= other_a.uint256s[1];
 	return *this;
 }
 
-std::string nano::uint512_union::to_string () const
+std::string btcb::uint512_union::to_string () const
 {
 	std::string result;
 	encode_hex (result);
 	return result;
 }
 
-nano::raw_key::~raw_key ()
+btcb::raw_key::~raw_key ()
 {
 	data.clear ();
 }
 
-bool nano::raw_key::operator== (nano::raw_key const & other_a) const
+bool btcb::raw_key::operator== (btcb::raw_key const & other_a) const
 {
 	return data == other_a.data;
 }
 
-bool nano::raw_key::operator!= (nano::raw_key const & other_a) const
+bool btcb::raw_key::operator!= (btcb::raw_key const & other_a) const
 {
 	return !(*this == other_a);
 }
 
 // This this = AES_DEC_CTR (ciphertext, key, iv)
-void nano::raw_key::decrypt (nano::uint256_union const & ciphertext, nano::raw_key const & key_a, uint128_union const & iv)
+void btcb::raw_key::decrypt (btcb::uint256_union const & ciphertext, btcb::raw_key const & key_a, uint128_union const & iv)
 {
 	CryptoPP::AES::Encryption alg (key_a.data.bytes.data (), sizeof (key_a.data.bytes));
 	CryptoPP::CTR_Mode_ExternalCipher::Decryption dec (alg, iv.bytes.data ());
 	dec.ProcessData (data.bytes.data (), ciphertext.bytes.data (), sizeof (ciphertext.bytes));
 }
 
-nano::uint512_union nano::sign_message (nano::raw_key const & private_key, nano::public_key const & public_key, nano::uint256_union const & message)
+btcb::uint512_union btcb::sign_message (btcb::raw_key const & private_key, btcb::public_key const & public_key, btcb::uint256_union const & message)
 {
-	nano::uint512_union result;
+	btcb::uint512_union result;
 	ed25519_sign (message.bytes.data (), sizeof (message.bytes), private_key.data.bytes.data (), public_key.bytes.data (), result.bytes.data ());
 	return result;
 }
 
-void nano::deterministic_key (nano::uint256_union const & seed_a, uint32_t index_a, nano::uint256_union & prv_a)
+void btcb::deterministic_key (btcb::uint256_union const & seed_a, uint32_t index_a, btcb::uint256_union & prv_a)
 {
 	blake2b_state hash;
 	blake2b_init (&hash, prv_a.bytes.size ());
 	blake2b_update (&hash, seed_a.bytes.data (), seed_a.bytes.size ());
-	nano::uint256_union index (index_a);
+	btcb::uint256_union index (index_a);
 	blake2b_update (&hash, reinterpret_cast<uint8_t *> (&index.dwords[7]), sizeof (uint32_t));
 	blake2b_final (&hash, prv_a.bytes.data (), prv_a.bytes.size ());
 }
 
-nano::public_key nano::pub_key (nano::private_key const & privatekey_a)
+btcb::public_key btcb::pub_key (btcb::private_key const & privatekey_a)
 {
-	nano::uint256_union result;
+	btcb::uint256_union result;
 	ed25519_publickey (privatekey_a.bytes.data (), result.bytes.data ());
 	return result;
 }
 
-bool nano::validate_message (nano::public_key const & public_key, nano::uint256_union const & message, nano::uint512_union const & signature)
+bool btcb::validate_message (btcb::public_key const & public_key, btcb::uint256_union const & message, btcb::uint512_union const & signature)
 {
 	auto result (0 != ed25519_sign_open (message.bytes.data (), sizeof (message.bytes), public_key.bytes.data (), signature.bytes.data ()));
 	return result;
 }
 
-bool nano::validate_message_batch (const unsigned char ** m, size_t * mlen, const unsigned char ** pk, const unsigned char ** RS, size_t num, int * valid)
+bool btcb::validate_message_batch (const unsigned char ** m, size_t * mlen, const unsigned char ** pk, const unsigned char ** RS, size_t num, int * valid)
 {
 	bool result (0 == ed25519_sign_open_batch (m, mlen, pk, RS, num, valid));
 	return result;
 }
 
-nano::uint128_union::uint128_union (std::string const & string_a)
+btcb::uint128_union::uint128_union (std::string const & string_a)
 {
 	auto error (decode_hex (string_a));
 
 	release_assert (!error);
 }
 
-nano::uint128_union::uint128_union (uint64_t value_a)
+btcb::uint128_union::uint128_union (uint64_t value_a)
 {
-	*this = nano::uint128_t (value_a);
+	*this = btcb::uint128_t (value_a);
 }
 
-nano::uint128_union::uint128_union (nano::uint128_t const & number_a)
+btcb::uint128_union::uint128_union (btcb::uint128_t const & number_a)
 {
 	bytes.fill (0);
 	boost::multiprecision::export_bits (number_a, bytes.rbegin (), 8, false);
 }
 
-bool nano::uint128_union::operator== (nano::uint128_union const & other_a) const
+bool btcb::uint128_union::operator== (btcb::uint128_union const & other_a) const
 {
 	return qwords[0] == other_a.qwords[0] && qwords[1] == other_a.qwords[1];
 }
 
-bool nano::uint128_union::operator!= (nano::uint128_union const & other_a) const
+bool btcb::uint128_union::operator!= (btcb::uint128_union const & other_a) const
 {
 	return !(*this == other_a);
 }
 
-bool nano::uint128_union::operator< (nano::uint128_union const & other_a) const
+bool btcb::uint128_union::operator< (btcb::uint128_union const & other_a) const
 {
 	return std::memcmp (bytes.data (), other_a.bytes.data (), 16) < 0;
 }
 
-bool nano::uint128_union::operator> (nano::uint128_union const & other_a) const
+bool btcb::uint128_union::operator> (btcb::uint128_union const & other_a) const
 {
 	return std::memcmp (bytes.data (), other_a.bytes.data (), 16) > 0;
 }
 
-nano::uint128_t nano::uint128_union::number () const
+btcb::uint128_t btcb::uint128_union::number () const
 {
-	nano::uint128_t result;
+	btcb::uint128_t result;
 	boost::multiprecision::import_bits (result, bytes.begin (), bytes.end ());
 	return result;
 }
 
-void nano::uint128_union::encode_hex (std::string & text) const
+void btcb::uint128_union::encode_hex (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -485,14 +485,14 @@ void nano::uint128_union::encode_hex (std::string & text) const
 	text = stream.str ();
 }
 
-bool nano::uint128_union::decode_hex (std::string const & text)
+bool btcb::uint128_union::decode_hex (std::string const & text)
 {
 	auto error (text.size () > 32);
 	if (!error)
 	{
 		std::stringstream stream (text);
 		stream << std::hex << std::noshowbase;
-		nano::uint128_t number_l;
+		btcb::uint128_t number_l;
 		try
 		{
 			stream >> number_l;
@@ -510,7 +510,7 @@ bool nano::uint128_union::decode_hex (std::string const & text)
 	return error;
 }
 
-void nano::uint128_union::encode_dec (std::string & text) const
+void btcb::uint128_union::encode_dec (std::string & text) const
 {
 	assert (text.empty ());
 	std::stringstream stream;
@@ -519,7 +519,7 @@ void nano::uint128_union::encode_dec (std::string & text) const
 	text = stream.str ();
 }
 
-bool nano::uint128_union::decode_dec (std::string const & text, bool decimal)
+bool btcb::uint128_union::decode_dec (std::string const & text, bool decimal)
 {
 	auto error (text.size () > 39 || (text.size () > 1 && text.front () == '0' && !decimal) || (!text.empty () && text.front () == '-'));
 	if (!error)
@@ -530,7 +530,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, bool decimal)
 		try
 		{
 			stream >> number_l;
-			nano::uint128_t unchecked (number_l);
+			btcb::uint128_t unchecked (number_l);
 			*this = unchecked;
 			if (!stream.eof ())
 			{
@@ -545,7 +545,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, bool decimal)
 	return error;
 }
 
-bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t scale)
+bool btcb::uint128_union::decode_dec (std::string const & text, btcb::uint128_t scale)
 {
 	bool error (text.size () > 40 || (!text.empty () && text.front () == '-'));
 	if (!error)
@@ -553,7 +553,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 		auto delimiter_position (text.find (".")); // Dot delimiter hardcoded until decision for supporting other locales
 		if (delimiter_position == std::string::npos)
 		{
-			nano::uint128_union integer;
+			btcb::uint128_union integer;
 			error = integer.decode_dec (text);
 			if (!error)
 			{
@@ -561,10 +561,10 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 				try
 				{
 					auto result (boost::multiprecision::checked_uint128_t (integer.number ()) * boost::multiprecision::checked_uint128_t (scale));
-					error = (result > std::numeric_limits<nano::uint128_t>::max ());
+					error = (result > std::numeric_limits<btcb::uint128_t>::max ());
 					if (!error)
 					{
-						*this = nano::uint128_t (result);
+						*this = btcb::uint128_t (result);
 					}
 				}
 				catch (std::overflow_error &)
@@ -575,7 +575,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 		}
 		else
 		{
-			nano::uint128_union integer_part;
+			btcb::uint128_union integer_part;
 			std::string integer_text (text.substr (0, delimiter_position));
 			error = (integer_text.empty () || integer_part.decode_dec (integer_text));
 			if (!error)
@@ -583,7 +583,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 				// Overflow check
 				try
 				{
-					error = ((boost::multiprecision::checked_uint128_t (integer_part.number ()) * boost::multiprecision::checked_uint128_t (scale)) > std::numeric_limits<nano::uint128_t>::max ());
+					error = ((boost::multiprecision::checked_uint128_t (integer_part.number ()) * boost::multiprecision::checked_uint128_t (scale)) > std::numeric_limits<btcb::uint128_t>::max ());
 				}
 				catch (std::overflow_error &)
 				{
@@ -591,7 +591,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 				}
 				if (!error)
 				{
-					nano::uint128_union decimal_part;
+					btcb::uint128_union decimal_part;
 					std::string decimal_text (text.substr (delimiter_position + 1, text.length ()));
 					error = (decimal_text.empty () || decimal_part.decode_dec (decimal_text, true));
 					if (!error)
@@ -610,10 +610,10 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 							auto result = integer_part_scaled + decimal_part_mult_pow;
 
 							// Overflow check
-							error = (result > std::numeric_limits<nano::uint128_t>::max ());
+							error = (result > std::numeric_limits<btcb::uint128_t>::max ());
 							if (!error)
 							{
-								*this = nano::uint128_t (result);
+								*this = btcb::uint128_t (result);
 							}
 						}
 					}
@@ -624,7 +624,7 @@ bool nano::uint128_union::decode_dec (std::string const & text, nano::uint128_t 
 	return error;
 }
 
-void format_frac (std::ostringstream & stream, nano::uint128_t value, nano::uint128_t scale, int precision)
+void format_frac (std::ostringstream & stream, btcb::uint128_t value, btcb::uint128_t scale, int precision)
 {
 	auto reduce = scale;
 	auto rem = value;
@@ -638,9 +638,9 @@ void format_frac (std::ostringstream & stream, nano::uint128_t value, nano::uint
 	}
 }
 
-void format_dec (std::ostringstream & stream, nano::uint128_t value, char group_sep, const std::string & groupings)
+void format_dec (std::ostringstream & stream, btcb::uint128_t value, char group_sep, const std::string & groupings)
 {
-	auto largestPow10 = nano::uint256_t (1);
+	auto largestPow10 = btcb::uint256_t (1);
 	int dec_count = 1;
 	while (1)
 	{
@@ -681,8 +681,8 @@ void format_dec (std::ostringstream & stream, nano::uint128_t value, char group_
 		}
 	}
 
-	auto reduce = nano::uint128_t (largestPow10);
-	nano::uint128_t rem = value;
+	auto reduce = btcb::uint128_t (largestPow10);
+	btcb::uint128_t rem = value;
 	while (reduce > 0)
 	{
 		auto val = rem / reduce;
@@ -697,7 +697,7 @@ void format_dec (std::ostringstream & stream, nano::uint128_t value, char group_
 	}
 }
 
-std::string format_balance (nano::uint128_t balance, nano::uint128_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
+std::string format_balance (btcb::uint128_t balance, btcb::uint128_t scale, int precision, bool group_digits, char thousands_sep, char decimal_point, std::string & grouping)
 {
 	std::ostringstream stream;
 	auto int_part = balance / scale;
@@ -734,7 +734,7 @@ std::string format_balance (nano::uint128_t balance, nano::uint128_t scale, int 
 	return stream.str ();
 }
 
-std::string nano::uint128_union::format_balance (nano::uint128_t scale, int precision, bool group_digits)
+std::string btcb::uint128_union::format_balance (btcb::uint128_t scale, int precision, bool group_digits)
 {
 	auto thousands_sep = std::use_facet<std::numpunct<char>> (std::locale ()).thousands_sep ();
 	auto decimal_point = std::use_facet<std::numpunct<char>> (std::locale ()).decimal_point ();
@@ -742,7 +742,7 @@ std::string nano::uint128_union::format_balance (nano::uint128_t scale, int prec
 	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
-std::string nano::uint128_union::format_balance (nano::uint128_t scale, int precision, bool group_digits, const std::locale & locale)
+std::string btcb::uint128_union::format_balance (btcb::uint128_t scale, int precision, bool group_digits, const std::locale & locale)
 {
 	auto thousands_sep = std::use_facet<std::moneypunct<char>> (locale).thousands_sep ();
 	auto decimal_point = std::use_facet<std::moneypunct<char>> (locale).decimal_point ();
@@ -750,31 +750,31 @@ std::string nano::uint128_union::format_balance (nano::uint128_t scale, int prec
 	return ::format_balance (number (), scale, precision, group_digits, thousands_sep, decimal_point, grouping);
 }
 
-void nano::uint128_union::clear ()
+void btcb::uint128_union::clear ()
 {
 	qwords.fill (0);
 }
 
-bool nano::uint128_union::is_zero () const
+bool btcb::uint128_union::is_zero () const
 {
 	return qwords[0] == 0 && qwords[1] == 0;
 }
 
-std::string nano::uint128_union::to_string () const
+std::string btcb::uint128_union::to_string () const
 {
 	std::string result;
 	encode_hex (result);
 	return result;
 }
 
-std::string nano::uint128_union::to_string_dec () const
+std::string btcb::uint128_union::to_string_dec () const
 {
 	std::string result;
 	encode_dec (result);
 	return result;
 }
 
-std::string nano::to_string_hex (uint64_t const value_a)
+std::string btcb::to_string_hex (uint64_t const value_a)
 {
 	std::stringstream stream;
 	stream << std::hex << std::noshowbase << std::setw (16) << std::setfill ('0');
@@ -782,7 +782,7 @@ std::string nano::to_string_hex (uint64_t const value_a)
 	return stream.str ();
 }
 
-bool nano::from_string_hex (std::string const & value_a, uint64_t & target_a)
+bool btcb::from_string_hex (std::string const & value_a, uint64_t & target_a)
 {
 	auto error (value_a.empty ());
 	if (!error)
@@ -811,7 +811,7 @@ bool nano::from_string_hex (std::string const & value_a, uint64_t & target_a)
 	return error;
 }
 
-std::string nano::to_string (double const value_a, int const precision_a)
+std::string btcb::to_string (double const value_a, int const precision_a)
 {
 	std::stringstream stream;
 	stream << std::setprecision (precision_a) << std::fixed;
@@ -819,13 +819,13 @@ std::string nano::to_string (double const value_a, int const precision_a)
 	return stream.str ();
 }
 
-uint64_t nano::difficulty::from_multiplier (double const multiplier_a, uint64_t const base_difficulty_a)
+uint64_t btcb::difficulty::from_multiplier (double const multiplier_a, uint64_t const base_difficulty_a)
 {
 	assert (multiplier_a > 0.);
 	return (-static_cast<uint64_t> ((-base_difficulty_a) / multiplier_a));
 }
 
-double nano::difficulty::to_multiplier (uint64_t const difficulty_a, uint64_t const base_difficulty_a)
+double btcb::difficulty::to_multiplier (uint64_t const difficulty_a, uint64_t const base_difficulty_a)
 {
 	assert (difficulty_a > 0);
 	return static_cast<double> (-base_difficulty_a) / (-difficulty_a);

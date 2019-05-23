@@ -1,11 +1,11 @@
 #include <crypto/blake2/blake2.h>
-#include <nano/crypto_lib/random_pool.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
 
 extern "C" {
 #include <crypto/ed25519-donna/ed25519-hash-custom.h>
 void ed25519_randombytes_unsafe (void * out, size_t outlen)
 {
-	nano::random_pool::generate_block (reinterpret_cast<uint8_t *> (out), outlen);
+	btcb::random_pool::generate_block (reinterpret_cast<uint8_t *> (out), outlen);
 }
 void ed25519_hash_init (ed25519_hash_context * ctx)
 {

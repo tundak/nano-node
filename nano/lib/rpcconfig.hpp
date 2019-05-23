@@ -3,11 +3,11 @@
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/errors.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/errors.hpp>
 #include <string>
 
-namespace nano
+namespace btcb
 {
 class jsonconfig;
 
@@ -15,8 +15,8 @@ class jsonconfig;
 class rpc_secure_config final
 {
 public:
-	nano::error serialize_json (nano::jsonconfig &) const;
-	nano::error deserialize_json (nano::jsonconfig &);
+	btcb::error serialize_json (btcb::jsonconfig &) const;
+	btcb::error deserialize_json (btcb::jsonconfig &);
 
 	/** If true, enable TLS */
 	bool enable{ false };
@@ -37,7 +37,7 @@ public:
 class rpc_process_config final
 {
 public:
-	nano::network_constants network_constants;
+	btcb::network_constants network_constants;
 	unsigned io_threads{ std::max<unsigned> (4, boost::thread::hardware_concurrency ()) };
 	uint16_t ipc_port{ network_constants.default_ipc_port };
 	unsigned num_ipc_connections{ network_constants.is_live_network () ? 8u : network_constants.is_beta_network () ? 4u : 1u };
@@ -47,10 +47,10 @@ class rpc_config final
 {
 public:
 	explicit rpc_config (bool = false);
-	nano::error serialize_json (nano::jsonconfig &) const;
-	nano::error deserialize_json (bool & upgraded_a, nano::jsonconfig &);
+	btcb::error serialize_json (btcb::jsonconfig &) const;
+	btcb::error deserialize_json (bool & upgraded_a, btcb::jsonconfig &);
 
-	nano::rpc_process_config rpc_process;
+	btcb::rpc_process_config rpc_process;
 	boost::asio::ip::address_v6 address{ boost::asio::ip::address_v6::loopback () };
 	uint16_t port{ rpc_process.network_constants.default_rpc_port };
 	bool enable_control;
@@ -63,7 +63,7 @@ public:
 	}
 };
 
-nano::error read_and_update_rpc_config (boost::filesystem::path const & data_path, nano::rpc_config & config_a);
+btcb::error read_and_update_rpc_config (boost::filesystem::path const & data_path, btcb::rpc_config & config_a);
 
 std::string get_default_rpc_filepath ();
 }

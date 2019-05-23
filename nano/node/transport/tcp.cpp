@@ -1,13 +1,13 @@
-#include <nano/node/node.hpp>
-#include <nano/node/transport/tcp.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/transport/tcp.hpp>
 
-nano::transport::channel_tcp::channel_tcp (nano::node & node_a, std::shared_ptr<nano::socket> socket_a) :
+btcb::transport::channel_tcp::channel_tcp (btcb::node & node_a, std::shared_ptr<btcb::socket> socket_a) :
 channel (node_a),
 socket (socket_a)
 {
 }
 
-nano::transport::channel_tcp::~channel_tcp ()
+btcb::transport::channel_tcp::~channel_tcp ()
 {
 	std::lock_guard<std::mutex> lk (channel_mutex);
 	if (socket)
@@ -16,16 +16,16 @@ nano::transport::channel_tcp::~channel_tcp ()
 	}
 }
 
-size_t nano::transport::channel_tcp::hash_code () const
+size_t btcb::transport::channel_tcp::hash_code () const
 {
-	std::hash<::nano::tcp_endpoint> hash;
+	std::hash<::btcb::tcp_endpoint> hash;
 	return hash (socket->remote_endpoint ());
 }
 
-bool nano::transport::channel_tcp::operator== (nano::transport::channel const & other_a) const
+bool btcb::transport::channel_tcp::operator== (btcb::transport::channel const & other_a) const
 {
 	bool result (false);
-	auto other_l (dynamic_cast<nano::transport::channel_tcp const *> (&other_a));
+	auto other_l (dynamic_cast<btcb::transport::channel_tcp const *> (&other_a));
 	if (other_l != nullptr)
 	{
 		return *this == *other_l;
@@ -33,20 +33,20 @@ bool nano::transport::channel_tcp::operator== (nano::transport::channel const & 
 	return result;
 }
 
-void nano::transport::channel_tcp::send_buffer (std::shared_ptr<std::vector<uint8_t>> buffer_a, nano::stat::detail detail_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a)
+void btcb::transport::channel_tcp::send_buffer (std::shared_ptr<std::vector<uint8_t>> buffer_a, btcb::stat::detail detail_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a)
 {
 	socket->async_write (buffer_a, tcp_callback (buffer_a, detail_a, socket->remote_endpoint (), callback_a));
 }
 
-std::function<void(boost::system::error_code const &, size_t)> nano::transport::channel_tcp::callback (std::shared_ptr<std::vector<uint8_t>> buffer_a, nano::stat::detail detail_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a) const
+std::function<void(boost::system::error_code const &, size_t)> btcb::transport::channel_tcp::callback (std::shared_ptr<std::vector<uint8_t>> buffer_a, btcb::stat::detail detail_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a) const
 {
 	return callback_a;
 }
 
-std::function<void(boost::system::error_code const &, size_t)> nano::transport::channel_tcp::tcp_callback (std::shared_ptr<std::vector<uint8_t>> buffer_a, nano::stat::detail detail_a, nano::tcp_endpoint const & endpoint_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a) const
+std::function<void(boost::system::error_code const &, size_t)> btcb::transport::channel_tcp::tcp_callback (std::shared_ptr<std::vector<uint8_t>> buffer_a, btcb::stat::detail detail_a, btcb::tcp_endpoint const & endpoint_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a) const
 {
 	// clang-format off
-	return [ buffer_a, endpoint_a, node = std::weak_ptr<nano::node> (node.shared ()), callback_a ](boost::system::error_code const & ec, size_t size_a)
+	return [ buffer_a, endpoint_a, node = std::weak_ptr<btcb::node> (node.shared ()), callback_a ](boost::system::error_code const & ec, size_t size_a)
 	{
 		if (auto node_l = node.lock ())
 		{
@@ -56,7 +56,7 @@ std::function<void(boost::system::error_code const &, size_t)> nano::transport::
 			}
 			if (ec == boost::system::errc::host_unreachable)
 			{
-				node_l->stats.inc (nano::stat::type::error, nano::stat::detail::unreachable_host, nano::stat::dir::out);
+				node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::unreachable_host, btcb::stat::dir::out);
 			}
 			if (callback_a)
 			{
@@ -67,21 +67,21 @@ std::function<void(boost::system::error_code const &, size_t)> nano::transport::
 	// clang-format on
 }
 
-std::string nano::transport::channel_tcp::to_string () const
+std::string btcb::transport::channel_tcp::to_string () const
 {
 	return boost::str (boost::format ("%1%") % socket->remote_endpoint ());
 }
 
-nano::transport::tcp_channels::tcp_channels (nano::node & node_a) :
+btcb::transport::tcp_channels::tcp_channels (btcb::node & node_a) :
 node (node_a)
 {
 }
 
-bool nano::transport::tcp_channels::insert (std::shared_ptr<nano::transport::channel_tcp> channel_a)
+bool btcb::transport::tcp_channels::insert (std::shared_ptr<btcb::transport::channel_tcp> channel_a)
 {
 	auto endpoint (channel_a->get_tcp_endpoint ());
 	assert (endpoint.address ().is_v6 ());
-	auto udp_endpoint (nano::transport::map_tcp_to_endpoint (endpoint));
+	auto udp_endpoint (btcb::transport::map_tcp_to_endpoint (endpoint));
 	bool error (true);
 	if (!node.network.not_a_peer (udp_endpoint, node.config.allow_local_peers))
 	{
@@ -100,22 +100,22 @@ bool nano::transport::tcp_channels::insert (std::shared_ptr<nano::transport::cha
 	return error;
 }
 
-void nano::transport::tcp_channels::erase (nano::tcp_endpoint const & endpoint_a)
+void btcb::transport::tcp_channels::erase (btcb::tcp_endpoint const & endpoint_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	channels.get<endpoint_tag> ().erase (endpoint_a);
 }
 
-size_t nano::transport::tcp_channels::size () const
+size_t btcb::transport::tcp_channels::size () const
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return channels.size ();
 }
 
-std::shared_ptr<nano::transport::channel_tcp> nano::transport::tcp_channels::find_channel (nano::tcp_endpoint const & endpoint_a) const
+std::shared_ptr<btcb::transport::channel_tcp> btcb::transport::tcp_channels::find_channel (btcb::tcp_endpoint const & endpoint_a) const
 {
 	std::lock_guard<std::mutex> lock (mutex);
-	std::shared_ptr<nano::transport::channel_tcp> result;
+	std::shared_ptr<btcb::transport::channel_tcp> result;
 	auto existing (channels.get<endpoint_tag> ().find (endpoint_a));
 	if (existing != channels.get<endpoint_tag> ().end ())
 	{
@@ -124,9 +124,9 @@ std::shared_ptr<nano::transport::channel_tcp> nano::transport::tcp_channels::fin
 	return result;
 }
 
-std::unordered_set<std::shared_ptr<nano::transport::channel>> nano::transport::tcp_channels::random_set (size_t count_a) const
+std::unordered_set<std::shared_ptr<btcb::transport::channel>> btcb::transport::tcp_channels::random_set (size_t count_a) const
 {
-	std::unordered_set<std::shared_ptr<nano::transport::channel>> result;
+	std::unordered_set<std::shared_ptr<btcb::transport::channel>> result;
 	result.reserve (count_a);
 	std::lock_guard<std::mutex> lock (mutex);
 	// Stop trying to fill result with random samples after this many attempts
@@ -138,18 +138,18 @@ std::unordered_set<std::shared_ptr<nano::transport::channel>> nano::transport::t
 	{
 		for (auto i (0); i < random_cutoff && result.size () < count_a; ++i)
 		{
-			auto index (nano::random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (peers_size - 1)));
+			auto index (btcb::random_pool::generate_word32 (0, static_cast<CryptoPP::word32> (peers_size - 1)));
 			result.insert (channels.get<random_access_tag> ()[index].channel);
 		}
 	}
 	return result;
 }
 
-void nano::transport::tcp_channels::random_fill (std::array<nano::endpoint, 8> & target_a) const
+void btcb::transport::tcp_channels::random_fill (std::array<btcb::endpoint, 8> & target_a) const
 {
 	auto peers (random_set (target_a.size ()));
 	assert (peers.size () <= target_a.size ());
-	auto endpoint (nano::endpoint (boost::asio::ip::address_v6{}, 0));
+	auto endpoint (btcb::endpoint (boost::asio::ip::address_v6{}, 0));
 	assert (endpoint.address ().is_v6 ());
 	std::fill (target_a.begin (), target_a.end (), endpoint);
 	auto j (target_a.begin ());
@@ -161,16 +161,16 @@ void nano::transport::tcp_channels::random_fill (std::array<nano::endpoint, 8> &
 	}
 }
 
-bool nano::transport::tcp_channels::store_all (bool clear_peers)
+bool btcb::transport::tcp_channels::store_all (bool clear_peers)
 {
 	// We can't hold the mutex while starting a write transaction, so
 	// we collect endpoints to be saved and then relase the lock.
-	std::vector<nano::endpoint> endpoints;
+	std::vector<btcb::endpoint> endpoints;
 	{
 		std::lock_guard<std::mutex> lock (mutex);
 		endpoints.reserve (channels.size ());
 		std::transform (channels.begin (), channels.end (),
-		std::back_inserter (endpoints), [](const auto & channel) { return nano::transport::map_tcp_to_endpoint (channel.endpoint ()); });
+		std::back_inserter (endpoints), [](const auto & channel) { return btcb::transport::map_tcp_to_endpoint (channel.endpoint ()); });
 	}
 	bool result (false);
 	if (!endpoints.empty ())
@@ -183,7 +183,7 @@ bool nano::transport::tcp_channels::store_all (bool clear_peers)
 		}
 		for (auto endpoint : endpoints)
 		{
-			nano::endpoint_key endpoint_key (endpoint.address ().to_v6 ().to_bytes (), endpoint.port ());
+			btcb::endpoint_key endpoint_key (endpoint.address ().to_v6 ().to_bytes (), endpoint.port ());
 			node.store.peer_put (transaction, std::move (endpoint_key));
 		}
 		result = true;
@@ -191,9 +191,9 @@ bool nano::transport::tcp_channels::store_all (bool clear_peers)
 	return result;
 }
 
-std::shared_ptr<nano::transport::channel_tcp> nano::transport::tcp_channels::find_node_id (nano::account const & node_id_a)
+std::shared_ptr<btcb::transport::channel_tcp> btcb::transport::tcp_channels::find_node_id (btcb::account const & node_id_a)
 {
-	std::shared_ptr<nano::transport::channel_tcp> result;
+	std::shared_ptr<btcb::transport::channel_tcp> result;
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (channels.get<node_id_tag> ().find (node_id_a));
 	if (existing != channels.get<node_id_tag> ().end ())
@@ -203,9 +203,9 @@ std::shared_ptr<nano::transport::channel_tcp> nano::transport::tcp_channels::fin
 	return result;
 }
 
-nano::tcp_endpoint nano::transport::tcp_channels::bootstrap_peer ()
+btcb::tcp_endpoint btcb::transport::tcp_channels::bootstrap_peer ()
 {
-	nano::tcp_endpoint result (boost::asio::ip::address_v6::any (), 0);
+	btcb::tcp_endpoint result (boost::asio::ip::address_v6::any (), 0);
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto i (channels.get<last_bootstrap_attempt_tag> ().begin ()), n (channels.get<last_bootstrap_attempt_tag> ().end ()); i != n;)
 	{
@@ -225,11 +225,11 @@ nano::tcp_endpoint nano::transport::tcp_channels::bootstrap_peer ()
 	return result;
 }
 
-void nano::transport::tcp_channels::process_message (nano::message const & message_a, nano::tcp_endpoint const & endpoint_a, nano::account const & node_id_a)
+void btcb::transport::tcp_channels::process_message (btcb::message const & message_a, btcb::tcp_endpoint const & endpoint_a, btcb::account const & node_id_a)
 {
 	if (!stopped)
 	{
-		auto channel (node.network.find_channel (nano::transport::map_tcp_to_endpoint (endpoint_a)));
+		auto channel (node.network.find_channel (btcb::transport::map_tcp_to_endpoint (endpoint_a)));
 		if (channel)
 		{
 			node.process_message (message_a, channel);
@@ -243,51 +243,51 @@ void nano::transport::tcp_channels::process_message (nano::message const & messa
 			}
 			else
 			{
-				auto udp_channel (std::make_shared<nano::transport::channel_udp> (node.network.udp_channels, nano::transport::map_tcp_to_endpoint (endpoint_a)));
+				auto udp_channel (std::make_shared<btcb::transport::channel_udp> (node.network.udp_channels, btcb::transport::map_tcp_to_endpoint (endpoint_a)));
 				node.process_message (message_a, udp_channel);
 			}
 		}
 	}
 }
 
-void nano::transport::tcp_channels::process_keepalive (nano::keepalive const & message_a, nano::tcp_endpoint const & endpoint_a, bool keepalive_first)
+void btcb::transport::tcp_channels::process_keepalive (btcb::keepalive const & message_a, btcb::tcp_endpoint const & endpoint_a, bool keepalive_first)
 {
 	if (!max_ip_connections (endpoint_a))
 	{
 		// Check for special node port data
-		std::vector<nano::tcp_endpoint> insert_response_channels;
+		std::vector<btcb::tcp_endpoint> insert_response_channels;
 		auto peer0 (message_a.peers[0]);
 		auto peer1 (message_a.peers[1]);
 		if (peer0.address () == boost::asio::ip::address_v6{} && peer0.port () != 0)
 		{
-			nano::endpoint new_endpoint (endpoint_a.address (), peer0.port ());
+			btcb::endpoint new_endpoint (endpoint_a.address (), peer0.port ());
 			node.network.merge_peer (new_endpoint);
 			if (keepalive_first)
 			{
-				insert_response_channels.push_back (nano::transport::map_endpoint_to_tcp (new_endpoint));
+				insert_response_channels.push_back (btcb::transport::map_endpoint_to_tcp (new_endpoint));
 			}
 		}
 		if (peer1.address () != boost::asio::ip::address_v6{} && peer1.port () != 0 && keepalive_first)
 		{
-			insert_response_channels.push_back (nano::transport::map_endpoint_to_tcp (peer1));
+			insert_response_channels.push_back (btcb::transport::map_endpoint_to_tcp (peer1));
 		}
 		// Insert preferred response channels from first TCP keepalive
 		if (!insert_response_channels.empty ())
 		{
 			node.network.add_response_channels (endpoint_a, insert_response_channels);
 		}
-		auto udp_channel (std::make_shared<nano::transport::channel_udp> (node.network.udp_channels, nano::transport::map_tcp_to_endpoint (endpoint_a)));
+		auto udp_channel (std::make_shared<btcb::transport::channel_udp> (node.network.udp_channels, btcb::transport::map_tcp_to_endpoint (endpoint_a)));
 		node.process_message (message_a, udp_channel);
 	}
 }
 
-void nano::transport::tcp_channels::start ()
+void btcb::transport::tcp_channels::start ()
 {
 	ongoing_keepalive ();
 	ongoing_syn_cookie_cleanup ();
 }
 
-void nano::transport::tcp_channels::stop ()
+void btcb::transport::tcp_channels::stop ()
 {
 	stopped = true;
 	// Close all TCP sockets
@@ -300,16 +300,16 @@ void nano::transport::tcp_channels::stop ()
 	}
 }
 
-bool nano::transport::tcp_channels::max_ip_connections (nano::tcp_endpoint const & endpoint_a)
+bool btcb::transport::tcp_channels::max_ip_connections (btcb::tcp_endpoint const & endpoint_a)
 {
 	std::unique_lock<std::mutex> lock (mutex);
-	bool result (channels.get<ip_address_tag> ().count (endpoint_a.address ()) >= nano::transport::max_peers_per_ip);
+	bool result (channels.get<ip_address_tag> ().count (endpoint_a.address ()) >= btcb::transport::max_peers_per_ip);
 	return result;
 }
 
-bool nano::transport::tcp_channels::reachout (nano::endpoint const & endpoint_a)
+bool btcb::transport::tcp_channels::reachout (btcb::endpoint const & endpoint_a)
 {
-	auto tcp_endpoint (nano::transport::map_endpoint_to_tcp (endpoint_a));
+	auto tcp_endpoint (btcb::transport::map_endpoint_to_tcp (endpoint_a));
 	// Don't overload single IP
 	bool error = max_ip_connections (tcp_endpoint);
 	if (!error)
@@ -324,7 +324,7 @@ bool nano::transport::tcp_channels::reachout (nano::endpoint const & endpoint_a)
 	return error;
 }
 
-std::unique_ptr<nano::seq_con_info_component> nano::transport::tcp_channels::collect_seq_con_info (std::string const & name)
+std::unique_ptr<btcb::seq_con_info_component> btcb::transport::tcp_channels::collect_seq_con_info (std::string const & name)
 {
 	size_t channels_count = 0;
 	size_t attemps_count = 0;
@@ -350,7 +350,7 @@ std::unique_ptr<nano::seq_con_info_component> nano::transport::tcp_channels::col
 	return composite;
 }
 
-void nano::transport::tcp_channels::purge (std::chrono::steady_clock::time_point const & cutoff_a)
+void btcb::transport::tcp_channels::purge (std::chrono::steady_clock::time_point const & cutoff_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto disconnect_cutoff (channels.get<last_packet_sent_tag> ().lower_bound (cutoff_a));
@@ -360,18 +360,18 @@ void nano::transport::tcp_channels::purge (std::chrono::steady_clock::time_point
 	attempts.get<1> ().erase (attempts.get<1> ().begin (), attempts_cutoff);
 }
 
-boost::optional<nano::uint256_union> nano::transport::tcp_channels::assign_syn_cookie (nano::tcp_endpoint const & endpoint_a)
+boost::optional<btcb::uint256_union> btcb::transport::tcp_channels::assign_syn_cookie (btcb::tcp_endpoint const & endpoint_a)
 {
 	auto ip_addr (endpoint_a.address ());
 	assert (ip_addr.is_v6 ());
 	std::lock_guard<std::mutex> lock (syn_cookie_mutex);
 	unsigned & ip_cookies = syn_cookies_per_ip[ip_addr];
-	boost::optional<nano::uint256_union> result;
-	if (ip_cookies < nano::transport::max_peers_per_ip)
+	boost::optional<btcb::uint256_union> result;
+	if (ip_cookies < btcb::transport::max_peers_per_ip)
 	{
 		if (syn_cookies.find (endpoint_a) == syn_cookies.end ())
 		{
-			nano::uint256_union query;
+			btcb::uint256_union query;
 			random_pool::generate_block (query.bytes.data (), query.bytes.size ());
 			syn_cookie_info info{ query, std::chrono::steady_clock::now () };
 			syn_cookies[endpoint_a] = info;
@@ -382,14 +382,14 @@ boost::optional<nano::uint256_union> nano::transport::tcp_channels::assign_syn_c
 	return result;
 }
 
-bool nano::transport::tcp_channels::validate_syn_cookie (nano::tcp_endpoint const & endpoint_a, nano::account const & node_id, nano::signature const & sig)
+bool btcb::transport::tcp_channels::validate_syn_cookie (btcb::tcp_endpoint const & endpoint_a, btcb::account const & node_id, btcb::signature const & sig)
 {
 	auto ip_addr (endpoint_a.address ());
 	assert (ip_addr.is_v6 ());
 	std::lock_guard<std::mutex> lock (syn_cookie_mutex);
 	auto result (true);
 	auto cookie_it (syn_cookies.find (endpoint_a));
-	if (cookie_it != syn_cookies.end () && !nano::validate_message (node_id, cookie_it->second.cookie, sig))
+	if (cookie_it != syn_cookies.end () && !btcb::validate_message (node_id, cookie_it->second.cookie, sig))
 	{
 		result = false;
 		syn_cookies.erase (cookie_it);
@@ -406,7 +406,7 @@ bool nano::transport::tcp_channels::validate_syn_cookie (nano::tcp_endpoint cons
 	return result;
 }
 
-void nano::transport::tcp_channels::purge_syn_cookies (std::chrono::steady_clock::time_point const & cutoff_a)
+void btcb::transport::tcp_channels::purge_syn_cookies (std::chrono::steady_clock::time_point const & cutoff_a)
 {
 	std::lock_guard<std::mutex> lock (syn_cookie_mutex);
 	auto it (syn_cookies.begin ());
@@ -433,11 +433,11 @@ void nano::transport::tcp_channels::purge_syn_cookies (std::chrono::steady_clock
 	}
 }
 
-void nano::transport::tcp_channels::ongoing_syn_cookie_cleanup ()
+void btcb::transport::tcp_channels::ongoing_syn_cookie_cleanup ()
 {
-	purge_syn_cookies (std::chrono::steady_clock::now () - nano::transport::syn_cookie_cutoff);
-	std::weak_ptr<nano::node> node_w (node.shared ());
-	node.alarm.add (std::chrono::steady_clock::now () + (nano::transport::syn_cookie_cutoff * 2), [node_w]() {
+	purge_syn_cookies (std::chrono::steady_clock::now () - btcb::transport::syn_cookie_cutoff);
+	std::weak_ptr<btcb::node> node_w (node.shared ());
+	node.alarm.add (std::chrono::steady_clock::now () + (btcb::transport::syn_cookie_cutoff * 2), [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
 			node_l->network.tcp_channels.ongoing_syn_cookie_cleanup ();
@@ -445,13 +445,13 @@ void nano::transport::tcp_channels::ongoing_syn_cookie_cleanup ()
 	});
 }
 
-void nano::transport::tcp_channels::ongoing_keepalive ()
+void btcb::transport::tcp_channels::ongoing_keepalive ()
 {
-	nano::keepalive message;
+	btcb::keepalive message;
 	node.network.random_fill (message.peers);
 	std::unique_lock<std::mutex> lock (mutex);
 	// Wake up channels
-	std::vector<std::shared_ptr<nano::transport::channel_tcp>> send_list;
+	std::vector<std::shared_ptr<btcb::transport::channel_tcp>> send_list;
 	auto keepalive_sent_cutoff (channels.get<last_packet_sent_tag> ().lower_bound (std::chrono::steady_clock::now () - node.network_params.node.period));
 	for (auto i (channels.get<last_packet_sent_tag> ().begin ()); i != keepalive_sent_cutoff; ++i)
 	{
@@ -460,10 +460,10 @@ void nano::transport::tcp_channels::ongoing_keepalive ()
 	lock.unlock ();
 	for (auto & channel : send_list)
 	{
-		std::weak_ptr<nano::node> node_w (node.shared ());
+		std::weak_ptr<btcb::node> node_w (node.shared ());
 		channel->send (message);
 	}
-	std::weak_ptr<nano::node> node_w (node.shared ());
+	std::weak_ptr<btcb::node> node_w (node.shared ());
 	node.alarm.add (std::chrono::steady_clock::now () + node.network_params.node.period, [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -472,7 +472,7 @@ void nano::transport::tcp_channels::ongoing_keepalive ()
 	});
 }
 
-void nano::transport::tcp_channels::list (std::deque<std::shared_ptr<nano::transport::channel>> & deque_a)
+void btcb::transport::tcp_channels::list (std::deque<std::shared_ptr<btcb::transport::channel>> & deque_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto i (channels.begin ()), j (channels.end ()); i != j; ++i)
@@ -481,7 +481,7 @@ void nano::transport::tcp_channels::list (std::deque<std::shared_ptr<nano::trans
 	}
 }
 
-void nano::transport::tcp_channels::modify (std::shared_ptr<nano::transport::channel_tcp> channel_a, std::function<void(std::shared_ptr<nano::transport::channel_tcp>)> modify_callback_a)
+void btcb::transport::tcp_channels::modify (std::shared_ptr<btcb::transport::channel_tcp> channel_a, std::function<void(std::shared_ptr<btcb::transport::channel_tcp>)> modify_callback_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (channels.get<endpoint_tag> ().find (channel_a->get_tcp_endpoint ()));
@@ -493,7 +493,7 @@ void nano::transport::tcp_channels::modify (std::shared_ptr<nano::transport::cha
 	}
 }
 
-void nano::transport::tcp_channels::update (nano::tcp_endpoint const & endpoint_a)
+void btcb::transport::tcp_channels::update (btcb::tcp_endpoint const & endpoint_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (channels.get<endpoint_tag> ().find (endpoint_a));
@@ -505,20 +505,20 @@ void nano::transport::tcp_channels::update (nano::tcp_endpoint const & endpoint_
 	}
 }
 
-void nano::transport::tcp_channels::start_tcp (nano::endpoint const & endpoint_a, std::function<void(std::shared_ptr<nano::transport::channel>)> const & callback_a)
+void btcb::transport::tcp_channels::start_tcp (btcb::endpoint const & endpoint_a, std::function<void(std::shared_ptr<btcb::transport::channel>)> const & callback_a)
 {
-	auto socket (std::make_shared<nano::socket> (node.shared_from_this (), boost::none, nano::socket::concurrency::multi_writer));
-	auto channel (std::make_shared<nano::transport::channel_tcp> (node, socket));
-	std::weak_ptr<nano::node> node_w (node.shared ());
-	channel->socket->async_connect (nano::transport::map_endpoint_to_tcp (endpoint_a),
+	auto socket (std::make_shared<btcb::socket> (node.shared_from_this (), boost::none, btcb::socket::concurrency::multi_writer));
+	auto channel (std::make_shared<btcb::transport::channel_tcp> (node, socket));
+	std::weak_ptr<btcb::node> node_w (node.shared ());
+	channel->socket->async_connect (btcb::transport::map_endpoint_to_tcp (endpoint_a),
 	[node_w, channel, endpoint_a, callback_a](boost::system::error_code const & ec) {
 		if (auto node_l = node_w.lock ())
 		{
 			if (!ec && channel)
 			{
 				// TCP node ID handshake
-				auto cookie (node_l->network.tcp_channels.assign_syn_cookie (nano::transport::map_endpoint_to_tcp (endpoint_a)));
-				nano::node_id_handshake message (cookie, boost::none);
+				auto cookie (node_l->network.tcp_channels.assign_syn_cookie (btcb::transport::map_endpoint_to_tcp (endpoint_a)));
+				btcb::node_id_handshake message (cookie, boost::none);
 				auto bytes = message.to_bytes ();
 				if (node_l->config.logging.network_node_id_handshake_logging ())
 				{
@@ -526,7 +526,7 @@ void nano::transport::tcp_channels::start_tcp (nano::endpoint const & endpoint_a
 				}
 				std::shared_ptr<std::vector<uint8_t>> receive_buffer (std::make_shared<std::vector<uint8_t>> ());
 				receive_buffer->resize (256);
-				channel->send_buffer (bytes, nano::stat::detail::node_id_handshake, [node_w, channel, endpoint_a, receive_buffer, callback_a](boost::system::error_code const & ec, size_t size_a) {
+				channel->send_buffer (bytes, btcb::stat::detail::node_id_handshake, [node_w, channel, endpoint_a, receive_buffer, callback_a](boost::system::error_code const & ec, size_t size_a) {
 					if (auto node_l = node_w.lock ())
 					{
 						if (!ec && channel)
@@ -552,37 +552,37 @@ void nano::transport::tcp_channels::start_tcp (nano::endpoint const & endpoint_a
 	});
 }
 
-void nano::transport::tcp_channels::start_tcp_receive_node_id (std::shared_ptr<nano::transport::channel_tcp> channel_a, nano::endpoint const & endpoint_a, std::shared_ptr<std::vector<uint8_t>> receive_buffer_a, std::function<void(std::shared_ptr<nano::transport::channel>)> const & callback_a)
+void btcb::transport::tcp_channels::start_tcp_receive_node_id (std::shared_ptr<btcb::transport::channel_tcp> channel_a, btcb::endpoint const & endpoint_a, std::shared_ptr<std::vector<uint8_t>> receive_buffer_a, std::function<void(std::shared_ptr<btcb::transport::channel>)> const & callback_a)
 {
-	std::weak_ptr<nano::node> node_w (node.shared ());
-	channel_a->socket->async_read (receive_buffer_a, 8 + sizeof (nano::account) + sizeof (nano::account) + sizeof (nano::signature), [node_w, channel_a, endpoint_a, receive_buffer_a, callback_a](boost::system::error_code const & ec, size_t size_a) {
+	std::weak_ptr<btcb::node> node_w (node.shared ());
+	channel_a->socket->async_read (receive_buffer_a, 8 + sizeof (btcb::account) + sizeof (btcb::account) + sizeof (btcb::signature), [node_w, channel_a, endpoint_a, receive_buffer_a, callback_a](boost::system::error_code const & ec, size_t size_a) {
 		if (auto node_l = node_w.lock ())
 		{
 			if (!ec && channel_a)
 			{
-				node_l->stats.inc (nano::stat::type::message, nano::stat::detail::node_id_handshake, nano::stat::dir::in);
+				node_l->stats.inc (btcb::stat::type::message, btcb::stat::detail::node_id_handshake, btcb::stat::dir::in);
 				auto error (false);
-				nano::bufferstream stream (receive_buffer_a->data (), size_a);
-				nano::message_header header (error, stream);
-				if (!error && header.type == nano::message_type::node_id_handshake && header.version_using >= nano::protocol_version_min)
+				btcb::bufferstream stream (receive_buffer_a->data (), size_a);
+				btcb::message_header header (error, stream);
+				if (!error && header.type == btcb::message_type::node_id_handshake && header.version_using >= btcb::protocol_version_min)
 				{
-					nano::node_id_handshake message (error, stream, header);
+					btcb::node_id_handshake message (error, stream, header);
 					if (!error && message.response && message.query)
 					{
 						channel_a->set_network_version (header.version_using);
 						auto node_id (message.response->first);
-						if (!node_l->network.tcp_channels.validate_syn_cookie (nano::transport::map_endpoint_to_tcp (endpoint_a), node_id, message.response->second) && node_id != node_l->node_id.pub && !node_l->network.tcp_channels.find_node_id (node_id))
+						if (!node_l->network.tcp_channels.validate_syn_cookie (btcb::transport::map_endpoint_to_tcp (endpoint_a), node_id, message.response->second) && node_id != node_l->node_id.pub && !node_l->network.tcp_channels.find_node_id (node_id))
 						{
 							channel_a->set_node_id (node_id);
 							channel_a->set_last_packet_received (std::chrono::steady_clock::now ());
-							boost::optional<std::pair<nano::account, nano::signature>> response (std::make_pair (node_l->node_id.pub, nano::sign_message (node_l->node_id.prv, node_l->node_id.pub, *message.query)));
-							nano::node_id_handshake response_message (boost::none, response);
+							boost::optional<std::pair<btcb::account, btcb::signature>> response (std::make_pair (node_l->node_id.pub, btcb::sign_message (node_l->node_id.prv, node_l->node_id.pub, *message.query)));
+							btcb::node_id_handshake response_message (boost::none, response);
 							auto bytes = response_message.to_bytes ();
 							if (node_l->config.logging.network_node_id_handshake_logging ())
 							{
 								node_l->logger.try_log (boost::str (boost::format ("Node ID handshake response sent with node ID %1% to %2%: query %3%") % node_l->node_id.pub.to_account () % endpoint_a % (*message.query).to_string ()));
 							}
-							channel_a->send_buffer (bytes, nano::stat::detail::node_id_handshake, [node_w, channel_a, endpoint_a, callback_a](boost::system::error_code const & ec, size_t size_a) {
+							channel_a->send_buffer (bytes, btcb::stat::detail::node_id_handshake, [node_w, channel_a, endpoint_a, callback_a](boost::system::error_code const & ec, size_t size_a) {
 								if (auto node_l = node_w.lock ())
 								{
 									if (!ec && channel_a)
@@ -630,7 +630,7 @@ void nano::transport::tcp_channels::start_tcp_receive_node_id (std::shared_ptr<n
 	});
 }
 
-void nano::transport::tcp_channels::udp_fallback (nano::endpoint const & endpoint_a, std::function<void(std::shared_ptr<nano::transport::channel>)> const & callback_a)
+void btcb::transport::tcp_channels::udp_fallback (btcb::endpoint const & endpoint_a, std::function<void(std::shared_ptr<btcb::transport::channel>)> const & callback_a)
 {
 	if (callback_a)
 	{

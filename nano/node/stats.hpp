@@ -7,13 +7,13 @@
 #include <map>
 #include <memory>
 #include <mutex>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/utility.hpp>
 #include <string>
 #include <unordered_map>
 
-namespace nano
+namespace btcb
 {
 class node;
 
@@ -26,7 +26,7 @@ class stat_config final
 {
 public:
 	/** Reads the JSON statistics node */
-	nano::error deserialize_json (nano::jsonconfig & json);
+	btcb::error deserialize_json (btcb::jsonconfig & json);
 
 	/** If true, sampling of counters is enabled */
 	bool sampling_enabled{ false };
@@ -139,10 +139,10 @@ public:
 	stat_datapoint counter;
 
 	/** Zero or more observers for samples. Called at the end of the sample interval. */
-	nano::observer_set<boost::circular_buffer<stat_datapoint> &> sample_observers;
+	btcb::observer_set<boost::circular_buffer<stat_datapoint> &> sample_observers;
 
 	/** Observers for count. Called on each update. */
-	nano::observer_set<uint64_t, uint64_t> count_observers;
+	btcb::observer_set<uint64_t, uint64_t> count_observers;
 };
 
 /** Log sink interface */
@@ -327,7 +327,7 @@ public:
 	 * Initialize stats with a config.
 	 * @param config Configuration object; deserialized from config.json
 	 */
-	stat (nano::stat_config config);
+	stat (btcb::stat_config config);
 
 	/**
 	 * Call this to override the default sample interval and capacity, for a specific stat entry.
@@ -466,13 +466,13 @@ private:
 	}
 
 	/** Get entry for key, creating a new entry if necessary, using interval and sample count from config */
-	std::shared_ptr<nano::stat_entry> get_entry (uint32_t key);
+	std::shared_ptr<btcb::stat_entry> get_entry (uint32_t key);
 
 	/** Get entry for key, creating a new entry if necessary */
-	std::shared_ptr<nano::stat_entry> get_entry (uint32_t key, size_t sample_interval, size_t max_samples);
+	std::shared_ptr<btcb::stat_entry> get_entry (uint32_t key, size_t sample_interval, size_t max_samples);
 
 	/** Unlocked implementation of get_entry() */
-	std::shared_ptr<nano::stat_entry> get_entry_impl (uint32_t key, size_t sample_interval, size_t max_samples);
+	std::shared_ptr<btcb::stat_entry> get_entry_impl (uint32_t key, size_t sample_interval, size_t max_samples);
 
 	/**
 	 * Update count and sample and call any observers on the key
@@ -491,10 +491,10 @@ private:
 	std::chrono::steady_clock::time_point timestamp{ std::chrono::steady_clock::now () };
 
 	/** Configuration deserialized from config.json */
-	nano::stat_config config;
+	btcb::stat_config config;
 
 	/** Stat entries are sorted by key to simplify processing of log output */
-	std::map<uint32_t, std::shared_ptr<nano::stat_entry>> entries;
+	std::map<uint32_t, std::shared_ptr<btcb::stat_entry>> entries;
 	std::chrono::steady_clock::time_point log_last_count_writeout{ std::chrono::steady_clock::now () };
 	std::chrono::steady_clock::time_point log_last_sample_writeout{ std::chrono::steady_clock::now () };
 

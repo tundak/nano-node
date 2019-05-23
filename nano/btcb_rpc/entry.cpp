@@ -3,15 +3,15 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/program_options.hpp>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/nano_wallet/icon.hpp>
-#include <nano/node/cli.hpp>
-#include <nano/node/ipc.hpp>
-#include <nano/node/working.hpp>
-#include <nano/rpc/rpc.hpp>
-#include <nano/rpc/rpc_request_processor.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/btcb_wallet/icon.hpp>
+#include <btcb/node/cli.hpp>
+#include <btcb/node/ipc.hpp>
+#include <btcb/node/working.hpp>
+#include <btcb/rpc/rpc.hpp>
+#include <btcb/rpc/rpc_request_processor.hpp>
 
 namespace
 {
@@ -34,21 +34,21 @@ void run (boost::filesystem::path const & data_path)
 {
 	boost::filesystem::create_directories (data_path);
 	boost::system::error_code error_chmod;
-	nano::set_secure_perm_directory (data_path, error_chmod);
-	std::unique_ptr<nano::thread_runner> runner;
+	btcb::set_secure_perm_directory (data_path, error_chmod);
+	std::unique_ptr<btcb::thread_runner> runner;
 
-	nano::rpc_config rpc_config;
-	auto error = nano::read_and_update_rpc_config (data_path, rpc_config);
+	btcb::rpc_config rpc_config;
+	auto error = btcb::read_and_update_rpc_config (data_path, rpc_config);
 	if (!error)
 	{
 		logging_init (data_path);
 		boost::asio::io_context io_ctx;
 		try
 		{
-			nano::ipc_rpc_processor ipc_rpc_processor (io_ctx, rpc_config);
-			auto rpc = nano::get_rpc (io_ctx, rpc_config, ipc_rpc_processor);
+			btcb::ipc_rpc_processor ipc_rpc_processor (io_ctx, rpc_config);
+			auto rpc = btcb::get_rpc (io_ctx, rpc_config, ipc_rpc_processor);
 			rpc->start ();
-			runner = std::make_unique<nano::thread_runner> (io_ctx, rpc_config.rpc_process.io_threads);
+			runner = std::make_unique<btcb::thread_runner> (io_ctx, rpc_config.rpc_process.io_threads);
 			runner->join ();
 		}
 		catch (const std::runtime_error & e)
@@ -65,7 +65,7 @@ void run (boost::filesystem::path const & data_path)
 
 int main (int argc, char * const * argv)
 {
-	nano::set_umask ();
+	btcb::set_umask ();
 
 	boost::program_options::options_description description ("Command line options");
 
@@ -94,7 +94,7 @@ int main (int argc, char * const * argv)
 	auto network (vm.find ("network"));
 	if (network != vm.end ())
 	{
-		auto err (nano::network_constants::set_active_network (network->second.as<std::string> ()));
+		auto err (btcb::network_constants::set_active_network (network->second.as<std::string> ()));
 		if (err)
 		{
 			std::cerr << err.get_message () << std::endl;
@@ -106,7 +106,7 @@ int main (int argc, char * const * argv)
 	if (data_path_it == vm.end ())
 	{
 		std::string error_string;
-		if (!nano::migrate_working_path (error_string))
+		if (!btcb::migrate_working_path (error_string))
 		{
 			std::cerr << error_string << std::endl;
 
@@ -114,20 +114,20 @@ int main (int argc, char * const * argv)
 		}
 	}
 
-	boost::filesystem::path data_path ((data_path_it != vm.end ()) ? data_path_it->second.as<std::string> () : nano::working_path ());
+	boost::filesystem::path data_path ((data_path_it != vm.end ()) ? data_path_it->second.as<std::string> () : btcb::working_path ());
 	if (vm.count ("daemon") > 0)
 	{
 		run (data_path);
 	}
 	else if (vm.count ("version"))
 	{
-		if (NANO_VERSION_PATCH == 0)
+		if (BTCB_VERSION_PATCH == 0)
 		{
-			std::cout << "Version " << NANO_MAJOR_MINOR_VERSION << std::endl;
+			std::cout << "Version " << BTCB_MAJOR_MINOR_VERSION << std::endl;
 		}
 		else
 		{
-			std::cout << "Version " << NANO_MAJOR_MINOR_RC_VERSION << std::endl;
+			std::cout << "Version " << BTCB_MAJOR_MINOR_RC_VERSION << std::endl;
 		}
 	}
 	else

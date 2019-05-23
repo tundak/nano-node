@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace nano
+namespace btcb
 {
 enum class timer_state
 {
@@ -22,10 +22,10 @@ class timer
 public:
 	timer () = default;
 
-	timer (nano::timer_state state_a, std::string description_a = "timer") :
+	timer (btcb::timer_state state_a, std::string description_a = "timer") :
 	desc (description_a)
 	{
-		if (state_a == nano::timer_state::started)
+		if (state_a == btcb::timer_state::started)
 		{
 			start ();
 		}
@@ -71,15 +71,15 @@ public:
 	/** Start the timer. This will assert if the timer is already started. */
 	void start ()
 	{
-		assert (state == nano::timer_state::stopped);
-		state = nano::timer_state::started;
+		assert (state == btcb::timer_state::stopped);
+		state = btcb::timer_state::started;
 		begin = CLOCK::now ();
 	}
 
 	/** Restarts the timer */
 	void restart ()
 	{
-		state = nano::timer_state::started;
+		state = btcb::timer_state::started;
 		begin = CLOCK::now ();
 		ticks = UNIT::zero ();
 		measurements = 0;
@@ -102,8 +102,8 @@ public:
 	 */
 	UNIT stop ()
 	{
-		assert (state == nano::timer_state::started);
-		state = nano::timer_state::stopped;
+		assert (state == btcb::timer_state::started);
+		state = btcb::timer_state::stopped;
 
 		auto end = CLOCK::now ();
 		ticks += std::chrono::duration_cast<UNIT> (end - begin);
@@ -190,7 +190,7 @@ public:
 		return typed_unit<UNIT> ();
 	}
 
-	nano::timer_state current_state () const
+	btcb::timer_state current_state () const
 	{
 		return state;
 	}
@@ -198,7 +198,7 @@ public:
 private:
 	timer * parent{ nullptr };
 	std::vector<timer> children;
-	nano::timer_state state{ nano::timer_state::stopped };
+	btcb::timer_state state{ btcb::timer_state::stopped };
 	std::string desc;
 	std::chrono::time_point<CLOCK> begin;
 	UNIT ticks{ 0 };
@@ -246,17 +246,17 @@ private:
  * The autotimer starts on construction, and stops and prints on destruction.
  */
 template <typename UNIT = std::chrono::milliseconds>
-class autotimer : public nano::timer<UNIT>
+class autotimer : public btcb::timer<UNIT>
 {
 public:
 	autotimer (std::string description_a, std::ostream & stream_a = std::cout) :
-	nano::timer<UNIT> (description_a), stream (stream_a)
+	btcb::timer<UNIT> (description_a), stream (stream_a)
 	{
-		nano::timer<UNIT>::start ();
+		btcb::timer<UNIT>::start ();
 	}
 	~autotimer ()
 	{
-		nano::timer<UNIT>::stop (stream);
+		btcb::timer<UNIT>::stop (stream);
 	}
 
 private:

@@ -1,8 +1,8 @@
-#include <nano/node/working.hpp>
+#include <btcb/node/working.hpp>
 
 #include <shlobj.h>
 
-namespace nano
+namespace btcb
 {
 boost::filesystem::path app_path ()
 {

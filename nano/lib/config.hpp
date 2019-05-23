@@ -3,8 +3,8 @@
 #include <array>
 #include <boost/filesystem.hpp>
 #include <chrono>
-#include <nano/lib/errors.hpp>
-#include <nano/lib/numbers.hpp>
+#include <btcb/lib/errors.hpp>
+#include <btcb/lib/numbers.hpp>
 #include <string>
 
 #define xstr(a) ver_str (a)
@@ -13,25 +13,25 @@
 /**
 * Returns build version information
 */
-static const char * NANO_MAJOR_MINOR_VERSION = xstr (NANO_VERSION_MAJOR) "." xstr (NANO_VERSION_MINOR);
-static const char * NANO_MAJOR_MINOR_RC_VERSION = xstr (NANO_VERSION_MAJOR) "." xstr (NANO_VERSION_MINOR) "RC" xstr (NANO_VERSION_PATCH);
+static const char * BTCB_MAJOR_MINOR_VERSION = xstr (BTCB_VERSION_MAJOR) "." xstr (BTCB_VERSION_MINOR);
+static const char * BTCB_MAJOR_MINOR_RC_VERSION = xstr (BTCB_VERSION_MAJOR) "." xstr (BTCB_VERSION_MINOR) "RC" xstr (BTCB_VERSION_PATCH);
 
-namespace nano
+namespace btcb
 {
 /**
  * Network variants with different genesis blocks and network parameters
  * @warning Enum values are used in integral comparisons; do not change.
  */
-enum class nano_networks
+enum class btcb_networks
 {
 	// Low work parameters, publicly known genesis key, test IP ports
-	nano_test_network = 0,
+	btcb_test_network = 0,
 	rai_test_network = 0,
 	// Normal work parameters, secret beta genesis key, beta IP ports
-	nano_beta_network = 1,
+	btcb_beta_network = 1,
 	rai_beta_network = 1,
 	// Normal work parameters, secret live key, live IP ports
-	nano_live_network = 2,
+	btcb_live_network = 2,
 	rai_live_network = 2,
 };
 
@@ -43,7 +43,7 @@ public:
 	{
 	}
 
-	network_constants (nano_networks network_a) :
+	network_constants (btcb_networks network_a) :
 	current_network (network_a)
 	{
 		// Local work threshold for rate-limiting publishing blocks. ~5 seconds of work.
@@ -65,7 +65,7 @@ public:
 	}
 
 	/** The network this param object represents. This may differ from the global active network; this is needed for certain --debug... commands */
-	nano_networks current_network;
+	btcb_networks current_network;
 	uint64_t publish_threshold;
 	uint16_t default_node_port;
 	uint16_t default_rpc_port;
@@ -74,7 +74,7 @@ public:
 	unsigned request_interval_ms;
 
 	/** Returns the network this object contains values for */
-	nano_networks network () const
+	btcb_networks network () const
 	{
 		return current_network;
 	}
@@ -84,7 +84,7 @@ public:
 	 * If not called, the compile-time option will be used.
 	 * @param network_a The new active network
 	 */
-	static void set_active_network (nano_networks network_a)
+	static void set_active_network (btcb_networks network_a)
 	{
 		active_network = network_a;
 	}
@@ -94,20 +94,20 @@ public:
 	 * If not called, the compile-time option will be used.
 	 * @param network_a The new active network. Valid values are "live", "beta" and "test"
 	 */
-	static nano::error set_active_network (std::string network_a)
+	static btcb::error set_active_network (std::string network_a)
 	{
-		nano::error err;
+		btcb::error err;
 		if (network_a == "live")
 		{
-			active_network = nano::nano_networks::nano_live_network;
+			active_network = btcb::btcb_networks::btcb_live_network;
 		}
 		else if (network_a == "beta")
 		{
-			active_network = nano::nano_networks::nano_beta_network;
+			active_network = btcb::btcb_networks::btcb_beta_network;
 		}
 		else if (network_a == "test")
 		{
-			active_network = nano::nano_networks::nano_test_network;
+			active_network = btcb::btcb_networks::btcb_test_network;
 		}
 		else
 		{
@@ -123,19 +123,19 @@ public:
 
 	bool is_live_network () const
 	{
-		return current_network == nano_networks::nano_live_network;
+		return current_network == btcb_networks::btcb_live_network;
 	}
 	bool is_beta_network () const
 	{
-		return current_network == nano_networks::nano_beta_network;
+		return current_network == btcb_networks::btcb_beta_network;
 	}
 	bool is_test_network () const
 	{
-		return current_network == nano_networks::nano_test_network;
+		return current_network == btcb_networks::btcb_test_network;
 	}
 
 	/** Initial value is ACTIVE_NETWORK compile flag, but can be overridden by a CLI flag */
-	static nano::nano_networks active_network;
+	static btcb::btcb_networks active_network;
 };
 
 inline boost::filesystem::path get_config_path (boost::filesystem::path const & data_path)
@@ -149,5 +149,5 @@ inline boost::filesystem::path get_rpc_config_path (boost::filesystem::path cons
 }
 
 /** Called by gtest_main to enforce test network */
-void force_nano_test_network ();
+void force_btcb_test_network ();
 }

@@ -16,17 +16,17 @@ endif ()
 file (READ ${CMAKE_SOURCE_DIR}/rep_weights_live.bin filedata HEX)
 string (REGEX REPLACE "(..)" "0x\\1," filedata ${filedata})
 file (WRITE ${CMAKE_BINARY_DIR}/bootstrap_weights_live.cpp "#include <cstddef>\n"
-	"namespace nano {\n"
-	"	unsigned char nano_bootstrap_weights_live[] = {${filedata} 0x00};\n"
-	"	size_t nano_bootstrap_weights_live_size = sizeof(nano_bootstrap_weights_live) - 1;\n"
+	"namespace btcb {\n"
+	"	unsigned char btcb_bootstrap_weights_live[] = {${filedata} 0x00};\n"
+	"	size_t btcb_bootstrap_weights_live_size = sizeof(btcb_bootstrap_weights_live) - 1;\n"
 	"}\n")
 
 file (READ ${CMAKE_SOURCE_DIR}/rep_weights_beta.bin filedata HEX)
 string (REGEX REPLACE "(..)" "0x\\1," filedata ${filedata})
 file (WRITE ${CMAKE_BINARY_DIR}/bootstrap_weights_beta.cpp "#include <cstddef>\n"
-"namespace nano {\n"
-"	unsigned char nano_bootstrap_weights_beta[] = {${filedata} 0x00};\n"
-"	size_t nano_bootstrap_weights_beta_size = sizeof(nano_bootstrap_weights_beta) - 1;\n"
+"namespace btcb {\n"
+"	unsigned char btcb_bootstrap_weights_beta[] = {${filedata} 0x00};\n"
+"	size_t btcb_bootstrap_weights_beta_size = sizeof(btcb_bootstrap_weights_beta) - 1;\n"
 "}\n")
 
 add_library (secure
@@ -45,7 +45,7 @@ add_library (secure
 	versioning.cpp)
 
 target_link_libraries(secure
-	nano_lib
+	btcb_lib
 	ed25519
 	crypto_lib
 	lmdb

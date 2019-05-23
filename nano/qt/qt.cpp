@@ -3,8 +3,8 @@
 #include <boost/property_tree/ptree.hpp>
 #include <cmath>
 #include <iomanip>
-#include <nano/lib/config.hpp>
-#include <nano/qt/qt.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/qt/qt.hpp>
 #include <sstream>
 
 namespace
@@ -43,25 +43,25 @@ void show_button_success (QPushButton & button)
 }
 }
 
-bool nano_qt::eventloop_processor::event (QEvent * event_a)
+bool btcb_qt::eventloop_processor::event (QEvent * event_a)
 {
-	assert (dynamic_cast<nano_qt::eventloop_event *> (event_a) != nullptr);
-	static_cast<nano_qt::eventloop_event *> (event_a)->action ();
+	assert (dynamic_cast<btcb_qt::eventloop_event *> (event_a) != nullptr);
+	static_cast<btcb_qt::eventloop_event *> (event_a)->action ();
 	return true;
 }
 
-nano_qt::eventloop_event::eventloop_event (std::function<void()> const & action_a) :
+btcb_qt::eventloop_event::eventloop_event (std::function<void()> const & action_a) :
 QEvent (QEvent::Type::User),
 action (action_a)
 {
 }
 
-nano_qt::self_pane::self_pane (nano_qt::wallet & wallet_a, nano::account const & account_a) :
+btcb_qt::self_pane::self_pane (btcb_qt::wallet & wallet_a, btcb::account const & account_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 self_layout (new QHBoxLayout),
 self_window (new QWidget),
-your_account_label (new QLabel ("Your Nano account:")),
+your_account_label (new QLabel ("Your Btcb account:")),
 account_window (new QWidget),
 account_layout (new QHBoxLayout),
 account_text (new QLineEdit),
@@ -81,13 +81,13 @@ wallet (wallet_a)
 	{
 		network = "Test";
 	}
-	if (NANO_VERSION_PATCH == 0)
+	if (BTCB_VERSION_PATCH == 0)
 	{
-		version = new QLabel (boost::str (boost::format ("Version %1% %2% network") % NANO_MAJOR_MINOR_VERSION % network).c_str ());
+		version = new QLabel (boost::str (boost::format ("Version %1% %2% network") % BTCB_MAJOR_MINOR_VERSION % network).c_str ());
 	}
 	else
 	{
-		version = new QLabel (boost::str (boost::format ("Version %1% %2% network") % NANO_MAJOR_MINOR_RC_VERSION % network).c_str ());
+		version = new QLabel (boost::str (boost::format ("Version %1% %2% network") % BTCB_MAJOR_MINOR_RC_VERSION % network).c_str ());
 	}
 	self_layout->addWidget (your_account_label);
 	self_layout->addStretch ();
@@ -122,7 +122,7 @@ wallet (wallet_a)
 	});
 }
 
-void nano_qt::self_pane::set_balance_text (std::pair<nano::uint128_t, nano::uint128_t> balance_a)
+void btcb_qt::self_pane::set_balance_text (std::pair<btcb::uint128_t, btcb::uint128_t> balance_a)
 {
 	auto final_text (std::string ("Balance: ") + wallet.format_balance (balance_a.first));
 	if (!balance_a.second.is_zero ())
@@ -132,7 +132,7 @@ void nano_qt::self_pane::set_balance_text (std::pair<nano::uint128_t, nano::uint
 	wallet.self.balance_label->setText (QString (final_text.c_str ()));
 }
 
-nano_qt::accounts::accounts (nano_qt::wallet & wallet_a) :
+btcb_qt::accounts::accounts (btcb_qt::wallet & wallet_a) :
 wallet_balance_label (new QLabel),
 window (new QWidget),
 layout (new QVBoxLayout),
@@ -181,7 +181,7 @@ wallet (wallet_a)
 	QObject::connect (account_key_button, &QPushButton::released, [this]() {
 		QString key_text_wide (account_key_line->text ());
 		std::string key_text (key_text_wide.toLocal8Bit ());
-		nano::raw_key key;
+		btcb::raw_key key;
 		if (!key.data.decode_hex (key_text))
 		{
 			show_line_ok (*account_key_line);
@@ -230,7 +230,7 @@ wallet (wallet_a)
 		this->wallet.push_main_stack (this->wallet.import.window);
 	});
 	QObject::connect (backup_seed, &QPushButton::released, [this]() {
-		nano::raw_key seed;
+		btcb::raw_key seed;
 		auto transaction (this->wallet.wallet_m->wallets.tx_begin_read ());
 		if (this->wallet.wallet_m->store.valid_password (transaction))
 		{
@@ -266,15 +266,15 @@ wallet (wallet_a)
 	refresh_wallet_balance ();
 }
 
-void nano_qt::accounts::refresh_wallet_balance ()
+void btcb_qt::accounts::refresh_wallet_balance ()
 {
 	auto transaction (this->wallet.wallet_m->wallets.tx_begin_read ());
 	auto block_transaction (this->wallet.node.store.tx_begin_read ());
-	nano::uint128_t balance (0);
-	nano::uint128_t pending (0);
+	btcb::uint128_t balance (0);
+	btcb::uint128_t pending (0);
 	for (auto i (this->wallet.wallet_m->store.begin (transaction)), j (this->wallet.wallet_m->store.end ()); i != j; ++i)
 	{
-		nano::public_key key (i->first);
+		btcb::public_key key (i->first);
 		balance = balance + (this->wallet.node.ledger.account_balance (block_transaction, key));
 		pending = pending + (this->wallet.node.ledger.account_pending (block_transaction, key));
 	}
@@ -291,7 +291,7 @@ void nano_qt::accounts::refresh_wallet_balance ()
 	});
 }
 
-void nano_qt::accounts::refresh ()
+void btcb_qt::accounts::refresh ()
 {
 	model->removeRows (0, model->rowCount ());
 	auto transaction (wallet.wallet_m->wallets.tx_begin_read ());
@@ -299,12 +299,12 @@ void nano_qt::accounts::refresh ()
 	QBrush brush;
 	for (auto i (wallet.wallet_m->store.begin (transaction)), j (wallet.wallet_m->store.end ()); i != j; ++i)
 	{
-		nano::public_key key (i->first);
+		btcb::public_key key (i->first);
 		auto balance_amount (wallet.node.ledger.account_balance (block_transaction, key));
 		bool display (true);
 		switch (wallet.wallet_m->store.key_type (i->second))
 		{
-			case nano::key_type::adhoc:
+			case btcb::key_type::adhoc:
 			{
 				brush.setColor ("red");
 				display = !balance_amount.is_zero ();
@@ -329,7 +329,7 @@ void nano_qt::accounts::refresh ()
 	}
 }
 
-nano_qt::import::import (nano_qt::wallet & wallet_a) :
+btcb_qt::import::import (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 seed_label (new QLabel ("Seed:")),
@@ -393,7 +393,7 @@ wallet (wallet_a)
 		if (clear_line->text ().toStdString () == "clear keys")
 		{
 			show_line_ok (*clear_line);
-			nano::raw_key seed_l;
+			btcb::raw_key seed_l;
 			if (!seed_l.data.decode_hex (seed->text ().toStdString ()))
 			{
 				bool successful (false);
@@ -484,7 +484,7 @@ wallet (wallet_a)
 	});
 }
 
-nano_qt::history::history (nano::ledger & ledger_a, nano::account const & account_a, nano_qt::wallet & wallet_a) :
+btcb_qt::history::history (btcb::ledger & ledger_a, btcb::account const & account_a, btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 model (new QStandardItemModel),
@@ -519,29 +519,29 @@ wallet (wallet_a)
 
 namespace
 {
-class short_text_visitor : public nano::block_visitor
+class short_text_visitor : public btcb::block_visitor
 {
 public:
-	short_text_visitor (nano::transaction const & transaction_a, nano::ledger & ledger_a) :
+	short_text_visitor (btcb::transaction const & transaction_a, btcb::ledger & ledger_a) :
 	transaction (transaction_a),
 	ledger (ledger_a)
 	{
 	}
-	void send_block (nano::send_block const & block_a)
+	void send_block (btcb::send_block const & block_a)
 	{
 		type = "Send";
 		account = block_a.hashables.destination;
 		amount = ledger.amount (transaction, block_a.hash ());
 	}
-	void receive_block (nano::receive_block const & block_a)
+	void receive_block (btcb::receive_block const & block_a)
 	{
 		type = "Receive";
 		account = ledger.account (transaction, block_a.source ());
 		amount = ledger.amount (transaction, block_a.source ());
 	}
-	void open_block (nano::open_block const & block_a)
+	void open_block (btcb::open_block const & block_a)
 	{
-		static nano::network_params params;
+		static btcb::network_params params;
 		type = "Receive";
 		if (block_a.hashables.source != params.ledger.genesis_account)
 		{
@@ -554,13 +554,13 @@ public:
 			amount = params.ledger.genesis_amount;
 		}
 	}
-	void change_block (nano::change_block const & block_a)
+	void change_block (btcb::change_block const & block_a)
 	{
 		type = "Change";
 		amount = 0;
 		account = block_a.hashables.representative;
 	}
-	void state_block (nano::state_block const & block_a)
+	void state_block (btcb::state_block const & block_a)
 	{
 		auto balance (block_a.hashables.balance.number ());
 		auto previous_balance (ledger.balance (transaction, block_a.hashables.previous));
@@ -590,15 +590,15 @@ public:
 			amount = balance - previous_balance;
 		}
 	}
-	nano::transaction const & transaction;
-	nano::ledger & ledger;
+	btcb::transaction const & transaction;
+	btcb::ledger & ledger;
 	std::string type;
-	nano::uint128_t amount;
-	nano::account account;
+	btcb::uint128_t amount;
+	btcb::account account;
 };
 }
 
-void nano_qt::history::refresh ()
+void btcb_qt::history::refresh ()
 {
 	auto transaction (ledger.store.tx_begin_read ());
 	model->removeRows (0, model->rowCount ());
@@ -621,7 +621,7 @@ void nano_qt::history::refresh ()
 	}
 }
 
-nano_qt::block_viewer::block_viewer (nano_qt::wallet & wallet_a) :
+btcb_qt::block_viewer::block_viewer (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 hash_label (new QLabel ("Hash:")),
@@ -650,7 +650,7 @@ wallet (wallet_a)
 		this->wallet.pop_main_stack ();
 	});
 	QObject::connect (retrieve, &QPushButton::released, [this]() {
-		nano::block_hash hash_l;
+		btcb::block_hash hash_l;
 		if (!hash_l.decode_hex (hash->text ().toStdString ()))
 		{
 			auto transaction (this->wallet.node.store.tx_begin_read ());
@@ -674,7 +674,7 @@ wallet (wallet_a)
 		}
 	});
 	QObject::connect (rebroadcast, &QPushButton::released, [this]() {
-		nano::block_hash block;
+		btcb::block_hash block;
 		auto error (block.decode_hex (hash->text ().toStdString ()));
 		if (!error)
 		{
@@ -696,7 +696,7 @@ wallet (wallet_a)
 	rebroadcast->setToolTip ("Rebroadcast block into the network");
 }
 
-void nano_qt::block_viewer::rebroadcast_action (nano::uint256_union const & hash_a)
+void btcb_qt::block_viewer::rebroadcast_action (btcb::uint256_union const & hash_a)
 {
 	auto done (true);
 	auto transaction (wallet.node.ledger.store.tx_begin_read ());
@@ -721,7 +721,7 @@ void nano_qt::block_viewer::rebroadcast_action (nano::uint256_union const & hash
 	}
 }
 
-nano_qt::account_viewer::account_viewer (nano_qt::wallet & wallet_a) :
+btcb_qt::account_viewer::account_viewer (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 account_label (new QLabel ("Account:")),
@@ -756,7 +756,7 @@ wallet (wallet_a)
 			show_line_ok (*account_line);
 			this->history.refresh ();
 			auto balance (this->wallet.node.balance_pending (account));
-			auto final_text (std::string ("Balance (NANO): ") + wallet.format_balance (balance.first));
+			auto final_text (std::string ("Balance (BTCB): ") + wallet.format_balance (balance.first));
 			if (!balance.second.is_zero ())
 			{
 				final_text += "\nPending: " + wallet.format_balance (balance.second);
@@ -776,7 +776,7 @@ wallet (wallet_a)
 	});
 }
 
-nano_qt::stats_viewer::stats_viewer (nano_qt::wallet & wallet_a) :
+btcb_qt::stats_viewer::stats_viewer (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 refresh (new QPushButton ("Refresh")),
@@ -810,7 +810,7 @@ wallet (wallet_a)
 	refresh_stats ();
 }
 
-void nano_qt::stats_viewer::refresh_stats ()
+void btcb_qt::stats_viewer::refresh_stats ()
 {
 	model->removeRows (0, model->rowCount ());
 
@@ -860,36 +860,36 @@ void nano_qt::stats_viewer::refresh_stats ()
 	}
 }
 
-nano_qt::status::status (nano_qt::wallet & wallet_a) :
+btcb_qt::status::status (btcb_qt::wallet & wallet_a) :
 wallet (wallet_a)
 {
 	wallet.status->setToolTip ("Wallet status, block count (blocks downloaded)");
-	active.insert (nano_qt::status_types::nominal);
+	active.insert (btcb_qt::status_types::nominal);
 	set_text ();
 }
 
-void nano_qt::status::erase (nano_qt::status_types status_a)
+void btcb_qt::status::erase (btcb_qt::status_types status_a)
 {
-	assert (status_a != nano_qt::status_types::nominal);
+	assert (status_a != btcb_qt::status_types::nominal);
 	auto erased (active.erase (status_a));
 	(void)erased;
 	set_text ();
 }
 
-void nano_qt::status::insert (nano_qt::status_types status_a)
+void btcb_qt::status::insert (btcb_qt::status_types status_a)
 {
-	assert (status_a != nano_qt::status_types::nominal);
+	assert (status_a != btcb_qt::status_types::nominal);
 	active.insert (status_a);
 	set_text ();
 }
 
-void nano_qt::status::set_text ()
+void btcb_qt::status::set_text ()
 {
 	wallet.status->setText (text ().c_str ());
 	wallet.status->setStyleSheet ((std::string ("QLabel {") + color () + "}").c_str ());
 }
 
-std::string nano_qt::status::text ()
+std::string btcb_qt::status::text ()
 {
 	assert (!active.empty ());
 	std::string result;
@@ -904,25 +904,25 @@ std::string nano_qt::status::text ()
 
 	switch (*active.begin ())
 	{
-		case nano_qt::status_types::disconnected:
+		case btcb_qt::status_types::disconnected:
 			result = "Status: Disconnected";
 			break;
-		case nano_qt::status_types::working:
+		case btcb_qt::status_types::working:
 			result = "Status: Generating proof of work";
 			break;
-		case nano_qt::status_types::synchronizing:
+		case btcb_qt::status_types::synchronizing:
 			result = "Status: Synchronizing";
 			break;
-		case nano_qt::status_types::locked:
+		case btcb_qt::status_types::locked:
 			result = "Status: Wallet locked";
 			break;
-		case nano_qt::status_types::vulnerable:
+		case btcb_qt::status_types::vulnerable:
 			result = "Status: Wallet password empty";
 			break;
-		case nano_qt::status_types::active:
+		case btcb_qt::status_types::active:
 			result = "Status: Wallet active";
 			break;
-		case nano_qt::status_types::nominal:
+		case btcb_qt::status_types::nominal:
 			result = "Status: Running";
 			break;
 		default:
@@ -940,31 +940,31 @@ std::string nano_qt::status::text ()
 	return result;
 }
 
-std::string nano_qt::status::color ()
+std::string btcb_qt::status::color ()
 {
 	assert (!active.empty ());
 	std::string result;
 	switch (*active.begin ())
 	{
-		case nano_qt::status_types::disconnected:
+		case btcb_qt::status_types::disconnected:
 			result = "color: red";
 			break;
-		case nano_qt::status_types::working:
+		case btcb_qt::status_types::working:
 			result = "color: blue";
 			break;
-		case nano_qt::status_types::synchronizing:
+		case btcb_qt::status_types::synchronizing:
 			result = "color: blue";
 			break;
-		case nano_qt::status_types::locked:
+		case btcb_qt::status_types::locked:
 			result = "color: orange";
 			break;
-		case nano_qt::status_types::vulnerable:
+		case btcb_qt::status_types::vulnerable:
 			result = "color: blue";
 			break;
-		case nano_qt::status_types::active:
+		case btcb_qt::status_types::active:
 			result = "color: black";
 			break;
-		case nano_qt::status_types::nominal:
+		case btcb_qt::status_types::nominal:
 			result = "color: black";
 			break;
 		default:
@@ -974,8 +974,8 @@ std::string nano_qt::status::color ()
 	return result;
 }
 
-nano_qt::wallet::wallet (QApplication & application_a, nano_qt::eventloop_processor & processor_a, nano::node & node_a, std::shared_ptr<nano::wallet> wallet_a, nano::account & account_a) :
-rendering_ratio (nano::Mxrb_ratio),
+btcb_qt::wallet::wallet (QApplication & application_a, btcb_qt::eventloop_processor & processor_a, btcb::node & node_a, std::shared_ptr<btcb::wallet> wallet_a, btcb::account & account_a) :
+rendering_ratio (btcb::Mxrb_ratio),
 node (node_a),
 wallet_m (wallet_a),
 account (account_a),
@@ -1070,9 +1070,9 @@ needs_deterministic_restore (false)
 	refresh ();
 }
 
-void nano_qt::wallet::ongoing_refresh ()
+void btcb_qt::wallet::ongoing_refresh ()
 {
-	std::weak_ptr<nano_qt::wallet> wallet_w (shared_from_this ());
+	std::weak_ptr<btcb_qt::wallet> wallet_w (shared_from_this ());
 
 	// Update balance if needed. This happens on an alarm thread, which posts back to the UI
 	// to do the actual rendering. This avoid UI lockups as balance_pending may take several
@@ -1105,10 +1105,10 @@ void nano_qt::wallet::ongoing_refresh ()
 	});
 }
 
-void nano_qt::wallet::start ()
+void btcb_qt::wallet::start ()
 {
 	ongoing_refresh ();
-	std::weak_ptr<nano_qt::wallet> this_w (shared_from_this ());
+	std::weak_ptr<btcb_qt::wallet> this_w (shared_from_this ());
 	QObject::connect (settings_button, &QPushButton::released, [this_w]() {
 		if (auto this_l = this_w.lock ())
 		{
@@ -1132,13 +1132,13 @@ void nano_qt::wallet::start ()
 		{
 			show_line_ok (*this_l->send_count);
 			show_line_ok (*this_l->send_account);
-			nano::amount amount;
+			btcb::amount amount;
 			if (!amount.decode_dec (this_l->send_count->text ().toStdString (), this_l->rendering_ratio))
 			{
-				nano::uint128_t actual (amount.number ());
+				btcb::uint128_t actual (amount.number ());
 				QString account_text (this_l->send_account->text ());
 				std::string account_text_narrow (account_text.toLocal8Bit ());
-				nano::account account_l;
+				btcb::account account_l;
 				auto parse_error (account_l.decode_account (account_text_narrow));
 				if (!parse_error)
 				{
@@ -1152,7 +1152,7 @@ void nano_qt::wallet::start ()
 							this_l->node.background ([this_w, account_l, actual]() {
 								if (auto this_l = this_w.lock ())
 								{
-									this_l->wallet_m->send_async (this_l->account, account_l, actual, [this_w](std::shared_ptr<nano::block> block_a) {
+									this_l->wallet_m->send_async (this_l->account, account_l, actual, [this_w](std::shared_ptr<btcb::block> block_a) {
 										if (auto this_l = this_w.lock ())
 										{
 											auto succeeded (block_a != nullptr);
@@ -1265,7 +1265,7 @@ void nano_qt::wallet::start ()
 			this_l->push_main_stack (this_l->send_blocks_window);
 		}
 	});
-	node.observers.blocks.add ([this_w](std::shared_ptr<nano::block> block_a, nano::account const & account_a, nano::uint128_t const & amount_a, bool) {
+	node.observers.blocks.add ([this_w](std::shared_ptr<btcb::block> block_a, btcb::account const & account_a, btcb::uint128_t const & amount_a, bool) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->application.postEvent (&this_l->processor, new eventloop_event ([this_w, block_a, account_a]() {
@@ -1283,7 +1283,7 @@ void nano_qt::wallet::start ()
 			}));
 		}
 	});
-	node.observers.account_balance.add ([this_w](nano::account const & account_a, bool is_pending) {
+	node.observers.account_balance.add ([this_w](btcb::account const & account_a, bool is_pending) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->needs_balance_refresh = this_l->needs_balance_refresh || account_a == this_l->account;
@@ -1297,17 +1297,17 @@ void nano_qt::wallet::start ()
 				{
 					if (active_a)
 					{
-						this_l->active_status.insert (nano_qt::status_types::active);
+						this_l->active_status.insert (btcb_qt::status_types::active);
 					}
 					else
 					{
-						this_l->active_status.erase (nano_qt::status_types::active);
+						this_l->active_status.erase (btcb_qt::status_types::active);
 					}
 				}
 			}));
 		}
 	});
-	node.observers.endpoint.add ([this_w](std::shared_ptr<nano::transport::channel>) {
+	node.observers.endpoint.add ([this_w](std::shared_ptr<btcb::transport::channel>) {
 		if (auto this_l = this_w.lock ())
 		{
 			this_l->application.postEvent (&this_l->processor, new eventloop_event ([this_w]() {
@@ -1337,11 +1337,11 @@ void nano_qt::wallet::start ()
 				{
 					if (active_a)
 					{
-						this_l->active_status.insert (nano_qt::status_types::synchronizing);
+						this_l->active_status.insert (btcb_qt::status_types::synchronizing);
 					}
 					else
 					{
-						this_l->active_status.erase (nano_qt::status_types::synchronizing);
+						this_l->active_status.erase (btcb_qt::status_types::synchronizing);
 						// Check for accounts to restore
 						if (this_l->needs_deterministic_restore)
 						{
@@ -1362,11 +1362,11 @@ void nano_qt::wallet::start ()
 				{
 					if (working)
 					{
-						this_l->active_status.insert (nano_qt::status_types::working);
+						this_l->active_status.insert (btcb_qt::status_types::working);
 					}
 					else
 					{
-						this_l->active_status.erase (nano_qt::status_types::working);
+						this_l->active_status.erase (btcb_qt::status_types::working);
 					}
 				}
 			}));
@@ -1386,7 +1386,7 @@ void nano_qt::wallet::start ()
 	settings_button->setToolTip ("Unlock wallet, set password, change representative");
 }
 
-void nano_qt::wallet::refresh ()
+void btcb_qt::wallet::refresh ()
 {
 	{
 		auto transaction (wallet_m->wallets.tx_begin_read ());
@@ -1400,19 +1400,19 @@ void nano_qt::wallet::refresh ()
 	settings.refresh_representative ();
 }
 
-void nano_qt::wallet::update_connected ()
+void btcb_qt::wallet::update_connected ()
 {
 	if (node.network.empty ())
 	{
-		active_status.insert (nano_qt::status_types::disconnected);
+		active_status.insert (btcb_qt::status_types::disconnected);
 	}
 	else
 	{
-		active_status.erase (nano_qt::status_types::disconnected);
+		active_status.erase (btcb_qt::status_types::disconnected);
 	}
 }
 
-void nano_qt::wallet::empty_password ()
+void btcb_qt::wallet::empty_password ()
 {
 	this->node.alarm.add (std::chrono::steady_clock::now () + std::chrono::seconds (3), [this]() {
 		auto transaction (wallet_m->wallets.tx_begin_write ());
@@ -1420,7 +1420,7 @@ void nano_qt::wallet::empty_password ()
 	});
 }
 
-void nano_qt::wallet::change_rendering_ratio (nano::uint128_t const & rendering_ratio_a)
+void btcb_qt::wallet::change_rendering_ratio (btcb::uint128_t const & rendering_ratio_a)
 {
 	application.postEvent (&processor, new eventloop_event ([this, rendering_ratio_a]() {
 		this->rendering_ratio = rendering_ratio_a;
@@ -1430,37 +1430,37 @@ void nano_qt::wallet::change_rendering_ratio (nano::uint128_t const & rendering_
 	}));
 }
 
-std::string nano_qt::wallet::format_balance (nano::uint128_t const & balance) const
+std::string btcb_qt::wallet::format_balance (btcb::uint128_t const & balance) const
 {
-	auto balance_str = nano::amount (balance).format_balance (rendering_ratio, 3, false);
-	auto unit = std::string ("NANO");
-	if (rendering_ratio == nano::kxrb_ratio)
+	auto balance_str = btcb::amount (balance).format_balance (rendering_ratio, 3, false);
+	auto unit = std::string ("BTCB");
+	if (rendering_ratio == btcb::kxrb_ratio)
 	{
-		unit = std::string ("knano");
+		unit = std::string ("kbtcb");
 	}
-	else if (rendering_ratio == nano::xrb_ratio)
+	else if (rendering_ratio == btcb::xrb_ratio)
 	{
-		unit = std::string ("nano");
+		unit = std::string ("btcb");
 	}
-	else if (rendering_ratio == nano::raw_ratio)
+	else if (rendering_ratio == btcb::raw_ratio)
 	{
 		unit = std::string ("raw");
 	}
 	return balance_str + " " + unit;
 }
 
-void nano_qt::wallet::push_main_stack (QWidget * widget_a)
+void btcb_qt::wallet::push_main_stack (QWidget * widget_a)
 {
 	main_stack->addWidget (widget_a);
 	main_stack->setCurrentIndex (main_stack->count () - 1);
 }
 
-void nano_qt::wallet::pop_main_stack ()
+void btcb_qt::wallet::pop_main_stack ()
 {
 	main_stack->removeWidget (main_stack->currentWidget ());
 }
 
-nano_qt::settings::settings (nano_qt::wallet & wallet_a) :
+btcb_qt::settings::settings (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 password (new QLineEdit),
@@ -1553,7 +1553,7 @@ wallet (wallet_a)
 		}
 	});
 	QObject::connect (change_rep, &QPushButton::released, [this]() {
-		nano::account representative_l;
+		btcb::account representative_l;
 		if (!representative_l.decode_account (new_representative->text ().toStdString ()))
 		{
 			auto transaction (this->wallet.wallet_m->wallets.tx_begin_read ());
@@ -1612,7 +1612,7 @@ wallet (wallet_a)
 		if (this->wallet.wallet_m->store.valid_password (transaction))
 		{
 			// lock wallet
-			nano::raw_key empty;
+			btcb::raw_key empty;
 			empty.data.clear ();
 			this->wallet.wallet_m->store.password.value_set (empty);
 			update_locked (true, true);
@@ -1668,10 +1668,10 @@ wallet (wallet_a)
 	refresh_representative ();
 }
 
-void nano_qt::settings::refresh_representative ()
+void btcb_qt::settings::refresh_representative ()
 {
 	auto transaction (this->wallet.wallet_m->wallets.node.store.tx_begin_read ());
-	nano::account_info info;
+	btcb::account_info info;
 	auto error (wallet.node.store.account_get (transaction, this->wallet.account, info));
 	if (!error)
 	{
@@ -1686,32 +1686,32 @@ void nano_qt::settings::refresh_representative ()
 	}
 }
 
-void nano_qt::settings::activate ()
+void btcb_qt::settings::activate ()
 {
 	this->wallet.push_main_stack (window);
 }
 
-void nano_qt::settings::update_locked (bool invalid, bool vulnerable)
+void btcb_qt::settings::update_locked (bool invalid, bool vulnerable)
 {
 	if (invalid)
 	{
-		this->wallet.active_status.insert (nano_qt::status_types::locked);
+		this->wallet.active_status.insert (btcb_qt::status_types::locked);
 	}
 	else
 	{
-		this->wallet.active_status.erase (nano_qt::status_types::locked);
+		this->wallet.active_status.erase (btcb_qt::status_types::locked);
 	}
 	if (vulnerable)
 	{
-		this->wallet.active_status.insert (nano_qt::status_types::vulnerable);
+		this->wallet.active_status.insert (btcb_qt::status_types::vulnerable);
 	}
 	else
 	{
-		this->wallet.active_status.erase (nano_qt::status_types::vulnerable);
+		this->wallet.active_status.erase (btcb_qt::status_types::vulnerable);
 	}
 }
 
-nano_qt::advanced_actions::advanced_actions (nano_qt::wallet & wallet_a) :
+btcb_qt::advanced_actions::advanced_actions (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 show_ledger (new QPushButton ("Ledger")),
@@ -1728,9 +1728,9 @@ scale_window (new QWidget),
 scale_layout (new QHBoxLayout),
 scale_label (new QLabel ("Scale:")),
 ratio_group (new QButtonGroup),
-mnano_unit (new QRadioButton ("Mnano")),
-knano_unit (new QRadioButton ("knano")),
-nano_unit (new QRadioButton ("nano")),
+mbtcb_unit (new QRadioButton ("Mbtcb")),
+kbtcb_unit (new QRadioButton ("kbtcb")),
+btcb_unit (new QRadioButton ("btcb")),
 raw_unit (new QRadioButton ("raw")),
 back (new QPushButton ("Back")),
 ledger_window (new QWidget),
@@ -1752,18 +1752,18 @@ peers_refresh (new QPushButton ("Refresh")),
 peers_back (new QPushButton ("Back")),
 wallet (wallet_a)
 {
-	ratio_group->addButton (mnano_unit);
-	ratio_group->addButton (knano_unit);
-	ratio_group->addButton (nano_unit);
+	ratio_group->addButton (mbtcb_unit);
+	ratio_group->addButton (kbtcb_unit);
+	ratio_group->addButton (btcb_unit);
 	ratio_group->addButton (raw_unit);
-	ratio_group->setId (mnano_unit, 0);
-	ratio_group->setId (knano_unit, 1);
-	ratio_group->setId (nano_unit, 2);
+	ratio_group->setId (mbtcb_unit, 0);
+	ratio_group->setId (kbtcb_unit, 1);
+	ratio_group->setId (btcb_unit, 2);
 	ratio_group->setId (raw_unit, 3);
 	scale_layout->addWidget (scale_label);
-	scale_layout->addWidget (mnano_unit);
-	scale_layout->addWidget (knano_unit);
-	scale_layout->addWidget (nano_unit);
+	scale_layout->addWidget (mbtcb_unit);
+	scale_layout->addWidget (kbtcb_unit);
+	scale_layout->addWidget (btcb_unit);
 	scale_layout->addWidget (raw_unit);
 	scale_window->setLayout (scale_layout);
 
@@ -1816,35 +1816,35 @@ wallet (wallet_a)
 	layout->addWidget (back);
 	window->setLayout (layout);
 
-	QObject::connect (mnano_unit, &QRadioButton::toggled, [this]() {
-		if (mnano_unit->isChecked ())
+	QObject::connect (mbtcb_unit, &QRadioButton::toggled, [this]() {
+		if (mbtcb_unit->isChecked ())
 		{
-			QSettings ().setValue (saved_ratio_key, ratio_group->id (mnano_unit));
-			this->wallet.change_rendering_ratio (nano::Mxrb_ratio);
+			QSettings ().setValue (saved_ratio_key, ratio_group->id (mbtcb_unit));
+			this->wallet.change_rendering_ratio (btcb::Mxrb_ratio);
 		}
 	});
-	QObject::connect (knano_unit, &QRadioButton::toggled, [this]() {
-		if (knano_unit->isChecked ())
+	QObject::connect (kbtcb_unit, &QRadioButton::toggled, [this]() {
+		if (kbtcb_unit->isChecked ())
 		{
-			QSettings ().setValue (saved_ratio_key, ratio_group->id (knano_unit));
-			this->wallet.change_rendering_ratio (nano::kxrb_ratio);
+			QSettings ().setValue (saved_ratio_key, ratio_group->id (kbtcb_unit));
+			this->wallet.change_rendering_ratio (btcb::kxrb_ratio);
 		}
 	});
-	QObject::connect (nano_unit, &QRadioButton::toggled, [this]() {
-		if (nano_unit->isChecked ())
+	QObject::connect (btcb_unit, &QRadioButton::toggled, [this]() {
+		if (btcb_unit->isChecked ())
 		{
-			QSettings ().setValue (saved_ratio_key, ratio_group->id (nano_unit));
-			this->wallet.change_rendering_ratio (nano::xrb_ratio);
+			QSettings ().setValue (saved_ratio_key, ratio_group->id (btcb_unit));
+			this->wallet.change_rendering_ratio (btcb::xrb_ratio);
 		}
 	});
 	QObject::connect (raw_unit, &QRadioButton::toggled, [this]() {
 		if (raw_unit->isChecked ())
 		{
 			QSettings ().setValue (saved_ratio_key, ratio_group->id (raw_unit));
-			this->wallet.change_rendering_ratio (nano::raw_ratio);
+			this->wallet.change_rendering_ratio (btcb::raw_ratio);
 		}
 	});
-	auto selected_ratio_id (QSettings ().value (saved_ratio_key, ratio_group->id (mnano_unit)).toInt ());
+	auto selected_ratio_id (QSettings ().value (saved_ratio_key, ratio_group->id (mbtcb_unit)).toInt ());
 	auto selected_ratio_button = ratio_group->button (selected_ratio_id);
 	assert (selected_ratio_button != nullptr);
 
@@ -1854,7 +1854,7 @@ wallet (wallet_a)
 	}
 	else
 	{
-		mnano_unit->click ();
+		mbtcb_unit->click ();
 	}
 	QObject::connect (wallet_refresh, &QPushButton::released, [this]() {
 		this->wallet.accounts.refresh ();
@@ -1874,8 +1874,8 @@ wallet (wallet_a)
 		this->wallet.pop_main_stack ();
 	});
 	QObject::connect (peers_bootstrap, &QPushButton::released, [this]() {
-		nano::endpoint endpoint;
-		auto error (nano::parse_endpoint (bootstrap_line->text ().toStdString (), endpoint));
+		btcb::endpoint endpoint;
+		auto error (btcb::parse_endpoint (bootstrap_line->text ().toStdString (), endpoint));
 		if (!error)
 		{
 			show_line_ok (*bootstrap_line);
@@ -1925,7 +1925,7 @@ wallet (wallet_a)
 	enter_block->setToolTip ("Enter block in JSON format");
 }
 
-void nano_qt::advanced_actions::refresh_peers ()
+void btcb_qt::advanced_actions::refresh_peers ()
 {
 	peers_model->removeRows (0, peers_model->rowCount ());
 	auto list (wallet.node.network.list (std::numeric_limits<size_t>::max ()));
@@ -1955,17 +1955,17 @@ void nano_qt::advanced_actions::refresh_peers ()
 	peer_count_label->setText (QString ("%1 peers").arg (peers_model->rowCount ()));
 }
 
-void nano_qt::advanced_actions::refresh_ledger ()
+void btcb_qt::advanced_actions::refresh_ledger ()
 {
 	ledger_model->removeRows (0, ledger_model->rowCount ());
 	auto transaction (wallet.node.store.tx_begin_read ());
 	for (auto i (wallet.node.ledger.store.latest_begin (transaction)), j (wallet.node.ledger.store.latest_end ()); i != j; ++i)
 	{
 		QList<QStandardItem *> items;
-		items.push_back (new QStandardItem (QString (nano::block_hash (i->first).to_account ().c_str ())));
-		nano::account_info info (i->second);
+		items.push_back (new QStandardItem (QString (btcb::block_hash (i->first).to_account ().c_str ())));
+		btcb::account_info info (i->second);
 		std::string balance;
-		nano::amount (info.balance.number () / wallet.rendering_ratio).encode_dec (balance);
+		btcb::amount (info.balance.number () / wallet.rendering_ratio).encode_dec (balance);
 		items.push_back (new QStandardItem (QString (balance.c_str ())));
 		std::string block_hash;
 		info.head.encode_hex (block_hash);
@@ -1974,12 +1974,12 @@ void nano_qt::advanced_actions::refresh_ledger ()
 	}
 }
 
-void nano_qt::advanced_actions::refresh_stats ()
+void btcb_qt::advanced_actions::refresh_stats ()
 {
 	wallet.stats_viewer.refresh_stats ();
 }
 
-nano_qt::block_entry::block_entry (nano_qt::wallet & wallet_a) :
+btcb_qt::block_entry::block_entry (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 block (new QPlainTextEdit),
@@ -2000,7 +2000,7 @@ wallet (wallet_a)
 			boost::property_tree::ptree tree;
 			std::stringstream istream (string);
 			boost::property_tree::read_json (istream, tree);
-			auto block_l (nano::deserialize_block_json (tree));
+			auto block_l (btcb::deserialize_block_json (tree));
 			if (block_l != nullptr)
 			{
 				show_label_ok (*status);
@@ -2024,7 +2024,7 @@ wallet (wallet_a)
 	});
 }
 
-nano_qt::block_creation::block_creation (nano_qt::wallet & wallet_a) :
+btcb_qt::block_creation::block_creation (btcb_qt::wallet & wallet_a) :
 window (new QWidget),
 layout (new QVBoxLayout),
 group (new QButtonGroup),
@@ -2159,7 +2159,7 @@ wallet (wallet_a)
 	send->click ();
 }
 
-void nano_qt::block_creation::deactivate_all ()
+void btcb_qt::block_creation::deactivate_all ()
 {
 	account_label->hide ();
 	account->hide ();
@@ -2173,7 +2173,7 @@ void nano_qt::block_creation::deactivate_all ()
 	representative->hide ();
 }
 
-void nano_qt::block_creation::activate_send ()
+void btcb_qt::block_creation::activate_send ()
 {
 	account_label->show ();
 	account->show ();
@@ -2183,13 +2183,13 @@ void nano_qt::block_creation::activate_send ()
 	destination->show ();
 }
 
-void nano_qt::block_creation::activate_receive ()
+void btcb_qt::block_creation::activate_receive ()
 {
 	source_label->show ();
 	source->show ();
 }
 
-void nano_qt::block_creation::activate_open ()
+void btcb_qt::block_creation::activate_open ()
 {
 	source_label->show ();
 	source->show ();
@@ -2197,7 +2197,7 @@ void nano_qt::block_creation::activate_open ()
 	representative->show ();
 }
 
-void nano_qt::block_creation::activate_change ()
+void btcb_qt::block_creation::activate_change ()
 {
 	account_label->show ();
 	account->show ();
@@ -2205,34 +2205,34 @@ void nano_qt::block_creation::activate_change ()
 	representative->show ();
 }
 
-void nano_qt::block_creation::create_send ()
+void btcb_qt::block_creation::create_send ()
 {
-	nano::account account_l;
+	btcb::account account_l;
 	auto error (account_l.decode_account (account->text ().toStdString ()));
 	if (!error)
 	{
-		nano::amount amount_l;
+		btcb::amount amount_l;
 		error = amount_l.decode_dec (amount->text ().toStdString ());
 		if (!error)
 		{
-			nano::account destination_l;
+			btcb::account destination_l;
 			error = destination_l.decode_account (destination->text ().toStdString ());
 			if (!error)
 			{
 				auto transaction (wallet.node.wallets.tx_begin_read ());
 				auto block_transaction (wallet.node.store.tx_begin_read ());
-				nano::raw_key key;
+				btcb::raw_key key;
 				if (!wallet.wallet_m->store.fetch (transaction, account_l, key))
 				{
 					auto balance (wallet.node.ledger.account_balance (block_transaction, account_l));
 					if (amount_l.number () <= balance)
 					{
-						nano::account_info info;
+						btcb::account_info info;
 						auto error (wallet.node.store.account_get (block_transaction, account_l, info));
 						assert (!error);
 						auto rep_block (wallet.node.store.block_get (block_transaction, info.rep_block));
 						assert (rep_block != nullptr);
-						nano::state_block send (account_l, info.head, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0);
+						btcb::state_block send (account_l, info.head, rep_block->representative (), balance - amount_l.number (), destination_l, key, account_l, 0);
 						wallet.node.work_generate_blocking (send);
 						std::string block_l;
 						send.serialize_json (block_l);
@@ -2271,9 +2271,9 @@ void nano_qt::block_creation::create_send ()
 	}
 }
 
-void nano_qt::block_creation::create_receive ()
+void btcb_qt::block_creation::create_receive ()
 {
-	nano::block_hash source_l;
+	btcb::block_hash source_l;
 	auto error (source_l.decode_hex (source->text ().toStdString ()));
 	if (!error)
 	{
@@ -2285,21 +2285,21 @@ void nano_qt::block_creation::create_receive ()
 			auto destination (wallet.node.ledger.block_destination (block_transaction, *block_l));
 			if (!destination.is_zero ())
 			{
-				nano::pending_key pending_key (destination, source_l);
-				nano::pending_info pending;
+				btcb::pending_key pending_key (destination, source_l);
+				btcb::pending_info pending;
 				if (!wallet.node.store.pending_get (block_transaction, pending_key, pending))
 				{
-					nano::account_info info;
+					btcb::account_info info;
 					auto error (wallet.node.store.account_get (block_transaction, pending_key.account, info));
 					if (!error)
 					{
-						nano::raw_key key;
+						btcb::raw_key key;
 						auto error (wallet.wallet_m->store.fetch (transaction, pending_key.account, key));
 						if (!error)
 						{
 							auto rep_block (wallet.node.store.block_get (block_transaction, info.rep_block));
 							assert (rep_block != nullptr);
-							nano::state_block receive (pending_key.account, info.head, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0);
+							btcb::state_block receive (pending_key.account, info.head, rep_block->representative (), info.balance.number () + pending.amount.number (), source_l, key, pending_key.account, 0);
 							wallet.node.work_generate_blocking (receive);
 							std::string block_l;
 							receive.serialize_json (block_l);
@@ -2344,27 +2344,27 @@ void nano_qt::block_creation::create_receive ()
 	}
 }
 
-void nano_qt::block_creation::create_change ()
+void btcb_qt::block_creation::create_change ()
 {
-	nano::account account_l;
+	btcb::account account_l;
 	auto error (account_l.decode_account (account->text ().toStdString ()));
 	if (!error)
 	{
-		nano::account representative_l;
+		btcb::account representative_l;
 		error = representative_l.decode_account (representative->text ().toStdString ());
 		if (!error)
 		{
 			auto transaction (wallet.node.wallets.tx_begin_read ());
 			auto block_transaction (wallet.node.store.tx_begin_read ());
-			nano::account_info info;
+			btcb::account_info info;
 			auto error (wallet.node.store.account_get (block_transaction, account_l, info));
 			if (!error)
 			{
-				nano::raw_key key;
+				btcb::raw_key key;
 				auto error (wallet.wallet_m->store.fetch (transaction, account_l, key));
 				if (!error)
 				{
-					nano::state_block change (account_l, info.head, representative_l, info.balance, 0, key, account_l, 0);
+					btcb::state_block change (account_l, info.head, representative_l, info.balance, 0, key, account_l, 0);
 					wallet.node.work_generate_blocking (change);
 					std::string block_l;
 					change.serialize_json (block_l);
@@ -2397,13 +2397,13 @@ void nano_qt::block_creation::create_change ()
 	}
 }
 
-void nano_qt::block_creation::create_open ()
+void btcb_qt::block_creation::create_open ()
 {
-	nano::block_hash source_l;
+	btcb::block_hash source_l;
 	auto error (source_l.decode_hex (source->text ().toStdString ()));
 	if (!error)
 	{
-		nano::account representative_l;
+		btcb::account representative_l;
 		error = representative_l.decode_account (representative->text ().toStdString ());
 		if (!error)
 		{
@@ -2415,19 +2415,19 @@ void nano_qt::block_creation::create_open ()
 				auto destination (wallet.node.ledger.block_destination (block_transaction, *block_l));
 				if (!destination.is_zero ())
 				{
-					nano::pending_key pending_key (destination, source_l);
-					nano::pending_info pending;
+					btcb::pending_key pending_key (destination, source_l);
+					btcb::pending_info pending;
 					if (!wallet.node.store.pending_get (block_transaction, pending_key, pending))
 					{
-						nano::account_info info;
+						btcb::account_info info;
 						auto error (wallet.node.store.account_get (block_transaction, pending_key.account, info));
 						if (error)
 						{
-							nano::raw_key key;
+							btcb::raw_key key;
 							auto error (wallet.wallet_m->store.fetch (transaction, pending_key.account, key));
 							if (!error)
 							{
-								nano::state_block open (pending_key.account, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0);
+								btcb::state_block open (pending_key.account, 0, representative_l, pending.amount, source_l, key, pending_key.account, 0);
 								wallet.node.work_generate_blocking (open);
 								std::string block_l;
 								open.serialize_json (block_l);

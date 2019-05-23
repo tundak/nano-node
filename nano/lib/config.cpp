@@ -1,9 +1,9 @@
-#include <nano/lib/config.hpp>
+#include <btcb/lib/config.hpp>
 
-namespace nano
+namespace btcb
 {
-void force_nano_test_network ()
+void force_btcb_test_network ()
 {
-	nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
+	btcb::network_constants::set_active_network (btcb::btcb_networks::btcb_test_network);
 }
 }

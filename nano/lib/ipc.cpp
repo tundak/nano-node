@@ -1,11 +1,11 @@
-#include <nano/lib/ipc.hpp>
+#include <btcb/lib/ipc.hpp>
 
-nano::ipc::socket_base::socket_base (boost::asio::io_context & io_ctx_a) :
+btcb::ipc::socket_base::socket_base (boost::asio::io_context & io_ctx_a) :
 io_timer (io_ctx_a)
 {
 }
 
-void nano::ipc::socket_base::timer_start (std::chrono::seconds timeout_a)
+void btcb::ipc::socket_base::timer_start (std::chrono::seconds timeout_a)
 {
 	if (timeout_a < std::chrono::seconds::max ())
 	{
@@ -19,25 +19,25 @@ void nano::ipc::socket_base::timer_start (std::chrono::seconds timeout_a)
 	}
 }
 
-void nano::ipc::socket_base::timer_expired ()
+void btcb::ipc::socket_base::timer_expired ()
 {
 	close ();
 }
 
-void nano::ipc::socket_base::timer_cancel ()
+void btcb::ipc::socket_base::timer_cancel ()
 {
 	boost::system::error_code ec;
 	io_timer.cancel (ec);
 	assert (!ec);
 }
 
-nano::ipc::dsock_file_remover::dsock_file_remover (std::string const & file_a) :
+btcb::ipc::dsock_file_remover::dsock_file_remover (std::string const & file_a) :
 filename (file_a)
 {
 	std::remove (filename.c_str ());
 }
 
-nano::ipc::dsock_file_remover::~dsock_file_remover ()
+btcb::ipc::dsock_file_remover::~dsock_file_remover ()
 {
 	std::remove (filename.c_str ());
 }

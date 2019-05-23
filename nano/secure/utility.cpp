@@ -1,41 +1,41 @@
-#include <nano/lib/config.hpp>
-#include <nano/lib/interface.h>
-#include <nano/node/logging.hpp>
-#include <nano/node/working.hpp>
-#include <nano/secure/utility.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/interface.h>
+#include <btcb/node/logging.hpp>
+#include <btcb/node/working.hpp>
+#include <btcb/secure/utility.hpp>
 
 static std::vector<boost::filesystem::path> all_unique_paths;
 
-boost::filesystem::path nano::working_path (bool legacy)
+boost::filesystem::path btcb::working_path (bool legacy)
 {
-	static nano::network_constants network_constants;
-	auto result (nano::app_path ());
+	static btcb::network_constants network_constants;
+	auto result (btcb::app_path ());
 	switch (network_constants.network ())
 	{
-		case nano::nano_networks::nano_test_network:
+		case btcb::btcb_networks::btcb_test_network:
 			if (!legacy)
 			{
-				result /= "NanoTest";
+				result /= "BtcbTest";
 			}
 			else
 			{
 				result /= "RaiBlocksTest";
 			}
 			break;
-		case nano::nano_networks::nano_beta_network:
+		case btcb::btcb_networks::btcb_beta_network:
 			if (!legacy)
 			{
-				result /= "NanoBeta";
+				result /= "BtcbBeta";
 			}
 			else
 			{
 				result /= "RaiBlocksBeta";
 			}
 			break;
-		case nano::nano_networks::nano_live_network:
+		case btcb::btcb_networks::btcb_live_network:
 			if (!legacy)
 			{
-				result /= "Nano";
+				result /= "Btcb";
 			}
 			else
 			{
@@ -46,11 +46,11 @@ boost::filesystem::path nano::working_path (bool legacy)
 	return result;
 }
 
-bool nano::migrate_working_path (std::string & error_string)
+bool btcb::migrate_working_path (std::string & error_string)
 {
 	bool result (true);
-	auto old_path (nano::working_path (true));
-	auto new_path (nano::working_path ());
+	auto old_path (btcb::working_path (true));
+	auto new_path (btcb::working_path ());
 
 	if (old_path != new_path)
 	{
@@ -82,14 +82,14 @@ bool nano::migrate_working_path (std::string & error_string)
 	return result;
 }
 
-boost::filesystem::path nano::unique_path ()
+boost::filesystem::path btcb::unique_path ()
 {
 	auto result (working_path () / boost::filesystem::unique_path ());
 	all_unique_paths.push_back (result);
 	return result;
 }
 
-void nano::remove_temporary_directories ()
+void btcb::remove_temporary_directories ()
 {
 	for (auto & path : all_unique_paths)
 	{

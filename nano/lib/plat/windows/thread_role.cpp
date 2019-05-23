@@ -1,9 +1,9 @@
 #include <windows.h>
 
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 #include <processthreadsapi.h>
 
-void nano::thread_role::set_os_name (std::string const & thread_name)
+void btcb::thread_role::set_os_name (std::string const & thread_name)
 {
 	using SetThreadDescription_t = HRESULT (*) (HANDLE, PCWSTR);
 	SetThreadDescription_t SetThreadDescription_local = (SetThreadDescription_t)GetProcAddress (GetModuleHandle (TEXT ("kernel32.dll")), "SetThreadDescription");

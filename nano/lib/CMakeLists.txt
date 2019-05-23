@@ -10,7 +10,7 @@ else ()
 	error ("Unknown platform: ${CMAKE_SYSTEM_NAME}")
 endif ()
 
-add_library (nano_lib
+add_library (btcb_lib
 	${platform_sources}
 	errors.hpp
 	errors.cpp
@@ -41,14 +41,14 @@ add_library (nano_lib
 	work.hpp
 	work.cpp)
 
-target_link_libraries (nano_lib
+target_link_libraries (btcb_lib
 	ed25519
 	crypto_lib
 	blake2
 	${CRYPTOPP_LIBRARY}
 	Boost::boost)
 
-target_compile_definitions(nano_lib
+target_compile_definitions(btcb_lib
 	PUBLIC
 		-DACTIVE_NETWORK=${ACTIVE_NETWORK}
 )

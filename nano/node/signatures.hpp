@@ -3,11 +3,11 @@
 #include <atomic>
 #include <future>
 #include <mutex>
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 
 #include <boost/asio.hpp>
 
-namespace nano
+namespace btcb
 {
 class signature_check_set final
 {
@@ -38,7 +38,7 @@ public:
 private:
 	struct Task final
 	{
-		Task (nano::signature_check_set & check, int pending) :
+		Task (btcb::signature_check_set & check, int pending) :
 		check (check), pending (pending)
 		{
 		}
@@ -46,12 +46,12 @@ private:
 		{
 			release_assert (pending == 0);
 		}
-		nano::signature_check_set & check;
+		btcb::signature_check_set & check;
 		std::atomic<int> pending;
 	};
 
-	bool verify_batch (const nano::signature_check_set & check_a, size_t index, size_t size);
-	void verify_async (nano::signature_check_set & check_a, size_t num_batches, std::promise<void> & promise);
+	bool verify_batch (const btcb::signature_check_set & check_a, size_t index, size_t size);
+	void verify_async (btcb::signature_check_set & check_a, size_t num_batches, std::promise<void> & promise);
 	void set_thread_names (unsigned num_threads);
 	boost::asio::thread_pool thread_pool;
 	std::atomic<int> tasks_remaining{ 0 };

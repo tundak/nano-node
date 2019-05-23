@@ -1,13 +1,13 @@
-#include <nano/node/openclconfig.hpp>
+#include <btcb/node/openclconfig.hpp>
 
-nano::opencl_config::opencl_config (unsigned platform_a, unsigned device_a, unsigned threads_a) :
+btcb::opencl_config::opencl_config (unsigned platform_a, unsigned device_a, unsigned threads_a) :
 platform (platform_a),
 device (device_a),
 threads (threads_a)
 {
 }
 
-nano::error nano::opencl_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::opencl_config::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("platform", platform);
 	json.put ("device", device);
@@ -15,7 +15,7 @@ nano::error nano::opencl_config::serialize_json (nano::jsonconfig & json) const
 	return json.get_error ();
 }
 
-nano::error nano::opencl_config::deserialize_json (nano::jsonconfig & json)
+btcb::error btcb::opencl_config::deserialize_json (btcb::jsonconfig & json)
 {
 	json.get_optional<unsigned> ("platform", platform);
 	json.get_optional<unsigned> ("device", device);

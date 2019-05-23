@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <nano/core_test/testutil.hpp>
-#include <nano/node/node.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/node/node.hpp>
 
 #include <atomic>
 #include <condition_variable>
@@ -9,52 +9,52 @@
 
 TEST (processor_service, bad_send_signature)
 {
-	nano::logger_mt logger;
+	btcb::logger_mt logger;
 	bool init (false);
-	nano::mdb_store store (init, logger, nano::unique_path ());
+	btcb::mdb_store store (init, logger, btcb::unique_path ());
 	ASSERT_FALSE (init);
-	nano::stat stats;
-	nano::ledger ledger (store, stats);
-	nano::genesis genesis;
+	btcb::stat stats;
+	btcb::ledger ledger (store, stats);
+	btcb::genesis genesis;
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
-	nano::work_pool pool (std::numeric_limits<unsigned>::max ());
-	nano::account_info info1;
-	ASSERT_FALSE (store.account_get (transaction, nano::test_genesis_key.pub, info1));
-	nano::keypair key2;
-	nano::send_block send (info1.head, nano::test_genesis_key.pub, 50, nano::test_genesis_key.prv, nano::test_genesis_key.pub, pool.generate (info1.head));
+	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
+	btcb::account_info info1;
+	ASSERT_FALSE (store.account_get (transaction, btcb::test_genesis_key.pub, info1));
+	btcb::keypair key2;
+	btcb::send_block send (info1.head, btcb::test_genesis_key.pub, 50, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (info1.head));
 	send.signature.bytes[32] ^= 0x1;
-	ASSERT_EQ (nano::process_result::bad_signature, ledger.process (transaction, send).code);
+	ASSERT_EQ (btcb::process_result::bad_signature, ledger.process (transaction, send).code);
 }
 
 TEST (processor_service, bad_receive_signature)
 {
-	nano::logger_mt logger;
+	btcb::logger_mt logger;
 	bool init (false);
-	nano::mdb_store store (init, logger, nano::unique_path ());
+	btcb::mdb_store store (init, logger, btcb::unique_path ());
 	ASSERT_FALSE (init);
-	nano::stat stats;
-	nano::ledger ledger (store, stats);
-	nano::genesis genesis;
+	btcb::stat stats;
+	btcb::ledger ledger (store, stats);
+	btcb::genesis genesis;
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
-	nano::work_pool pool (std::numeric_limits<unsigned>::max ());
-	nano::account_info info1;
-	ASSERT_FALSE (store.account_get (transaction, nano::test_genesis_key.pub, info1));
-	nano::send_block send (info1.head, nano::test_genesis_key.pub, 50, nano::test_genesis_key.prv, nano::test_genesis_key.pub, pool.generate (info1.head));
-	nano::block_hash hash1 (send.hash ());
-	ASSERT_EQ (nano::process_result::progress, ledger.process (transaction, send).code);
-	nano::account_info info2;
-	ASSERT_FALSE (store.account_get (transaction, nano::test_genesis_key.pub, info2));
-	nano::receive_block receive (hash1, hash1, nano::test_genesis_key.prv, nano::test_genesis_key.pub, pool.generate (hash1));
+	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
+	btcb::account_info info1;
+	ASSERT_FALSE (store.account_get (transaction, btcb::test_genesis_key.pub, info1));
+	btcb::send_block send (info1.head, btcb::test_genesis_key.pub, 50, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (info1.head));
+	btcb::block_hash hash1 (send.hash ());
+	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send).code);
+	btcb::account_info info2;
+	ASSERT_FALSE (store.account_get (transaction, btcb::test_genesis_key.pub, info2));
+	btcb::receive_block receive (hash1, hash1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (hash1));
 	receive.signature.bytes[32] ^= 0x1;
-	ASSERT_EQ (nano::process_result::bad_signature, ledger.process (transaction, receive).code);
+	ASSERT_EQ (btcb::process_result::bad_signature, ledger.process (transaction, receive).code);
 }
 
 TEST (alarm, one)
 {
 	boost::asio::io_context io_ctx;
-	nano::alarm alarm (io_ctx);
+	btcb::alarm alarm (io_ctx);
 	std::atomic<bool> done (false);
 	std::mutex mutex;
 	std::condition_variable condition;
@@ -76,7 +76,7 @@ TEST (alarm, one)
 TEST (alarm, many)
 {
 	boost::asio::io_context io_ctx;
-	nano::alarm alarm (io_ctx);
+	btcb::alarm alarm (io_ctx);
 	std::atomic<int> count (0);
 	std::mutex mutex;
 	std::condition_variable condition;
@@ -108,7 +108,7 @@ TEST (alarm, many)
 TEST (alarm, top_execution)
 {
 	boost::asio::io_context io_ctx;
-	nano::alarm alarm (io_ctx);
+	btcb::alarm alarm (io_ctx);
 	int value1 (0);
 	int value2 (0);
 	std::mutex mutex;

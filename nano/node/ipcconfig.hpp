@@ -1,10 +1,10 @@
 #pragma once
 
-#include <nano/lib/config.hpp>
-#include <nano/lib/errors.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/errors.hpp>
 #include <string>
 
-namespace nano
+namespace btcb
 {
 class jsonconfig;
 
@@ -29,7 +29,7 @@ namespace ipc
 		 * Default domain socket path for Unix systems. Once Boost supports Windows 10 usocks,
 		 * this value will be conditional on OS.
 		 */
-		std::string path{ "/tmp/nano" };
+		std::string path{ "/tmp/btcb" };
 
 		int json_version () const
 		{
@@ -45,7 +45,7 @@ namespace ipc
 		port (network_constants.default_ipc_port)
 		{
 		}
-		nano::network_constants network_constants;
+		btcb::network_constants network_constants;
 		/** Listening port */
 		uint16_t port;
 	};
@@ -54,8 +54,8 @@ namespace ipc
 	class ipc_config
 	{
 	public:
-		nano::error deserialize_json (bool & upgraded_a, nano::jsonconfig & json_a);
-		nano::error serialize_json (nano::jsonconfig & json) const;
+		btcb::error deserialize_json (bool & upgraded_a, btcb::jsonconfig & json_a);
+		btcb::error serialize_json (btcb::jsonconfig & json) const;
 		ipc_config_domain_socket transport_domain;
 		ipc_config_tcp_socket transport_tcp;
 	};

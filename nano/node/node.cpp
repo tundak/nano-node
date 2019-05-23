@@ -1,11 +1,11 @@
-#include <nano/node/node.hpp>
+#include <btcb/node/node.hpp>
 
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/lib/interface.h>
-#include <nano/lib/timer.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/node/common.hpp>
-#include <nano/rpc/rpc.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/lib/interface.h>
+#include <btcb/lib/timer.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/rpc/rpc.hpp>
 
 #include <algorithm>
 #include <cstdlib>
@@ -16,21 +16,21 @@
 #include <boost/polymorphic_cast.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-double constexpr nano::node::price_max;
-double constexpr nano::node::free_cutoff;
-size_t constexpr nano::block_arrival::arrival_size_min;
-std::chrono::seconds constexpr nano::block_arrival::arrival_time_min;
+double constexpr btcb::node::price_max;
+double constexpr btcb::node::free_cutoff;
+size_t constexpr btcb::block_arrival::arrival_size_min;
+std::chrono::seconds constexpr btcb::block_arrival::arrival_time_min;
 
-namespace nano
+namespace btcb
 {
-extern unsigned char nano_bootstrap_weights_live[];
-extern size_t nano_bootstrap_weights_live_size;
-extern unsigned char nano_bootstrap_weights_beta[];
-extern size_t nano_bootstrap_weights_beta_size;
+extern unsigned char btcb_bootstrap_weights_live[];
+extern size_t btcb_bootstrap_weights_live_size;
+extern unsigned char btcb_bootstrap_weights_beta[];
+extern size_t btcb_bootstrap_weights_beta_size;
 }
 
-nano::network::network (nano::node & node_a, uint16_t port_a) :
-buffer_container (node_a.stats, nano::network::buffer_size, 4096), // 2Mb receive buffer
+btcb::network::network (btcb::node & node_a, uint16_t port_a) :
+buffer_container (node_a.stats, btcb::network::buffer_size, 4096), // 2Mb receive buffer
 resolver (node_a.io_ctx),
 node (node_a),
 udp_channels (node_a, port_a),
@@ -38,11 +38,11 @@ tcp_channels (node_a),
 disconnect_observer ([]() {})
 {
 	boost::thread::attributes attrs;
-	nano::thread_attributes::set (attrs);
+	btcb::thread_attributes::set (attrs);
 	for (size_t i = 0; i < node.config.network_threads; ++i)
 	{
 		packet_processing_threads.push_back (boost::thread (attrs, [this]() {
-			nano::thread_role::set (nano::thread_role::name::packet_processing);
+			btcb::thread_role::set (btcb::thread_role::name::packet_processing);
 			try
 			{
 				udp_channels.process_packets ();
@@ -75,7 +75,7 @@ disconnect_observer ([]() {})
 	}
 }
 
-nano::network::~network ()
+btcb::network::~network ()
 {
 	for (auto & thread : packet_processing_threads)
 	{
@@ -83,14 +83,14 @@ nano::network::~network ()
 	}
 }
 
-void nano::network::start ()
+void btcb::network::start ()
 {
 	ongoing_cleanup ();
 	udp_channels.start ();
 	tcp_channels.start ();
 }
 
-void nano::network::stop ()
+void btcb::network::stop ()
 {
 	udp_channels.stop ();
 	tcp_channels.stop ();
@@ -98,37 +98,37 @@ void nano::network::stop ()
 	buffer_container.stop ();
 }
 
-void nano::network::send_keepalive (std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::network::send_keepalive (std::shared_ptr<btcb::transport::channel> channel_a)
 {
-	nano::keepalive message;
+	btcb::keepalive message;
 	random_fill (message.peers);
 	channel_a->send (message);
 }
 
-void nano::network::send_keepalive_self (std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::network::send_keepalive_self (std::shared_ptr<btcb::transport::channel> channel_a)
 {
-	nano::keepalive message;
+	btcb::keepalive message;
 	if (node.config.external_address != boost::asio::ip::address_v6{} && node.config.external_port != 0)
 	{
-		message.peers[0] = nano::endpoint (node.config.external_address, node.config.external_port);
+		message.peers[0] = btcb::endpoint (node.config.external_address, node.config.external_port);
 	}
 	else
 	{
 		auto external_address (node.port_mapping.external_address ());
 		if (external_address.address () != boost::asio::ip::address_v4::any ())
 		{
-			message.peers[0] = nano::endpoint (boost::asio::ip::address_v6{}, endpoint ().port ());
+			message.peers[0] = btcb::endpoint (boost::asio::ip::address_v6{}, endpoint ().port ());
 			message.peers[1] = external_address;
 		}
 		else
 		{
-			message.peers[0] = nano::endpoint (boost::asio::ip::address_v6{}, endpoint ().port ());
+			message.peers[0] = btcb::endpoint (boost::asio::ip::address_v6{}, endpoint ().port ());
 		}
 	}
 	channel_a->send (message);
 }
 
-void nano::node::keepalive (std::string const & address_a, uint16_t port_a)
+void btcb::node::keepalive (std::string const & address_a, uint16_t port_a)
 {
 	auto node_l (shared_from_this ());
 	network.resolver.async_resolve (boost::asio::ip::udp::resolver::query (address_a, std::to_string (port_a)), [node_l, address_a, port_a](boost::system::error_code const & ec, boost::asio::ip::udp::resolver::iterator i_a) {
@@ -136,12 +136,12 @@ void nano::node::keepalive (std::string const & address_a, uint16_t port_a)
 		{
 			for (auto i (i_a), n (boost::asio::ip::udp::resolver::iterator{}); i != n; ++i)
 			{
-				auto endpoint (nano::transport::map_endpoint_to_v6 (i->endpoint ()));
-				std::weak_ptr<nano::node> node_w (node_l);
+				auto endpoint (btcb::transport::map_endpoint_to_v6 (i->endpoint ()));
+				std::weak_ptr<btcb::node> node_w (node_l);
 				auto channel (node_l->network.find_channel (endpoint));
 				if (!channel)
 				{
-					node_l->network.tcp_channels.start_tcp (endpoint, [node_w](std::shared_ptr<nano::transport::channel> channel_a) {
+					node_l->network.tcp_channels.start_tcp (endpoint, [node_w](std::shared_ptr<btcb::transport::channel> channel_a) {
 						if (auto node_l = node_w.lock ())
 						{
 							node_l->network.send_keepalive (channel_a);
@@ -161,15 +161,15 @@ void nano::node::keepalive (std::string const & address_a, uint16_t port_a)
 	});
 }
 
-void nano::network::send_node_id_handshake (std::shared_ptr<nano::transport::channel> channel_a, boost::optional<nano::uint256_union> const & query, boost::optional<nano::uint256_union> const & respond_to)
+void btcb::network::send_node_id_handshake (std::shared_ptr<btcb::transport::channel> channel_a, boost::optional<btcb::uint256_union> const & query, boost::optional<btcb::uint256_union> const & respond_to)
 {
-	boost::optional<std::pair<nano::account, nano::signature>> response (boost::none);
+	boost::optional<std::pair<btcb::account, btcb::signature>> response (boost::none);
 	if (respond_to)
 	{
-		response = std::make_pair (node.node_id.pub, nano::sign_message (node.node_id.prv, node.node_id.pub, *respond_to));
-		assert (!nano::validate_message (response->first, *respond_to, response->second));
+		response = std::make_pair (node.node_id.pub, btcb::sign_message (node.node_id.prv, node.node_id.pub, *respond_to));
+		assert (!btcb::validate_message (response->first, *respond_to, response->second));
 	}
-	nano::node_id_handshake message (query, response);
+	btcb::node_id_handshake message (query, response);
 	if (node.config.logging.network_node_id_handshake_logging ())
 	{
 		node.logger.try_log (boost::str (boost::format ("Node ID handshake sent with node ID %1% to %2%: query %3%, respond_to %4% (signature %5%)") % node.node_id.pub.to_account () % channel_a->get_endpoint () % (query ? query->to_string () : std::string ("[none]")) % (respond_to ? respond_to->to_string () : std::string ("[none]")) % (response ? response->second.to_string () : std::string ("[none]"))));
@@ -178,7 +178,7 @@ void nano::network::send_node_id_handshake (std::shared_ptr<nano::transport::cha
 }
 
 template <typename T>
-bool confirm_block (nano::transaction const & transaction_a, nano::node & node_a, T & list_a, std::shared_ptr<nano::block> block_a, bool also_publish)
+bool confirm_block (btcb::transaction const & transaction_a, btcb::node & node_a, T & list_a, std::shared_ptr<btcb::block> block_a, bool also_publish)
 {
 	bool result (false);
 	if (node_a.config.enable_voting)
@@ -189,14 +189,14 @@ bool confirm_block (nano::transaction const & transaction_a, nano::node & node_a
 		if (votes.empty ())
 		{
 			// Generate new vote
-			node_a.wallets.foreach_representative (transaction_a, [&result, &list_a, &node_a, &transaction_a, &hash](nano::public_key const & pub_a, nano::raw_key const & prv_a) {
+			node_a.wallets.foreach_representative (transaction_a, [&result, &list_a, &node_a, &transaction_a, &hash](btcb::public_key const & pub_a, btcb::raw_key const & prv_a) {
 				result = true;
-				auto vote (node_a.store.vote_generate (transaction_a, pub_a, prv_a, std::vector<nano::block_hash> (1, hash)));
-				nano::confirm_ack confirm (vote);
+				auto vote (node_a.store.vote_generate (transaction_a, pub_a, prv_a, std::vector<btcb::block_hash> (1, hash)));
+				btcb::confirm_ack confirm (vote);
 				auto vote_bytes = confirm.to_bytes ();
 				for (auto j (list_a.begin ()), m (list_a.end ()); j != m; ++j)
 				{
-					j->get ()->send_buffer (vote_bytes, nano::stat::detail::confirm_ack);
+					j->get ()->send_buffer (vote_bytes, btcb::stat::detail::confirm_ack);
 				}
 				node_a.votes_cache.add (vote);
 			});
@@ -206,70 +206,70 @@ bool confirm_block (nano::transaction const & transaction_a, nano::node & node_a
 			// Send from cache
 			for (auto & vote : votes)
 			{
-				nano::confirm_ack confirm (vote);
+				btcb::confirm_ack confirm (vote);
 				auto vote_bytes = confirm.to_bytes ();
 				for (auto j (list_a.begin ()), m (list_a.end ()); j != m; ++j)
 				{
-					j->get ()->send_buffer (vote_bytes, nano::stat::detail::confirm_ack);
+					j->get ()->send_buffer (vote_bytes, btcb::stat::detail::confirm_ack);
 				}
 			}
 		}
 		// Republish if required
 		if (also_publish)
 		{
-			nano::publish publish (block_a);
+			btcb::publish publish (block_a);
 			auto publish_bytes (publish.to_bytes ());
 			for (auto j (list_a.begin ()), m (list_a.end ()); j != m; ++j)
 			{
-				j->get ()->send_buffer (publish_bytes, nano::stat::detail::publish);
+				j->get ()->send_buffer (publish_bytes, btcb::stat::detail::publish);
 			}
 		}
 	}
 	return result;
 }
 
-bool confirm_block (nano::transaction const & transaction_a, nano::node & node_a, std::shared_ptr<nano::transport::channel> channel_a, std::shared_ptr<nano::block> block_a, bool also_publish)
+bool confirm_block (btcb::transaction const & transaction_a, btcb::node & node_a, std::shared_ptr<btcb::transport::channel> channel_a, std::shared_ptr<btcb::block> block_a, bool also_publish)
 {
-	std::array<std::shared_ptr<nano::transport::channel>, 1> endpoints = { channel_a };
+	std::array<std::shared_ptr<btcb::transport::channel>, 1> endpoints = { channel_a };
 	auto result (confirm_block (transaction_a, node_a, endpoints, std::move (block_a), also_publish));
 	return result;
 }
 
-void nano::network::confirm_hashes (nano::transaction const & transaction_a, std::shared_ptr<nano::transport::channel> channel_a, std::vector<nano::block_hash> blocks_bundle_a)
+void btcb::network::confirm_hashes (btcb::transaction const & transaction_a, std::shared_ptr<btcb::transport::channel> channel_a, std::vector<btcb::block_hash> blocks_bundle_a)
 {
 	if (node.config.enable_voting)
 	{
-		node.wallets.foreach_representative (transaction_a, [this, &blocks_bundle_a, &channel_a, &transaction_a](nano::public_key const & pub_a, nano::raw_key const & prv_a) {
+		node.wallets.foreach_representative (transaction_a, [this, &blocks_bundle_a, &channel_a, &transaction_a](btcb::public_key const & pub_a, btcb::raw_key const & prv_a) {
 			auto vote (this->node.store.vote_generate (transaction_a, pub_a, prv_a, blocks_bundle_a));
-			nano::confirm_ack confirm (vote);
+			btcb::confirm_ack confirm (vote);
 			std::shared_ptr<std::vector<uint8_t>> bytes (new std::vector<uint8_t>);
 			{
-				nano::vectorstream stream (*bytes);
+				btcb::vectorstream stream (*bytes);
 				confirm.serialize (stream);
 			}
-			channel_a->send_buffer (bytes, nano::stat::detail::confirm_ack);
+			channel_a->send_buffer (bytes, btcb::stat::detail::confirm_ack);
 			this->node.votes_cache.add (vote);
 		});
 	}
 }
 
-bool nano::network::send_votes_cache (std::shared_ptr<nano::transport::channel> channel_a, nano::block_hash const & hash_a)
+bool btcb::network::send_votes_cache (std::shared_ptr<btcb::transport::channel> channel_a, btcb::block_hash const & hash_a)
 {
 	// Search in cache
 	auto votes (node.votes_cache.find (hash_a));
 	// Send from cache
 	for (auto & vote : votes)
 	{
-		nano::confirm_ack confirm (vote);
+		btcb::confirm_ack confirm (vote);
 		auto vote_bytes = confirm.to_bytes ();
-		channel_a->send_buffer (vote_bytes, nano::stat::detail::confirm_ack);
+		channel_a->send_buffer (vote_bytes, btcb::stat::detail::confirm_ack);
 	}
 	// Returns true if votes were sent
 	bool result (!votes.empty ());
 	return result;
 }
 
-void nano::network::flood_message (nano::message const & message_a)
+void btcb::network::flood_message (btcb::message const & message_a)
 {
 	auto list (list_fanout ());
 	for (auto i (list.begin ()), n (list.end ()); i != n; ++i)
@@ -278,14 +278,14 @@ void nano::network::flood_message (nano::message const & message_a)
 	}
 }
 
-void nano::network::flood_block_batch (std::deque<std::shared_ptr<nano::block>> blocks_a, unsigned delay_a)
+void btcb::network::flood_block_batch (std::deque<std::shared_ptr<btcb::block>> blocks_a, unsigned delay_a)
 {
 	auto block (blocks_a.front ());
 	blocks_a.pop_front ();
 	flood_block (block);
 	if (!blocks_a.empty ())
 	{
-		std::weak_ptr<nano::node> node_w (node.shared ());
+		std::weak_ptr<btcb::node> node_w (node.shared ());
 		node.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (delay_a + std::rand () % delay_a), [node_w, blocks_a, delay_a]() {
 			if (auto node_l = node_w.lock ())
 			{
@@ -295,9 +295,9 @@ void nano::network::flood_block_batch (std::deque<std::shared_ptr<nano::block>> 
 	}
 }
 
-void nano::network::broadcast_confirm_req (std::shared_ptr<nano::block> block_a)
+void btcb::network::broadcast_confirm_req (std::shared_ptr<btcb::block> block_a)
 {
-	auto list (std::make_shared<std::vector<std::shared_ptr<nano::transport::channel>>> (node.rep_crawler.representative_endpoints (std::numeric_limits<size_t>::max ())));
+	auto list (std::make_shared<std::vector<std::shared_ptr<btcb::transport::channel>>> (node.rep_crawler.representative_endpoints (std::numeric_limits<size_t>::max ())));
 	if (list->empty () || node.rep_crawler.total_weight () < node.config.online_weight_minimum.number ())
 	{
 		// broadcast request to all peers (with max limit 2 * sqrt (peers count))
@@ -326,7 +326,7 @@ void nano::network::broadcast_confirm_req (std::shared_ptr<nano::block> block_a)
 	broadcast_confirm_req_base (block_a, list, 0);
 }
 
-void nano::network::broadcast_confirm_req_base (std::shared_ptr<nano::block> block_a, std::shared_ptr<std::vector<std::shared_ptr<nano::transport::channel>>> endpoints_a, unsigned delay_a, bool resumption)
+void btcb::network::broadcast_confirm_req_base (std::shared_ptr<btcb::block> block_a, std::shared_ptr<std::vector<std::shared_ptr<btcb::transport::channel>>> endpoints_a, unsigned delay_a, bool resumption)
 {
 	const size_t max_reps = 10;
 	if (!resumption && node.config.logging.network_logging ())
@@ -336,7 +336,7 @@ void nano::network::broadcast_confirm_req_base (std::shared_ptr<nano::block> blo
 	auto count (0);
 	while (!endpoints_a->empty () && count < max_reps)
 	{
-		nano::confirm_req req (block_a);
+		btcb::confirm_req req (block_a);
 		auto channel (endpoints_a->back ());
 		channel->send (req);
 		endpoints_a->pop_back ();
@@ -346,7 +346,7 @@ void nano::network::broadcast_confirm_req_base (std::shared_ptr<nano::block> blo
 	{
 		delay_a += std::rand () % broadcast_interval_ms;
 
-		std::weak_ptr<nano::node> node_w (node.shared ());
+		std::weak_ptr<btcb::node> node_w (node.shared ());
 		node.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (delay_a), [node_w, block_a, endpoints_a, delay_a]() {
 			if (auto node_l = node_w.lock ())
 			{
@@ -356,7 +356,7 @@ void nano::network::broadcast_confirm_req_base (std::shared_ptr<nano::block> blo
 	}
 }
 
-void nano::network::broadcast_confirm_req_batch (std::unordered_map<std::shared_ptr<nano::transport::channel>, std::vector<std::pair<nano::block_hash, nano::block_hash>>> request_bundle_a, unsigned delay_a, bool resumption)
+void btcb::network::broadcast_confirm_req_batch (std::unordered_map<std::shared_ptr<btcb::transport::channel>, std::vector<std::pair<btcb::block_hash, btcb::block_hash>>> request_bundle_a, unsigned delay_a, bool resumption)
 {
 	const size_t max_reps = 10;
 	if (!resumption && node.config.logging.network_logging ())
@@ -368,14 +368,14 @@ void nano::network::broadcast_confirm_req_batch (std::unordered_map<std::shared_
 	{
 		auto j (request_bundle_a.begin ());
 		count++;
-		std::vector<std::pair<nano::block_hash, nano::block_hash>> roots_hashes;
+		std::vector<std::pair<btcb::block_hash, btcb::block_hash>> roots_hashes;
 		// Limit max request size hash + root to 6 pairs
 		while (roots_hashes.size () <= confirm_req_hashes_max && !j->second.empty ())
 		{
 			roots_hashes.push_back (j->second.back ());
 			j->second.pop_back ();
 		}
-		nano::confirm_req req (roots_hashes);
+		btcb::confirm_req req (roots_hashes);
 		j->first->send (req);
 		if (j->second.empty ())
 		{
@@ -384,7 +384,7 @@ void nano::network::broadcast_confirm_req_batch (std::unordered_map<std::shared_
 	}
 	if (!request_bundle_a.empty ())
 	{
-		std::weak_ptr<nano::node> node_w (node.shared ());
+		std::weak_ptr<btcb::node> node_w (node.shared ());
 		node.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (delay_a), [node_w, request_bundle_a, delay_a]() {
 			if (auto node_l = node_w.lock ())
 			{
@@ -394,7 +394,7 @@ void nano::network::broadcast_confirm_req_batch (std::unordered_map<std::shared_
 	}
 }
 
-void nano::network::broadcast_confirm_req_batch (std::deque<std::pair<std::shared_ptr<nano::block>, std::shared_ptr<std::vector<std::shared_ptr<nano::transport::channel>>>>> deque_a, unsigned delay_a)
+void btcb::network::broadcast_confirm_req_batch (std::deque<std::pair<std::shared_ptr<btcb::block>, std::shared_ptr<std::vector<std::shared_ptr<btcb::transport::channel>>>>> deque_a, unsigned delay_a)
 {
 	auto pair (deque_a.front ());
 	deque_a.pop_front ();
@@ -409,7 +409,7 @@ void nano::network::broadcast_confirm_req_batch (std::deque<std::pair<std::share
 	Broadcast with random delay between delay_a & 2*delay_a */
 	if (!deque_a.empty ())
 	{
-		std::weak_ptr<nano::node> node_w (node.shared ());
+		std::weak_ptr<btcb::node> node_w (node.shared ());
 		node.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (delay_a + std::rand () % delay_a), [node_w, deque_a, delay_a]() {
 			if (auto node_l = node_w.lock ())
 			{
@@ -421,37 +421,37 @@ void nano::network::broadcast_confirm_req_batch (std::deque<std::pair<std::share
 
 namespace
 {
-class network_message_visitor : public nano::message_visitor
+class network_message_visitor : public btcb::message_visitor
 {
 public:
-	network_message_visitor (nano::node & node_a, std::shared_ptr<nano::transport::channel> channel_a) :
+	network_message_visitor (btcb::node & node_a, std::shared_ptr<btcb::transport::channel> channel_a) :
 	node (node_a),
 	channel (channel_a)
 	{
 	}
-	void keepalive (nano::keepalive const & message_a) override
+	void keepalive (btcb::keepalive const & message_a) override
 	{
 		if (node.config.logging.network_keepalive_logging ())
 		{
 			node.logger.try_log (boost::str (boost::format ("Received keepalive message from %1%") % channel->to_string ()));
 		}
-		node.stats.inc (nano::stat::type::message, nano::stat::detail::keepalive, nano::stat::dir::in);
+		node.stats.inc (btcb::stat::type::message, btcb::stat::detail::keepalive, btcb::stat::dir::in);
 		node.network.merge_peers (message_a.peers);
 	}
-	void publish (nano::publish const & message_a) override
+	void publish (btcb::publish const & message_a) override
 	{
 		if (node.config.logging.network_message_logging ())
 		{
 			node.logger.try_log (boost::str (boost::format ("Publish message from %1% for %2%") % channel->to_string () % message_a.block->hash ().to_string ()));
 		}
-		node.stats.inc (nano::stat::type::message, nano::stat::detail::publish, nano::stat::dir::in);
+		node.stats.inc (btcb::stat::type::message, btcb::stat::detail::publish, btcb::stat::dir::in);
 		if (!node.block_processor.full ())
 		{
 			node.process_active (message_a.block);
 		}
 		node.active.publish (message_a.block);
 	}
-	void confirm_req (nano::confirm_req const & message_a) override
+	void confirm_req (btcb::confirm_req const & message_a) override
 	{
 		if (node.config.logging.network_message_logging ())
 		{
@@ -464,7 +464,7 @@ public:
 				node.logger.try_log (boost::str (boost::format ("Confirm_req message from %1% for %2%") % channel->to_string () % message_a.block->hash ().to_string ()));
 			}
 		}
-		node.stats.inc (nano::stat::type::message, nano::stat::detail::confirm_req, nano::stat::dir::in);
+		node.stats.inc (btcb::stat::type::message, btcb::stat::detail::confirm_req, btcb::stat::dir::in);
 		// Don't load nodes with disabled voting
 		if (node.config.enable_voting && node.wallets.reps_count)
 		{
@@ -485,7 +485,7 @@ public:
 			else if (!message_a.roots_hashes.empty ())
 			{
 				auto transaction (node.store.tx_begin_read ());
-				std::vector<nano::block_hash> blocks_bundle;
+				std::vector<btcb::block_hash> blocks_bundle;
 				for (auto & root_hash : message_a.roots_hashes)
 				{
 					if (!node.network.send_votes_cache (channel, root_hash.first) && node.store.block_exists (transaction, root_hash.first))
@@ -494,13 +494,13 @@ public:
 					}
 					else
 					{
-						nano::block_hash successor (0);
+						btcb::block_hash successor (0);
 						// Search for block root
 						successor = node.store.block_successor (transaction, root_hash.second);
 						// Search for account root
 						if (successor.is_zero () && node.store.account_exists (transaction, root_hash.second))
 						{
-							nano::account_info info;
+							btcb::account_info info;
 							auto error (node.store.account_get (transaction, root_hash.second, info));
 							assert (!error);
 							successor = info.open_block;
@@ -513,7 +513,7 @@ public:
 							}
 							auto successor_block (node.store.block_get (transaction, successor));
 							assert (successor_block != nullptr);
-							nano::publish publish (successor_block);
+							btcb::publish publish (successor_block);
 							channel->send (publish);
 						}
 					}
@@ -525,18 +525,18 @@ public:
 			}
 		}
 	}
-	void confirm_ack (nano::confirm_ack const & message_a) override
+	void confirm_ack (btcb::confirm_ack const & message_a) override
 	{
 		if (node.config.logging.network_message_logging ())
 		{
 			node.logger.try_log (boost::str (boost::format ("Received confirm_ack message from %1% for %2%sequence %3%") % channel->to_string () % message_a.vote->hashes_string () % std::to_string (message_a.vote->sequence)));
 		}
-		node.stats.inc (nano::stat::type::message, nano::stat::detail::confirm_ack, nano::stat::dir::in);
+		node.stats.inc (btcb::stat::type::message, btcb::stat::detail::confirm_ack, btcb::stat::dir::in);
 		for (auto & vote_block : message_a.vote->blocks)
 		{
 			if (!vote_block.which ())
 			{
-				auto block (boost::get<std::shared_ptr<nano::block>> (vote_block));
+				auto block (boost::get<std::shared_ptr<btcb::block>> (vote_block));
 				if (!node.block_processor.full ())
 				{
 					node.process_active (block);
@@ -546,33 +546,33 @@ public:
 		}
 		node.vote_processor.vote (message_a.vote, channel);
 	}
-	void bulk_pull (nano::bulk_pull const &) override
+	void bulk_pull (btcb::bulk_pull const &) override
 	{
 		assert (false);
 	}
-	void bulk_pull_account (nano::bulk_pull_account const &) override
+	void bulk_pull_account (btcb::bulk_pull_account const &) override
 	{
 		assert (false);
 	}
-	void bulk_push (nano::bulk_push const &) override
+	void bulk_push (btcb::bulk_push const &) override
 	{
 		assert (false);
 	}
-	void frontier_req (nano::frontier_req const &) override
+	void frontier_req (btcb::frontier_req const &) override
 	{
 		assert (false);
 	}
-	void node_id_handshake (nano::node_id_handshake const & message_a) override
+	void node_id_handshake (btcb::node_id_handshake const & message_a) override
 	{
-		node.stats.inc (nano::stat::type::message, nano::stat::detail::node_id_handshake, nano::stat::dir::in);
+		node.stats.inc (btcb::stat::type::message, btcb::stat::detail::node_id_handshake, btcb::stat::dir::in);
 	}
-	nano::node & node;
-	std::shared_ptr<nano::transport::channel> channel;
+	btcb::node & node;
+	std::shared_ptr<btcb::transport::channel> channel;
 };
 }
 
 // Send keepalives to all the peers we've been notified of
-void nano::network::merge_peers (std::array<nano::endpoint, 8> const & peers_a)
+void btcb::network::merge_peers (std::array<btcb::endpoint, 8> const & peers_a)
 {
 	for (auto i (peers_a.begin ()), j (peers_a.end ()); i != j; ++i)
 	{
@@ -580,12 +580,12 @@ void nano::network::merge_peers (std::array<nano::endpoint, 8> const & peers_a)
 	}
 }
 
-void nano::network::merge_peer (nano::endpoint const & peer_a)
+void btcb::network::merge_peer (btcb::endpoint const & peer_a)
 {
 	if (!reachout (peer_a, node.config.allow_local_peers))
 	{
-		std::weak_ptr<nano::node> node_w (node.shared ());
-		node.network.tcp_channels.start_tcp (peer_a, [node_w](std::shared_ptr<nano::transport::channel> channel_a) {
+		std::weak_ptr<btcb::node> node_w (node.shared ());
+		node.network.tcp_channels.start_tcp (peer_a, [node_w](std::shared_ptr<btcb::transport::channel> channel_a) {
 			if (auto node_l = node_w.lock ())
 			{
 				node_l->network.send_keepalive (channel_a);
@@ -594,14 +594,14 @@ void nano::network::merge_peer (nano::endpoint const & peer_a)
 	}
 }
 
-bool nano::network::not_a_peer (nano::endpoint const & endpoint_a, bool allow_local_peers)
+bool btcb::network::not_a_peer (btcb::endpoint const & endpoint_a, bool allow_local_peers)
 {
 	bool result (false);
 	if (endpoint_a.address ().to_v6 ().is_unspecified ())
 	{
 		result = true;
 	}
-	else if (nano::transport::reserved_address (endpoint_a, allow_local_peers))
+	else if (btcb::transport::reserved_address (endpoint_a, allow_local_peers))
 	{
 		result = true;
 	}
@@ -612,7 +612,7 @@ bool nano::network::not_a_peer (nano::endpoint const & endpoint_a, bool allow_lo
 	return result;
 }
 
-bool nano::network::reachout (nano::endpoint const & endpoint_a, bool allow_local_peers)
+bool btcb::network::reachout (btcb::endpoint const & endpoint_a, bool allow_local_peers)
 {
 	// Don't contact invalid IPs
 	bool error = not_a_peer (endpoint_a, allow_local_peers);
@@ -624,9 +624,9 @@ bool nano::network::reachout (nano::endpoint const & endpoint_a, bool allow_loca
 	return error;
 }
 
-std::deque<std::shared_ptr<nano::transport::channel>> nano::network::list (size_t count_a)
+std::deque<std::shared_ptr<btcb::transport::channel>> btcb::network::list (size_t count_a)
 {
-	std::deque<std::shared_ptr<nano::transport::channel>> result;
+	std::deque<std::shared_ptr<btcb::transport::channel>> result;
 	tcp_channels.list (result);
 	udp_channels.list (result);
 	random_pool::shuffle (result.begin (), result.end ());
@@ -638,16 +638,16 @@ std::deque<std::shared_ptr<nano::transport::channel>> nano::network::list (size_
 }
 
 // Simulating with sqrt_broadcast_simulate shows we only need to broadcast to sqrt(total_peers) random peers in order to successfully publish to everyone with high probability
-std::deque<std::shared_ptr<nano::transport::channel>> nano::network::list_fanout ()
+std::deque<std::shared_ptr<btcb::transport::channel>> btcb::network::list_fanout ()
 {
 	auto result (list (size_sqrt ()));
 	return result;
 }
 
-std::unordered_set<std::shared_ptr<nano::transport::channel>> nano::network::random_set (size_t count_a) const
+std::unordered_set<std::shared_ptr<btcb::transport::channel>> btcb::network::random_set (size_t count_a) const
 {
-	std::unordered_set<std::shared_ptr<nano::transport::channel>> result (tcp_channels.random_set (count_a));
-	std::unordered_set<std::shared_ptr<nano::transport::channel>> udp_random (udp_channels.random_set (count_a));
+	std::unordered_set<std::shared_ptr<btcb::transport::channel>> result (tcp_channels.random_set (count_a));
+	std::unordered_set<std::shared_ptr<btcb::transport::channel>> udp_random (udp_channels.random_set (count_a));
 	for (auto i (udp_random.begin ()), n (udp_random.end ()); i != n && result.size () < count_a * 1.5; ++i)
 	{
 		result.insert (*i);
@@ -659,11 +659,11 @@ std::unordered_set<std::shared_ptr<nano::transport::channel>> nano::network::ran
 	return result;
 }
 
-void nano::network::random_fill (std::array<nano::endpoint, 8> & target_a) const
+void btcb::network::random_fill (std::array<btcb::endpoint, 8> & target_a) const
 {
 	auto peers (random_set (target_a.size ()));
 	assert (peers.size () <= target_a.size ());
-	auto endpoint (nano::endpoint (boost::asio::ip::address_v6{}, 0));
+	auto endpoint (btcb::endpoint (boost::asio::ip::address_v6{}, 0));
 	assert (endpoint.address ().is_v6 ());
 	std::fill (target_a.begin (), target_a.end (), endpoint);
 	auto j (target_a.begin ());
@@ -675,19 +675,19 @@ void nano::network::random_fill (std::array<nano::endpoint, 8> & target_a) const
 	}
 }
 
-nano::tcp_endpoint nano::network::bootstrap_peer ()
+btcb::tcp_endpoint btcb::network::bootstrap_peer ()
 {
 	auto result (udp_channels.bootstrap_peer ());
-	if (result == nano::tcp_endpoint (boost::asio::ip::address_v6::any (), 0))
+	if (result == btcb::tcp_endpoint (boost::asio::ip::address_v6::any (), 0))
 	{
 		result = tcp_channels.bootstrap_peer ();
 	}
 	return result;
 }
 
-std::shared_ptr<nano::transport::channel> nano::network::find_channel (nano::endpoint const & endpoint_a)
+std::shared_ptr<btcb::transport::channel> btcb::network::find_channel (btcb::endpoint const & endpoint_a)
 {
-	std::shared_ptr<nano::transport::channel> result (tcp_channels.find_channel (nano::transport::map_endpoint_to_tcp (endpoint_a)));
+	std::shared_ptr<btcb::transport::channel> result (tcp_channels.find_channel (btcb::transport::map_endpoint_to_tcp (endpoint_a)));
 	if (!result)
 	{
 		result = udp_channels.channel (endpoint_a);
@@ -695,9 +695,9 @@ std::shared_ptr<nano::transport::channel> nano::network::find_channel (nano::end
 	return result;
 }
 
-std::shared_ptr<nano::transport::channel> nano::network::find_node_id (nano::account const & node_id_a)
+std::shared_ptr<btcb::transport::channel> btcb::network::find_node_id (btcb::account const & node_id_a)
 {
-	std::shared_ptr<nano::transport::channel> result (tcp_channels.find_node_id (node_id_a));
+	std::shared_ptr<btcb::transport::channel> result (tcp_channels.find_node_id (node_id_a));
 	if (!result)
 	{
 		result = udp_channels.find_node_id (node_id_a);
@@ -705,16 +705,16 @@ std::shared_ptr<nano::transport::channel> nano::network::find_node_id (nano::acc
 	return result;
 }
 
-void nano::network::add_response_channels (nano::tcp_endpoint const & endpoint_a, std::vector<nano::tcp_endpoint> insert_channels)
+void btcb::network::add_response_channels (btcb::tcp_endpoint const & endpoint_a, std::vector<btcb::tcp_endpoint> insert_channels)
 {
 	std::lock_guard<std::mutex> lock (response_channels_mutex);
 	response_channels.emplace (endpoint_a, insert_channels);
 }
 
-std::shared_ptr<nano::transport::channel> nano::network::search_response_channel (nano::tcp_endpoint const & endpoint_a, nano::account const & node_id_a)
+std::shared_ptr<btcb::transport::channel> btcb::network::search_response_channel (btcb::tcp_endpoint const & endpoint_a, btcb::account const & node_id_a)
 {
 	// Search by node ID
-	std::shared_ptr<nano::transport::channel> result (find_node_id (node_id_a));
+	std::shared_ptr<btcb::transport::channel> result (find_node_id (node_id_a));
 	if (!result)
 	{
 		// Search in response channels
@@ -739,7 +739,7 @@ std::shared_ptr<nano::transport::channel> nano::network::search_response_channel
 			{
 				for (auto & i : channels_list)
 				{
-					auto udp_endpoint (nano::transport::map_tcp_to_endpoint (i));
+					auto udp_endpoint (btcb::transport::map_tcp_to_endpoint (i));
 					auto search_channel (udp_channels.channel (udp_endpoint));
 					if (search_channel != nullptr)
 					{
@@ -753,39 +753,39 @@ std::shared_ptr<nano::transport::channel> nano::network::search_response_channel
 	return result;
 }
 
-void nano::network::remove_response_channel (nano::tcp_endpoint const & endpoint_a)
+void btcb::network::remove_response_channel (btcb::tcp_endpoint const & endpoint_a)
 {
 	std::lock_guard<std::mutex> lock (response_channels_mutex);
 	response_channels.erase (endpoint_a);
 }
 
-size_t nano::network::response_channels_size ()
+size_t btcb::network::response_channels_size ()
 {
 	std::lock_guard<std::mutex> lock (response_channels_mutex);
 	return response_channels.size ();
 }
 
-bool nano::operation::operator> (nano::operation const & other_a) const
+bool btcb::operation::operator> (btcb::operation const & other_a) const
 {
 	return wakeup > other_a.wakeup;
 }
 
-nano::alarm::alarm (boost::asio::io_context & io_ctx_a) :
+btcb::alarm::alarm (boost::asio::io_context & io_ctx_a) :
 io_ctx (io_ctx_a),
 thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::alarm);
+	btcb::thread_role::set (btcb::thread_role::name::alarm);
 	run ();
 })
 {
 }
 
-nano::alarm::~alarm ()
+btcb::alarm::~alarm ()
 {
 	add (std::chrono::steady_clock::now (), nullptr);
 	thread.join ();
 }
 
-void nano::alarm::run ()
+void btcb::alarm::run ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	auto done (false);
@@ -819,16 +819,16 @@ void nano::alarm::run ()
 	}
 }
 
-void nano::alarm::add (std::chrono::steady_clock::time_point const & wakeup_a, std::function<void()> const & operation)
+void btcb::alarm::add (std::chrono::steady_clock::time_point const & wakeup_a, std::function<void()> const & operation)
 {
 	{
 		std::lock_guard<std::mutex> lock (mutex);
-		operations.push (nano::operation ({ wakeup_a, operation }));
+		operations.push (btcb::operation ({ wakeup_a, operation }));
 	}
 	condition.notify_all ();
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (alarm & alarm, const std::string & name)
 {
@@ -844,18 +844,18 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (alarm & alarm, con
 }
 }
 
-bool nano::node_init::error () const
+bool btcb::node_init::error () const
 {
 	return block_store_init || wallets_store_init;
 }
 
-nano::vote_processor::vote_processor (nano::node & node_a) :
+btcb::vote_processor::vote_processor (btcb::node & node_a) :
 node (node_a),
 started (false),
 stopped (false),
 active (false),
 thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::vote_processing);
+	btcb::thread_role::set (btcb::thread_role::name::vote_processing);
 	process_loop ();
 })
 {
@@ -866,7 +866,7 @@ thread ([this]() {
 	}
 }
 
-void nano::vote_processor::process_loop ()
+void btcb::vote_processor::process_loop ()
 {
 	std::chrono::steady_clock::time_point start_time, end_time;
 	std::chrono::steady_clock::duration elapsed_time;
@@ -885,7 +885,7 @@ void nano::vote_processor::process_loop ()
 	{
 		if (!votes.empty ())
 		{
-			std::deque<std::pair<std::shared_ptr<nano::vote>, std::shared_ptr<nano::transport::channel>>> votes_l;
+			std::deque<std::pair<std::shared_ptr<btcb::vote>, std::shared_ptr<btcb::transport::channel>>> votes_l;
 			votes_l.swap (votes);
 
 			log_this_iteration = false;
@@ -949,7 +949,7 @@ void nano::vote_processor::process_loop ()
 	}
 }
 
-void nano::vote_processor::vote (std::shared_ptr<nano::vote> vote_a, std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::vote_processor::vote (std::shared_ptr<btcb::vote> vote_a, std::shared_ptr<btcb::transport::channel> channel_a)
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped)
@@ -996,19 +996,19 @@ void nano::vote_processor::vote (std::shared_ptr<nano::vote> vote_a, std::shared
 		}
 		else
 		{
-			node.stats.inc (nano::stat::type::vote, nano::stat::detail::vote_overflow);
+			node.stats.inc (btcb::stat::type::vote, btcb::stat::detail::vote_overflow);
 		}
 	}
 }
 
-void nano::vote_processor::verify_votes (std::deque<std::pair<std::shared_ptr<nano::vote>, std::shared_ptr<nano::transport::channel>>> & votes_a)
+void btcb::vote_processor::verify_votes (std::deque<std::pair<std::shared_ptr<btcb::vote>, std::shared_ptr<btcb::transport::channel>>> & votes_a)
 {
 	auto size (votes_a.size ());
 	std::vector<unsigned char const *> messages;
 	messages.reserve (size);
-	std::vector<nano::uint256_union> hashes;
+	std::vector<btcb::uint256_union> hashes;
 	hashes.reserve (size);
-	std::vector<size_t> lengths (size, sizeof (nano::uint256_union));
+	std::vector<size_t> lengths (size, sizeof (btcb::uint256_union));
 	std::vector<unsigned char const *> pub_keys;
 	pub_keys.reserve (size);
 	std::vector<unsigned char const *> signatures;
@@ -1022,7 +1022,7 @@ void nano::vote_processor::verify_votes (std::deque<std::pair<std::shared_ptr<na
 		pub_keys.push_back (vote.first->account.bytes.data ());
 		signatures.push_back (vote.first->signature.bytes.data ());
 	}
-	nano::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
+	btcb::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
 	node.checker.verify (check);
 	std::remove_reference_t<decltype (votes_a)> result;
 	auto i (0);
@@ -1039,33 +1039,33 @@ void nano::vote_processor::verify_votes (std::deque<std::pair<std::shared_ptr<na
 }
 
 // node.active.mutex lock required
-nano::vote_code nano::vote_processor::vote_blocking (nano::transaction const & transaction_a, std::shared_ptr<nano::vote> vote_a, std::shared_ptr<nano::transport::channel> channel_a, bool validated)
+btcb::vote_code btcb::vote_processor::vote_blocking (btcb::transaction const & transaction_a, std::shared_ptr<btcb::vote> vote_a, std::shared_ptr<btcb::transport::channel> channel_a, bool validated)
 {
 	assert (!node.active.mutex.try_lock ());
-	auto result (nano::vote_code::invalid);
+	auto result (btcb::vote_code::invalid);
 	if (validated || !vote_a->validate ())
 	{
 		auto max_vote (node.store.vote_max (transaction_a, vote_a));
-		result = nano::vote_code::replay;
+		result = btcb::vote_code::replay;
 		if (!node.active.vote (vote_a, true))
 		{
-			result = nano::vote_code::vote;
+			result = btcb::vote_code::vote;
 		}
 		switch (result)
 		{
-			case nano::vote_code::vote:
+			case btcb::vote_code::vote:
 				node.observers.vote.notify (transaction_a, vote_a, channel_a);
-			case nano::vote_code::replay:
+			case btcb::vote_code::replay:
 				// This tries to assist rep nodes that have lost track of their highest sequence number by replaying our highest known vote back to them
 				// Only do this if the sequence number is significantly different to account for network reordering
 				// Amplify attack considerations: We're sending out a confirm_ack in response to a confirm_ack for no net traffic increase
 				if (max_vote->sequence > vote_a->sequence + 10000)
 				{
-					nano::confirm_ack confirm (max_vote);
-					channel_a->send_buffer (confirm.to_bytes (), nano::stat::detail::confirm_ack);
+					btcb::confirm_ack confirm (max_vote);
+					channel_a->send_buffer (confirm.to_bytes (), btcb::stat::detail::confirm_ack);
 				}
 				break;
-			case nano::vote_code::invalid:
+			case btcb::vote_code::invalid:
 				assert (false);
 				break;
 		}
@@ -1073,17 +1073,17 @@ nano::vote_code nano::vote_processor::vote_blocking (nano::transaction const & t
 	std::string status;
 	switch (result)
 	{
-		case nano::vote_code::invalid:
+		case btcb::vote_code::invalid:
 			status = "Invalid";
-			node.stats.inc (nano::stat::type::vote, nano::stat::detail::vote_invalid);
+			node.stats.inc (btcb::stat::type::vote, btcb::stat::detail::vote_invalid);
 			break;
-		case nano::vote_code::replay:
+		case btcb::vote_code::replay:
 			status = "Replay";
-			node.stats.inc (nano::stat::type::vote, nano::stat::detail::vote_replay);
+			node.stats.inc (btcb::stat::type::vote, btcb::stat::detail::vote_replay);
 			break;
-		case nano::vote_code::vote:
+		case btcb::vote_code::vote:
 			status = "Vote";
-			node.stats.inc (nano::stat::type::vote, nano::stat::detail::vote_valid);
+			node.stats.inc (btcb::stat::type::vote, btcb::stat::detail::vote_valid);
 			break;
 	}
 	if (node.config.logging.vote_logging ())
@@ -1093,7 +1093,7 @@ nano::vote_code nano::vote_processor::vote_blocking (nano::transaction const & t
 	return result;
 }
 
-void nano::vote_processor::stop ()
+void btcb::vote_processor::stop ()
 {
 	{
 		std::lock_guard<std::mutex> lock (mutex);
@@ -1106,7 +1106,7 @@ void nano::vote_processor::stop ()
 	}
 }
 
-void nano::vote_processor::flush ()
+void btcb::vote_processor::flush ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (active || !votes.empty ())
@@ -1115,7 +1115,7 @@ void nano::vote_processor::flush ()
 	}
 }
 
-void nano::vote_processor::calculate_weights ()
+void btcb::vote_processor::calculate_weights ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	if (!stopped)
@@ -1127,7 +1127,7 @@ void nano::vote_processor::calculate_weights ()
 		auto transaction (node.store.tx_begin_read ());
 		for (auto i (node.store.representation_begin (transaction)), n (node.store.representation_end ()); i != n; ++i)
 		{
-			nano::account representative (i->first);
+			btcb::account representative (i->first);
 			auto weight (node.ledger.weight (transaction, representative));
 			if (weight > supply / 1000) // 0.1% or above (level 1)
 			{
@@ -1145,7 +1145,7 @@ void nano::vote_processor::calculate_weights ()
 	}
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (vote_processor & vote_processor, const std::string & name)
 {
@@ -1212,21 +1212,21 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (block_processor & 
 }
 }
 
-nano::node::node (nano::node_init & init_a, boost::asio::io_context & io_ctx_a, uint16_t peering_port_a, boost::filesystem::path const & application_path_a, nano::alarm & alarm_a, nano::logging const & logging_a, nano::work_pool & work_a) :
-node (init_a, io_ctx_a, application_path_a, alarm_a, nano::node_config (peering_port_a, logging_a), work_a)
+btcb::node::node (btcb::node_init & init_a, boost::asio::io_context & io_ctx_a, uint16_t peering_port_a, boost::filesystem::path const & application_path_a, btcb::alarm & alarm_a, btcb::logging const & logging_a, btcb::work_pool & work_a) :
+node (init_a, io_ctx_a, application_path_a, alarm_a, btcb::node_config (peering_port_a, logging_a), work_a)
 {
 }
 
-nano::node::node (nano::node_init & init_a, boost::asio::io_context & io_ctx_a, boost::filesystem::path const & application_path_a, nano::alarm & alarm_a, nano::node_config const & config_a, nano::work_pool & work_a, nano::node_flags flags_a, bool delay_frontier_confirmation_height_updating) :
+btcb::node::node (btcb::node_init & init_a, boost::asio::io_context & io_ctx_a, boost::filesystem::path const & application_path_a, btcb::alarm & alarm_a, btcb::node_config const & config_a, btcb::work_pool & work_a, btcb::node_flags flags_a, bool delay_frontier_confirmation_height_updating) :
 io_ctx (io_ctx_a),
 config (config_a),
 flags (flags_a),
 alarm (alarm_a),
 work (work_a),
 logger (config_a.logging.min_time_between_log_output),
-store_impl (std::make_unique<nano::mdb_store> (init_a.block_store_init, logger, application_path_a / "data.ldb", config_a.diagnostics_config.txn_tracking, config_a.block_processor_batch_max_time, config_a.lmdb_max_dbs, !flags.disable_unchecked_drop, flags.sideband_batch_size)),
+store_impl (std::make_unique<btcb::mdb_store> (init_a.block_store_init, logger, application_path_a / "data.ldb", config_a.diagnostics_config.txn_tracking, config_a.block_processor_batch_max_time, config_a.lmdb_max_dbs, !flags.disable_unchecked_drop, flags.sideband_batch_size)),
 store (*store_impl),
-wallets_store_impl (std::make_unique<nano::mdb_wallets_store> (init_a.wallets_store_init, application_path_a / "wallets.ldb", config_a.lmdb_max_dbs)),
+wallets_store_impl (std::make_unique<btcb::mdb_wallets_store> (init_a.wallets_store_init, application_path_a / "wallets.ldb", config_a.lmdb_max_dbs)),
 wallets_store (*wallets_store_impl),
 gap_cache (*this),
 ledger (store, stats, config.epoch_block_link, config.epoch_block_signer),
@@ -1241,7 +1241,7 @@ rep_crawler (*this),
 warmed_up (0),
 block_processor (*this),
 block_processor_thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::block_processing);
+	btcb::thread_role::set (btcb::thread_role::name::block_processing);
 	this->block_processor.process_blocks ();
 }),
 online_reps (*this, config.online_weight_minimum.number ()),
@@ -1257,15 +1257,15 @@ startup_time (std::chrono::steady_clock::now ())
 	{
 		if (config.websocket_config.enabled)
 		{
-			auto endpoint_l (nano::tcp_endpoint (config.websocket_config.address, config.websocket_config.port));
-			websocket_server = std::make_shared<nano::websocket::listener> (*this, endpoint_l);
+			auto endpoint_l (btcb::tcp_endpoint (config.websocket_config.address, config.websocket_config.port));
+			websocket_server = std::make_shared<btcb::websocket::listener> (*this, endpoint_l);
 			this->websocket_server->run ();
 		}
 
 		wallets.observer = [this](bool active) {
 			observers.wallet.notify (active);
 		};
-		network.channel_observer = [this](std::shared_ptr<nano::transport::channel> channel_a) {
+		network.channel_observer = [this](std::shared_ptr<btcb::transport::channel> channel_a) {
 			observers.endpoint.notify (channel_a);
 		};
 		network.disconnect_observer = [this]() {
@@ -1273,7 +1273,7 @@ startup_time (std::chrono::steady_clock::now ())
 		};
 		if (!config.callback_address.empty ())
 		{
-			observers.blocks.add ([this](std::shared_ptr<nano::block> block_a, nano::account const & account_a, nano::amount const & amount_a, bool is_state_send_a) {
+			observers.blocks.add ([this](std::shared_ptr<btcb::block> block_a, btcb::account const & account_a, btcb::amount const & amount_a, bool is_state_send_a) {
 				if (this->block_arrival.recent (block_a->hash ()))
 				{
 					auto node_l (shared_from_this ());
@@ -1291,7 +1291,7 @@ startup_time (std::chrono::steady_clock::now ())
 							event.add ("subtype", "send");
 						}
 						// Subtype field
-						else if (block_a->type () == nano::block_type::state)
+						else if (block_a->type () == btcb::block_type::state)
 						{
 							if (block_a->link ().is_zero ())
 							{
@@ -1325,7 +1325,7 @@ startup_time (std::chrono::steady_clock::now ())
 								{
 									node_l->logger.always_log (boost::str (boost::format ("Error resolving callback: %1%:%2%: %3%") % address % port % ec.message ()));
 								}
-								node_l->stats.inc (nano::stat::type::error, nano::stat::detail::http_callback, nano::stat::dir::out);
+								node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::http_callback, btcb::stat::dir::out);
 							}
 						});
 					});
@@ -1334,8 +1334,8 @@ startup_time (std::chrono::steady_clock::now ())
 		}
 		if (websocket_server)
 		{
-			observers.blocks.add ([this](std::shared_ptr<nano::block> block_a, nano::account const & account_a, nano::amount const & amount_a, bool is_state_send_a) {
-				if (this->websocket_server->any_subscribers (nano::websocket::topic::confirmation))
+			observers.blocks.add ([this](std::shared_ptr<btcb::block> block_a, btcb::account const & account_a, btcb::amount const & amount_a, bool is_state_send_a) {
+				if (this->websocket_server->any_subscribers (btcb::websocket::topic::confirmation))
 				{
 					if (this->block_arrival.recent (block_a->hash ()))
 					{
@@ -1344,7 +1344,7 @@ startup_time (std::chrono::steady_clock::now ())
 						{
 							subtype = "send";
 						}
-						else if (block_a->type () == nano::block_type::state)
+						else if (block_a->type () == btcb::block_type::state)
 						{
 							if (block_a->link ().is_zero ())
 							{
@@ -1359,15 +1359,15 @@ startup_time (std::chrono::steady_clock::now ())
 								subtype = "receive";
 							}
 						}
-						nano::websocket::message_builder builder;
+						btcb::websocket::message_builder builder;
 						auto msg (builder.block_confirmed (block_a, account_a, amount_a, subtype));
 						this->websocket_server->broadcast (msg);
 					}
 				}
 			});
 		}
-		observers.endpoint.add ([this](std::shared_ptr<nano::transport::channel> channel_a) {
-			if (channel_a->get_type () == nano::transport::transport_type::udp)
+		observers.endpoint.add ([this](std::shared_ptr<btcb::transport::channel> channel_a) {
+			if (channel_a->get_type () == btcb::transport::transport_type::udp)
 			{
 				this->network.send_keepalive (channel_a);
 			}
@@ -1376,11 +1376,11 @@ startup_time (std::chrono::steady_clock::now ())
 				this->network.send_keepalive_self (channel_a);
 			}
 		});
-		observers.vote.add ([this](nano::transaction const & transaction, std::shared_ptr<nano::vote> vote_a, std::shared_ptr<nano::transport::channel> channel_a) {
+		observers.vote.add ([this](btcb::transaction const & transaction, std::shared_ptr<btcb::vote> vote_a, std::shared_ptr<btcb::transport::channel> channel_a) {
 			this->gap_cache.vote (vote_a);
 			this->online_reps.observe (vote_a->account);
-			nano::uint128_t rep_weight;
-			nano::uint128_t min_rep_weight;
+			btcb::uint128_t rep_weight;
+			btcb::uint128_t min_rep_weight;
 			{
 				rep_weight = ledger.weight (transaction, vote_a->account);
 				min_rep_weight = online_reps.online_stake () / 1000;
@@ -1408,7 +1408,7 @@ startup_time (std::chrono::steady_clock::now ())
 						{
 							if (*i != nullptr)
 							{
-								nano::confirm_req req (*i);
+								btcb::confirm_req req (*i);
 								channel_a->send (req);
 							}
 						}
@@ -1418,22 +1418,22 @@ startup_time (std::chrono::steady_clock::now ())
 		});
 		if (this->websocket_server)
 		{
-			observers.vote.add ([this](nano::transaction const & transaction, std::shared_ptr<nano::vote> vote_a, std::shared_ptr<nano::transport::channel> channel_a) {
-				if (this->websocket_server->any_subscribers (nano::websocket::topic::vote))
+			observers.vote.add ([this](btcb::transaction const & transaction, std::shared_ptr<btcb::vote> vote_a, std::shared_ptr<btcb::transport::channel> channel_a) {
+				if (this->websocket_server->any_subscribers (btcb::websocket::topic::vote))
 				{
-					nano::websocket::message_builder builder;
+					btcb::websocket::message_builder builder;
 					auto msg (builder.vote_received (vote_a));
 					this->websocket_server->broadcast (msg);
 				}
 			});
 		}
-		if (NANO_VERSION_PATCH == 0)
+		if (BTCB_VERSION_PATCH == 0)
 		{
-			logger.always_log ("Node starting, version: ", NANO_MAJOR_MINOR_VERSION);
+			logger.always_log ("Node starting, version: ", BTCB_MAJOR_MINOR_VERSION);
 		}
 		else
 		{
-			logger.always_log ("Node starting, version: ", NANO_MAJOR_MINOR_RC_VERSION);
+			logger.always_log ("Node starting, version: ", BTCB_MAJOR_MINOR_RC_VERSION);
 		}
 
 		logger.always_log (boost::str (boost::format ("Work pool running %1% threads") % work.threads.size ()));
@@ -1450,7 +1450,7 @@ startup_time (std::chrono::steady_clock::now ())
 			is_initialized = (store.latest_begin (transaction) != store.latest_end ());
 		}
 
-		nano::genesis genesis;
+		btcb::genesis genesis;
 		if (!is_initialized)
 		{
 			auto transaction (store.tx_begin_write ());
@@ -1465,16 +1465,16 @@ startup_time (std::chrono::steady_clock::now ())
 			std::exit (1);
 		}
 
-		node_id = nano::keypair ();
+		node_id = btcb::keypair ();
 		logger.always_log ("Node ID: ", node_id.pub.to_account ());
 
-		const uint8_t * weight_buffer = network_params.network.is_live_network () ? nano_bootstrap_weights_live : nano_bootstrap_weights_beta;
-		size_t weight_size = network_params.network.is_live_network () ? nano_bootstrap_weights_live_size : nano_bootstrap_weights_beta_size;
+		const uint8_t * weight_buffer = network_params.network.is_live_network () ? btcb_bootstrap_weights_live : btcb_bootstrap_weights_beta;
+		size_t weight_size = network_params.network.is_live_network () ? btcb_bootstrap_weights_live_size : btcb_bootstrap_weights_beta_size;
 		if (network_params.network.is_live_network () || network_params.network.is_beta_network ())
 		{
-			nano::bufferstream weight_stream ((const uint8_t *)weight_buffer, weight_size);
-			nano::uint128_union block_height;
-			if (!nano::try_read (weight_stream, block_height))
+			btcb::bufferstream weight_stream ((const uint8_t *)weight_buffer, weight_size);
+			btcb::uint128_union block_height;
+			if (!btcb::try_read (weight_stream, block_height))
 			{
 				auto max_blocks = (uint64_t)block_height.number ();
 				auto transaction (store.tx_begin_read ());
@@ -1483,13 +1483,13 @@ startup_time (std::chrono::steady_clock::now ())
 					ledger.bootstrap_weight_max_blocks = max_blocks;
 					while (true)
 					{
-						nano::account account;
-						if (nano::try_read (weight_stream, account.bytes))
+						btcb::account account;
+						if (btcb::try_read (weight_stream, account.bytes))
 						{
 							break;
 						}
-						nano::amount weight;
-						if (nano::try_read (weight_stream, weight.bytes))
+						btcb::amount weight;
+						if (btcb::try_read (weight_stream, weight.bytes))
 						{
 							break;
 						}
@@ -1502,7 +1502,7 @@ startup_time (std::chrono::steady_clock::now ())
 	}
 }
 
-nano::node::~node ()
+btcb::node::~node ()
 {
 	if (config.logging.node_lifetime_tracing ())
 	{
@@ -1511,7 +1511,7 @@ nano::node::~node ()
 	stop ();
 }
 
-void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, std::string const & address, uint16_t port, std::shared_ptr<std::string> target, std::shared_ptr<std::string> body, std::shared_ptr<boost::asio::ip::tcp::resolver> resolver)
+void btcb::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, std::string const & address, uint16_t port, std::shared_ptr<std::string> target, std::shared_ptr<std::string> body, std::shared_ptr<boost::asio::ip::tcp::resolver> resolver)
 {
 	if (i_a != boost::asio::ip::tcp::resolver::iterator{})
 	{
@@ -1538,7 +1538,7 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 							{
 								if (resp->result () == boost::beast::http::status::ok)
 								{
-									node_l->stats.inc (nano::stat::type::http_callback, nano::stat::detail::initiate, nano::stat::dir::out);
+									node_l->stats.inc (btcb::stat::type::http_callback, btcb::stat::detail::initiate, btcb::stat::dir::out);
 								}
 								else
 								{
@@ -1546,7 +1546,7 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 									{
 										node_l->logger.try_log (boost::str (boost::format ("Callback to %1%:%2% failed with status: %3%") % address % port % resp->result ()));
 									}
-									node_l->stats.inc (nano::stat::type::error, nano::stat::detail::http_callback, nano::stat::dir::out);
+									node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::http_callback, btcb::stat::dir::out);
 								}
 							}
 							else
@@ -1555,7 +1555,7 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 								{
 									node_l->logger.try_log (boost::str (boost::format ("Unable complete callback: %1%:%2%: %3%") % address % port % ec.message ()));
 								}
-								node_l->stats.inc (nano::stat::type::error, nano::stat::detail::http_callback, nano::stat::dir::out);
+								node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::http_callback, btcb::stat::dir::out);
 							};
 						});
 					}
@@ -1565,7 +1565,7 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 						{
 							node_l->logger.try_log (boost::str (boost::format ("Unable to send callback: %1%:%2%: %3%") % address % port % ec.message ()));
 						}
-						node_l->stats.inc (nano::stat::type::error, nano::stat::detail::http_callback, nano::stat::dir::out);
+						node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::http_callback, btcb::stat::dir::out);
 					}
 				});
 			}
@@ -1575,7 +1575,7 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 				{
 					node_l->logger.try_log (boost::str (boost::format ("Unable to connect to callback address: %1%:%2%: %3%") % address % port % ec.message ()));
 				}
-				node_l->stats.inc (nano::stat::type::error, nano::stat::detail::http_callback, nano::stat::dir::out);
+				node_l->stats.inc (btcb::stat::type::error, btcb::stat::detail::http_callback, btcb::stat::dir::out);
 				++i_a;
 				node_l->do_rpc_callback (i_a, address, port, target, body, resolver);
 			}
@@ -1583,35 +1583,35 @@ void nano::node::do_rpc_callback (boost::asio::ip::tcp::resolver::iterator i_a, 
 	}
 }
 
-bool nano::node::copy_with_compaction (boost::filesystem::path const & destination_file)
+bool btcb::node::copy_with_compaction (boost::filesystem::path const & destination_file)
 {
-	return !mdb_env_copy2 (boost::polymorphic_downcast<nano::mdb_store *> (store_impl.get ())->env.environment, destination_file.string ().c_str (), MDB_CP_COMPACT);
+	return !mdb_env_copy2 (boost::polymorphic_downcast<btcb::mdb_store *> (store_impl.get ())->env.environment, destination_file.string ().c_str (), MDB_CP_COMPACT);
 }
 
-void nano::node::process_fork (nano::transaction const & transaction_a, std::shared_ptr<nano::block> block_a)
+void btcb::node::process_fork (btcb::transaction const & transaction_a, std::shared_ptr<btcb::block> block_a)
 {
 	auto root (block_a->root ());
 	if (!store.block_exists (transaction_a, block_a->type (), block_a->hash ()) && store.root_exists (transaction_a, block_a->root ()))
 	{
-		std::shared_ptr<nano::block> ledger_block (ledger.forked_block (transaction_a, *block_a));
+		std::shared_ptr<btcb::block> ledger_block (ledger.forked_block (transaction_a, *block_a));
 		if (ledger_block && !block_confirmed_or_being_confirmed (transaction_a, ledger_block->hash ()))
 		{
-			std::weak_ptr<nano::node> this_w (shared_from_this ());
-			if (!active.start (ledger_block, [this_w, root](std::shared_ptr<nano::block>) {
+			std::weak_ptr<btcb::node> this_w (shared_from_this ());
+			if (!active.start (ledger_block, [this_w, root](std::shared_ptr<btcb::block>) {
 				    if (auto this_l = this_w.lock ())
 				    {
 					    auto attempt (this_l->bootstrap_initiator.current_attempt ());
-					    if (attempt && attempt->mode == nano::bootstrap_mode::legacy)
+					    if (attempt && attempt->mode == btcb::bootstrap_mode::legacy)
 					    {
 						    auto transaction (this_l->store.tx_begin_read ());
 						    auto account (this_l->ledger.store.frontier_get (transaction, root));
 						    if (!account.is_zero ())
 						    {
-							    attempt->requeue_pull (nano::pull_info (account, root, root));
+							    attempt->requeue_pull (btcb::pull_info (account, root, root));
 						    }
 						    else if (this_l->ledger.store.account_exists (transaction, root))
 						    {
-							    attempt->requeue_pull (nano::pull_info (root, nano::block_hash (0), nano::block_hash (0)));
+							    attempt->requeue_pull (btcb::pull_info (root, btcb::block_hash (0), btcb::block_hash (0)));
 						    }
 					    }
 				    }
@@ -1624,7 +1624,7 @@ void nano::node::process_fork (nano::transaction const & transaction_a, std::sha
 	}
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (node & node, const std::string & name)
 {
@@ -1654,24 +1654,24 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (node & node, const
 }
 }
 
-nano::gap_cache::gap_cache (nano::node & node_a) :
+btcb::gap_cache::gap_cache (btcb::node & node_a) :
 node (node_a)
 {
 }
 
-void nano::gap_cache::add (nano::transaction const & transaction_a, nano::block_hash const & hash_a, std::chrono::steady_clock::time_point time_point_a)
+void btcb::gap_cache::add (btcb::transaction const & transaction_a, btcb::block_hash const & hash_a, std::chrono::steady_clock::time_point time_point_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (blocks.get<1> ().find (hash_a));
 	if (existing != blocks.get<1> ().end ())
 	{
-		blocks.get<1> ().modify (existing, [time_point_a](nano::gap_information & info) {
+		blocks.get<1> ().modify (existing, [time_point_a](btcb::gap_information & info) {
 			info.arrival = time_point_a;
 		});
 	}
 	else
 	{
-		blocks.insert ({ time_point_a, hash_a, std::unordered_set<nano::account> () });
+		blocks.insert ({ time_point_a, hash_a, std::unordered_set<btcb::account> () });
 		if (blocks.size () > max)
 		{
 			blocks.get<0> ().erase (blocks.get<0> ().begin ());
@@ -1679,7 +1679,7 @@ void nano::gap_cache::add (nano::transaction const & transaction_a, nano::block_
 	}
 }
 
-void nano::gap_cache::vote (std::shared_ptr<nano::vote> vote_a)
+void btcb::gap_cache::vote (std::shared_ptr<btcb::vote> vote_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto transaction (node.store.tx_begin_read ());
@@ -1689,7 +1689,7 @@ void nano::gap_cache::vote (std::shared_ptr<nano::vote> vote_a)
 		if (existing != blocks.get<1> ().end ())
 		{
 			auto is_new (false);
-			blocks.get<1> ().modify (existing, [&](nano::gap_information & info) { is_new = info.voters.insert (vote_a->account).second; });
+			blocks.get<1> ().modify (existing, [&](btcb::gap_information & info) { is_new = info.voters.insert (vote_a->account).second; });
 			if (is_new)
 			{
 				uint128_t tally;
@@ -1737,19 +1737,19 @@ void nano::gap_cache::vote (std::shared_ptr<nano::vote> vote_a)
 	}
 }
 
-nano::uint128_t nano::gap_cache::bootstrap_threshold (nano::transaction const & transaction_a)
+btcb::uint128_t btcb::gap_cache::bootstrap_threshold (btcb::transaction const & transaction_a)
 {
 	auto result ((node.online_reps.online_stake () / 256) * node.config.bootstrap_fraction_numerator);
 	return result;
 }
 
-size_t nano::gap_cache::size ()
+size_t btcb::gap_cache::size ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return blocks.size ();
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (gap_cache & gap_cache, const std::string & name)
 {
@@ -1761,20 +1761,20 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (gap_cache & gap_ca
 }
 }
 
-void nano::node::process_active (std::shared_ptr<nano::block> incoming)
+void btcb::node::process_active (std::shared_ptr<btcb::block> incoming)
 {
 	block_arrival.add (incoming->hash ());
-	block_processor.add (incoming, nano::seconds_since_epoch ());
+	block_processor.add (incoming, btcb::seconds_since_epoch ());
 }
 
-nano::process_return nano::node::process (nano::block const & block_a)
+btcb::process_return btcb::node::process (btcb::block const & block_a)
 {
 	auto transaction (store.tx_begin_write ());
 	auto result (ledger.process (transaction, block_a));
 	return result;
 }
 
-void nano::node::start ()
+void btcb::node::start ()
 {
 	network.start ();
 	add_initial_peers ();
@@ -1814,7 +1814,7 @@ void nano::node::start ()
 	}
 }
 
-void nano::node::stop ()
+void btcb::node::stop ()
 {
 	logger.always_log ("Node stopping");
 	block_processor.stop ();
@@ -1837,7 +1837,7 @@ void nano::node::stop ()
 	wallets.stop ();
 }
 
-void nano::node::keepalive_preconfigured (std::vector<std::string> const & peers_a)
+void btcb::node::keepalive_preconfigured (std::vector<std::string> const & peers_a)
 {
 	for (auto i (peers_a.begin ()), n (peers_a.end ()); i != n; ++i)
 	{
@@ -1845,44 +1845,44 @@ void nano::node::keepalive_preconfigured (std::vector<std::string> const & peers
 	}
 }
 
-nano::block_hash nano::node::latest (nano::account const & account_a)
+btcb::block_hash btcb::node::latest (btcb::account const & account_a)
 {
 	auto transaction (store.tx_begin_read ());
 	return ledger.latest (transaction, account_a);
 }
 
-nano::uint128_t nano::node::balance (nano::account const & account_a)
+btcb::uint128_t btcb::node::balance (btcb::account const & account_a)
 {
 	auto transaction (store.tx_begin_read ());
 	return ledger.account_balance (transaction, account_a);
 }
 
-std::shared_ptr<nano::block> nano::node::block (nano::block_hash const & hash_a)
+std::shared_ptr<btcb::block> btcb::node::block (btcb::block_hash const & hash_a)
 {
 	auto transaction (store.tx_begin_read ());
 	return store.block_get (transaction, hash_a);
 }
 
-std::pair<nano::uint128_t, nano::uint128_t> nano::node::balance_pending (nano::account const & account_a)
+std::pair<btcb::uint128_t, btcb::uint128_t> btcb::node::balance_pending (btcb::account const & account_a)
 {
-	std::pair<nano::uint128_t, nano::uint128_t> result;
+	std::pair<btcb::uint128_t, btcb::uint128_t> result;
 	auto transaction (store.tx_begin_read ());
 	result.first = ledger.account_balance (transaction, account_a);
 	result.second = ledger.account_pending (transaction, account_a);
 	return result;
 }
 
-nano::uint128_t nano::node::weight (nano::account const & account_a)
+btcb::uint128_t btcb::node::weight (btcb::account const & account_a)
 {
 	auto transaction (store.tx_begin_read ());
 	return ledger.weight (transaction, account_a);
 }
 
-nano::account nano::node::representative (nano::account const & account_a)
+btcb::account btcb::node::representative (btcb::account const & account_a)
 {
 	auto transaction (store.tx_begin_read ());
-	nano::account_info info;
-	nano::account result (0);
+	btcb::account_info info;
+	btcb::account result (0);
 	if (!store.account_get (transaction, account_a, info))
 	{
 		result = info.rep_block;
@@ -1890,11 +1890,11 @@ nano::account nano::node::representative (nano::account const & account_a)
 	return result;
 }
 
-void nano::node::ongoing_rep_calculation ()
+void btcb::node::ongoing_rep_calculation ()
 {
 	auto now (std::chrono::steady_clock::now ());
 	vote_processor.calculate_weights ();
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
+	std::weak_ptr<btcb::node> node_w (shared_from_this ());
 	alarm.add (now + std::chrono::minutes (10), [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -1903,7 +1903,7 @@ void nano::node::ongoing_rep_calculation ()
 	});
 }
 
-void nano::node::ongoing_bootstrap ()
+void btcb::node::ongoing_bootstrap ()
 {
 	auto next_wakeup (300);
 	if (warmed_up < 3)
@@ -1916,7 +1916,7 @@ void nano::node::ongoing_bootstrap ()
 		}
 	}
 	bootstrap_initiator.bootstrap ();
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
+	std::weak_ptr<btcb::node> node_w (shared_from_this ());
 	alarm.add (std::chrono::steady_clock::now () + std::chrono::seconds (next_wakeup), [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -1925,13 +1925,13 @@ void nano::node::ongoing_bootstrap ()
 	});
 }
 
-void nano::node::ongoing_store_flush ()
+void btcb::node::ongoing_store_flush ()
 {
 	{
 		auto transaction (store.tx_begin_write ());
 		store.flush (transaction);
 	}
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
+	std::weak_ptr<btcb::node> node_w (shared_from_this ());
 	alarm.add (std::chrono::steady_clock::now () + std::chrono::seconds (5), [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -1940,11 +1940,11 @@ void nano::node::ongoing_store_flush ()
 	});
 }
 
-void nano::node::ongoing_peer_store ()
+void btcb::node::ongoing_peer_store ()
 {
 	bool stored (network.tcp_channels.store_all (true));
 	network.udp_channels.store_all (!stored);
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
+	std::weak_ptr<btcb::node> node_w (shared_from_this ());
 	alarm.add (std::chrono::steady_clock::now () + network_params.node.peer_interval, [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -1953,7 +1953,7 @@ void nano::node::ongoing_peer_store ()
 	});
 }
 
-void nano::node::backup_wallet ()
+void btcb::node::backup_wallet ()
 {
 	auto transaction (wallets.tx_begin_read ());
 	for (auto i (wallets.items.begin ()), n (wallets.items.end ()); i != n; ++i)
@@ -1962,7 +1962,7 @@ void nano::node::backup_wallet ()
 		auto backup_path (application_path / "backup");
 
 		boost::filesystem::create_directories (backup_path);
-		nano::set_secure_perm_directory (backup_path, error_chmod);
+		btcb::set_secure_perm_directory (backup_path, error_chmod);
 		i->second->store.write_backup (transaction, backup_path / (i->first.to_string () + ".json"));
 	}
 	auto this_l (shared ());
@@ -1971,7 +1971,7 @@ void nano::node::backup_wallet ()
 	});
 }
 
-void nano::node::search_pending ()
+void btcb::node::search_pending ()
 {
 	// Reload wallets from disk
 	wallets.reload ();
@@ -1983,9 +1983,9 @@ void nano::node::search_pending ()
 	});
 }
 
-void nano::node::bootstrap_wallet ()
+void btcb::node::bootstrap_wallet ()
 {
-	std::deque<nano::account> accounts;
+	std::deque<btcb::account> accounts;
 	{
 		std::lock_guard<std::mutex> lock (wallets.mutex);
 		auto transaction (wallets.tx_begin_read ());
@@ -1995,7 +1995,7 @@ void nano::node::bootstrap_wallet ()
 			std::lock_guard<std::recursive_mutex> wallet_lock (wallet.store.mutex);
 			for (auto j (wallet.store.begin (transaction)), m (wallet.store.end ()); j != m && accounts.size () < 128; ++j)
 			{
-				nano::account account (j->first);
+				btcb::account account (j->first);
 				accounts.push_back (account);
 			}
 		}
@@ -2003,18 +2003,18 @@ void nano::node::bootstrap_wallet ()
 	bootstrap_initiator.bootstrap_wallet (accounts);
 }
 
-void nano::node::unchecked_cleanup ()
+void btcb::node::unchecked_cleanup ()
 {
-	std::deque<nano::unchecked_key> cleaning_list;
+	std::deque<btcb::unchecked_key> cleaning_list;
 	// Collect old unchecked keys
 	{
-		auto now (nano::seconds_since_epoch ());
+		auto now (btcb::seconds_since_epoch ());
 		auto transaction (store.tx_begin_read ());
 		// Max 128k records to clean, max 2 minutes reading to prevent slow i/o systems start issues
-		for (auto i (store.unchecked_begin (transaction)), n (store.unchecked_end ()); i != n && cleaning_list.size () < 128 * 1024 && nano::seconds_since_epoch () - now < 120; ++i)
+		for (auto i (store.unchecked_begin (transaction)), n (store.unchecked_end ()); i != n && cleaning_list.size () < 128 * 1024 && btcb::seconds_since_epoch () - now < 120; ++i)
 		{
-			nano::unchecked_key key (i->first);
-			nano::unchecked_info info (i->second);
+			btcb::unchecked_key key (i->first);
+			btcb::unchecked_info info (i->second);
 			if ((now - info.modified) > static_cast<uint64_t> (config.unchecked_cutoff_time.count ()))
 			{
 				cleaning_list.push_back (key);
@@ -2035,7 +2035,7 @@ void nano::node::unchecked_cleanup ()
 	}
 }
 
-void nano::node::ongoing_unchecked_cleanup ()
+void btcb::node::ongoing_unchecked_cleanup ()
 {
 	if (!bootstrap_initiator.in_progress ())
 	{
@@ -2047,15 +2047,15 @@ void nano::node::ongoing_unchecked_cleanup ()
 	});
 }
 
-int nano::node::price (nano::uint128_t const & balance_a, int amount_a)
+int btcb::node::price (btcb::uint128_t const & balance_a, int amount_a)
 {
-	assert (balance_a >= amount_a * nano::Gxrb_ratio);
+	assert (balance_a >= amount_a * btcb::Gxrb_ratio);
 	auto balance_l (balance_a);
 	double result (0.0);
 	for (auto i (0); i < amount_a; ++i)
 	{
-		balance_l -= nano::Gxrb_ratio;
-		auto balance_scaled ((balance_l / nano::Mxrb_ratio).convert_to<double> ());
+		balance_l -= btcb::Gxrb_ratio;
+		auto balance_scaled ((balance_l / btcb::Mxrb_ratio).convert_to<double> ());
 		auto units (balance_scaled / 1000.0);
 		auto unit_price (((free_cutoff - units) / free_cutoff) * price_max);
 		result += std::min (std::max (0.0, unit_price), price_max);
@@ -2083,12 +2083,12 @@ public:
 class distributed_work : public std::enable_shared_from_this<distributed_work>
 {
 public:
-	distributed_work (std::shared_ptr<nano::node> const & node_a, nano::block_hash const & root_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a) :
+	distributed_work (std::shared_ptr<btcb::node> const & node_a, btcb::block_hash const & root_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a) :
 	distributed_work (1, node_a, root_a, callback_a, difficulty_a)
 	{
 		assert (node_a != nullptr);
 	}
-	distributed_work (unsigned int backoff_a, std::shared_ptr<nano::node> const & node_a, nano::block_hash const & root_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a) :
+	distributed_work (unsigned int backoff_a, std::shared_ptr<btcb::node> const & node_a, btcb::block_hash const & root_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a) :
 	callback (callback_a),
 	backoff (backoff_a),
 	node (node_a),
@@ -2149,7 +2149,7 @@ public:
 				auto service (i.second);
 				node->background ([this_l, host, service]() {
 					auto connection (std::make_shared<work_request> (this_l->node->io_ctx, host, service));
-					connection->socket.async_connect (nano::tcp_endpoint (host, service), [this_l, connection](boost::system::error_code const & ec) {
+					connection->socket.async_connect (btcb::tcp_endpoint (host, service), [this_l, connection](boost::system::error_code const & ec) {
 						if (!ec)
 						{
 							std::string request_string;
@@ -2157,7 +2157,7 @@ public:
 								boost::property_tree::ptree request;
 								request.put ("action", "work_generate");
 								request.put ("hash", this_l->root.to_string ());
-								request.put ("difficulty", nano::to_string_hex (this_l->difficulty));
+								request.put ("difficulty", btcb::to_string_hex (this_l->difficulty));
 								std::stringstream ostream;
 								boost::property_tree::write_json (ostream, request);
 								request_string = ostream.str ();
@@ -2252,17 +2252,17 @@ public:
 			boost::property_tree::read_json (istream, result);
 			auto work_text (result.get<std::string> ("work"));
 			uint64_t work;
-			if (!nano::from_string_hex (work_text, work))
+			if (!btcb::from_string_hex (work_text, work))
 			{
 				uint64_t result_difficulty (0);
-				if (!nano::work_validate (root, work, &result_difficulty) && result_difficulty >= difficulty)
+				if (!btcb::work_validate (root, work, &result_difficulty) && result_difficulty >= difficulty)
 				{
 					set_once (work);
 					stop ();
 				}
 				else
 				{
-					node->logger.try_log (boost::str (boost::format ("Incorrect work response from %1% for root %2% with diffuculty %3%: %4%") % address % root.to_string () % nano::to_string_hex (difficulty) % work_text));
+					node->logger.try_log (boost::str (boost::format ("Incorrect work response from %1% for root %2% with diffuculty %3%: %4%") % address % root.to_string () % btcb::to_string_hex (difficulty) % work_text));
 					handle_failure (last);
 				}
 			}
@@ -2315,7 +2315,7 @@ public:
 					auto now (std::chrono::steady_clock::now ());
 					auto root_l (root);
 					auto callback_l (callback);
-					std::weak_ptr<nano::node> node_w (node);
+					std::weak_ptr<btcb::node> node_w (node);
 					auto next_backoff (std::min (backoff * 2, (unsigned int)60 * 5));
 					// clang-format off
 					node->alarm.add (now + std::chrono::seconds (backoff), [ node_w, root_l, callback_l, next_backoff, difficulty = difficulty ] {
@@ -2338,8 +2338,8 @@ public:
 	}
 	std::function<void(uint64_t)> callback;
 	unsigned int backoff; // in seconds
-	std::shared_ptr<nano::node> node;
-	nano::block_hash root;
+	std::shared_ptr<btcb::node> node;
+	btcb::block_hash root;
 	std::mutex mutex;
 	std::map<boost::asio::ip::address, uint16_t> outstanding;
 	std::vector<std::pair<std::string, uint16_t>> need_resolve;
@@ -2348,33 +2348,33 @@ public:
 };
 }
 
-void nano::node::work_generate_blocking (nano::block & block_a)
+void btcb::node::work_generate_blocking (btcb::block & block_a)
 {
 	work_generate_blocking (block_a, network_params.network.publish_threshold);
 }
 
-void nano::node::work_generate_blocking (nano::block & block_a, uint64_t difficulty_a)
+void btcb::node::work_generate_blocking (btcb::block & block_a, uint64_t difficulty_a)
 {
 	block_a.block_work_set (work_generate_blocking (block_a.root (), difficulty_a));
 }
 
-void nano::node::work_generate (nano::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a)
+void btcb::node::work_generate (btcb::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a)
 {
 	work_generate (hash_a, callback_a, network_params.network.publish_threshold);
 }
 
-void nano::node::work_generate (nano::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a)
+void btcb::node::work_generate (btcb::uint256_union const & hash_a, std::function<void(uint64_t)> callback_a, uint64_t difficulty_a)
 {
 	auto work_generation (std::make_shared<distributed_work> (shared (), hash_a, callback_a, difficulty_a));
 	work_generation->start ();
 }
 
-uint64_t nano::node::work_generate_blocking (nano::uint256_union const & block_a)
+uint64_t btcb::node::work_generate_blocking (btcb::uint256_union const & block_a)
 {
 	return work_generate_blocking (block_a, network_params.network.publish_threshold);
 }
 
-uint64_t nano::node::work_generate_blocking (nano::uint256_union const & hash_a, uint64_t difficulty_a)
+uint64_t btcb::node::work_generate_blocking (btcb::uint256_union const & hash_a, uint64_t difficulty_a)
 {
 	std::promise<uint64_t> promise;
 	std::future<uint64_t> future = promise.get_future ();
@@ -2387,16 +2387,16 @@ uint64_t nano::node::work_generate_blocking (nano::uint256_union const & hash_a,
 	return future.get ();
 }
 
-void nano::node::add_initial_peers ()
+void btcb::node::add_initial_peers ()
 {
 	auto transaction (store.tx_begin_read ());
 	for (auto i (store.peers_begin (transaction)), n (store.peers_end ()); i != n; ++i)
 	{
-		nano::endpoint endpoint (boost::asio::ip::address_v6 (i->first.address_bytes ()), i->first.port ());
+		btcb::endpoint endpoint (boost::asio::ip::address_v6 (i->first.address_bytes ()), i->first.port ());
 		if (!network.reachout (endpoint, config.allow_local_peers))
 		{
-			std::weak_ptr<nano::node> node_w (shared_from_this ());
-			network.tcp_channels.start_tcp (endpoint, [node_w](std::shared_ptr<nano::transport::channel> channel_a) {
+			std::weak_ptr<btcb::node> node_w (shared_from_this ());
+			network.tcp_channels.start_tcp (endpoint, [node_w](std::shared_ptr<btcb::transport::channel> channel_a) {
 				if (auto node_l = node_w.lock ())
 				{
 					node_l->network.send_keepalive (channel_a);
@@ -2407,7 +2407,7 @@ void nano::node::add_initial_peers ()
 	}
 }
 
-void nano::node::block_confirm (std::shared_ptr<nano::block> block_a)
+void btcb::node::block_confirm (std::shared_ptr<btcb::block> block_a)
 {
 	active.start (block_a);
 	network.broadcast_confirm_req (block_a);
@@ -2418,20 +2418,20 @@ void nano::node::block_confirm (std::shared_ptr<nano::block> block_a)
 	}
 }
 
-bool nano::node::block_confirmed_or_being_confirmed (nano::transaction const & transaction_a, nano::block_hash const & hash_a)
+bool btcb::node::block_confirmed_or_being_confirmed (btcb::transaction const & transaction_a, btcb::block_hash const & hash_a)
 {
 	return ledger.block_confirmed (transaction_a, hash_a) || confirmation_height_processor.is_processing_block (hash_a);
 }
 
-nano::uint128_t nano::node::delta () const
+btcb::uint128_t btcb::node::delta () const
 {
 	auto result ((online_reps.online_stake () / 100) * config.online_weight_quorum);
 	return result;
 }
 
-void nano::node::ongoing_online_weight_calculation_queue ()
+void btcb::node::ongoing_online_weight_calculation_queue ()
 {
-	std::weak_ptr<nano::node> node_w (shared_from_this ());
+	std::weak_ptr<btcb::node> node_w (shared_from_this ());
 	alarm.add (std::chrono::steady_clock::now () + (std::chrono::seconds (network_params.node.weight_period)), [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -2440,12 +2440,12 @@ void nano::node::ongoing_online_weight_calculation_queue ()
 	});
 }
 
-bool nano::node::online () const
+bool btcb::node::online () const
 {
 	return rep_crawler.total_weight () > (std::max (config.online_weight_minimum.number (), delta ()));
 }
 
-void nano::node::ongoing_online_weight_calculation ()
+void btcb::node::ongoing_online_weight_calculation ()
 {
 	online_reps.sample ();
 	ongoing_online_weight_calculation_queue ();
@@ -2453,10 +2453,10 @@ void nano::node::ongoing_online_weight_calculation ()
 
 namespace
 {
-class confirmed_visitor : public nano::block_visitor
+class confirmed_visitor : public btcb::block_visitor
 {
 public:
-	confirmed_visitor (nano::transaction const & transaction_a, nano::node & node_a, std::shared_ptr<nano::block> block_a, nano::block_hash const & hash_a) :
+	confirmed_visitor (btcb::transaction const & transaction_a, btcb::node & node_a, std::shared_ptr<btcb::block> block_a, btcb::block_hash const & hash_a) :
 	transaction (transaction_a),
 	node (node_a),
 	block (block_a),
@@ -2464,7 +2464,7 @@ public:
 	{
 	}
 	virtual ~confirmed_visitor () = default;
-	void scan_receivable (nano::account const & account_a)
+	void scan_receivable (btcb::account const & account_a)
 	{
 		for (auto i (node.wallets.items.begin ()), n (node.wallets.items.end ()); i != n; ++i)
 		{
@@ -2472,15 +2472,15 @@ public:
 			auto transaction_l (node.wallets.tx_begin_read ());
 			if (wallet->store.exists (transaction_l, account_a))
 			{
-				nano::account representative;
-				nano::pending_info pending;
+				btcb::account representative;
+				btcb::pending_info pending;
 				representative = wallet->store.representative (transaction_l);
-				auto error (node.store.pending_get (transaction, nano::pending_key (account_a, hash), pending));
+				auto error (node.store.pending_get (transaction, btcb::pending_key (account_a, hash), pending));
 				if (!error)
 				{
 					auto node_l (node.shared ());
 					auto amount (pending.amount.number ());
-					wallet->receive_async (block, representative, amount, [](std::shared_ptr<nano::block>) {});
+					wallet->receive_async (block, representative, amount, [](std::shared_ptr<btcb::block>) {});
 				}
 				else
 				{
@@ -2497,37 +2497,37 @@ public:
 			}
 		}
 	}
-	void state_block (nano::state_block const & block_a) override
+	void state_block (btcb::state_block const & block_a) override
 	{
 		scan_receivable (block_a.hashables.link);
 	}
-	void send_block (nano::send_block const & block_a) override
+	void send_block (btcb::send_block const & block_a) override
 	{
 		scan_receivable (block_a.hashables.destination);
 	}
-	void receive_block (nano::receive_block const &) override
+	void receive_block (btcb::receive_block const &) override
 	{
 	}
-	void open_block (nano::open_block const &) override
+	void open_block (btcb::open_block const &) override
 	{
 	}
-	void change_block (nano::change_block const &) override
+	void change_block (btcb::change_block const &) override
 	{
 	}
-	nano::transaction const & transaction;
-	nano::node & node;
-	std::shared_ptr<nano::block> block;
-	nano::block_hash const & hash;
+	btcb::transaction const & transaction;
+	btcb::node & node;
+	std::shared_ptr<btcb::block> block;
+	btcb::block_hash const & hash;
 };
 }
 
-void nano::node::receive_confirmed (nano::transaction const & transaction_a, std::shared_ptr<nano::block> block_a, nano::block_hash const & hash_a)
+void btcb::node::receive_confirmed (btcb::transaction const & transaction_a, std::shared_ptr<btcb::block> block_a, btcb::block_hash const & hash_a)
 {
 	confirmed_visitor visitor (transaction_a, *this, block_a, hash_a);
 	block_a->visit (visitor);
 }
 
-void nano::node::process_confirmed (std::shared_ptr<nano::block> block_a, uint8_t iteration)
+void btcb::node::process_confirmed (std::shared_ptr<btcb::block> block_a, uint8_t iteration)
 {
 	auto hash (block_a->hash ());
 	if (ledger.block_exists (block_a->type (), hash))
@@ -2539,13 +2539,13 @@ void nano::node::process_confirmed (std::shared_ptr<nano::block> block_a, uint8_
 		auto account (ledger.account (transaction, hash));
 		auto amount (ledger.amount (transaction, hash));
 		bool is_state_send (false);
-		nano::account pending_account (0);
-		if (auto state = dynamic_cast<nano::state_block *> (block_a.get ()))
+		btcb::account pending_account (0);
+		if (auto state = dynamic_cast<btcb::state_block *> (block_a.get ()))
 		{
 			is_state_send = ledger.is_send (transaction, *state);
 			pending_account = state->hashables.link;
 		}
-		if (auto send = dynamic_cast<nano::send_block *> (block_a.get ()))
+		if (auto send = dynamic_cast<btcb::send_block *> (block_a.get ()))
 		{
 			pending_account = send->hashables.destination;
 		}
@@ -2563,7 +2563,7 @@ void nano::node::process_confirmed (std::shared_ptr<nano::block> block_a, uint8_
 	else if (iteration < 20)
 	{
 		iteration++;
-		std::weak_ptr<nano::node> node_w (shared ());
+		std::weak_ptr<btcb::node> node_w (shared ());
 		alarm.add (std::chrono::steady_clock::now () + network_params.node.process_confirmed_interval, [node_w, block_a, iteration]() {
 			if (auto node_l = node_w.lock ())
 			{
@@ -2573,18 +2573,18 @@ void nano::node::process_confirmed (std::shared_ptr<nano::block> block_a, uint8_
 	}
 }
 
-void nano::node::process_message (nano::message const & message_a, std::shared_ptr<nano::transport::channel> channel_a)
+void btcb::node::process_message (btcb::message const & message_a, std::shared_ptr<btcb::transport::channel> channel_a)
 {
 	network_message_visitor visitor (*this, channel_a);
 	message_a.visit (visitor);
 }
 
-nano::endpoint nano::network::endpoint ()
+btcb::endpoint btcb::network::endpoint ()
 {
 	return udp_channels.get_local_endpoint ();
 }
 
-void nano::network::cleanup (std::chrono::steady_clock::time_point const & cutoff_a)
+void btcb::network::cleanup (std::chrono::steady_clock::time_point const & cutoff_a)
 {
 	tcp_channels.purge (cutoff_a);
 	udp_channels.purge (cutoff_a);
@@ -2594,10 +2594,10 @@ void nano::network::cleanup (std::chrono::steady_clock::time_point const & cutof
 	}
 }
 
-void nano::network::ongoing_cleanup ()
+void btcb::network::ongoing_cleanup ()
 {
 	cleanup (std::chrono::steady_clock::now () - node.network_params.node.cutoff);
-	std::weak_ptr<nano::node> node_w (node.shared ());
+	std::weak_ptr<btcb::node> node_w (node.shared ());
 	node.alarm.add (std::chrono::steady_clock::now () + node.network_params.node.period, [node_w]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -2606,31 +2606,31 @@ void nano::network::ongoing_cleanup ()
 	});
 }
 
-size_t nano::network::size () const
+size_t btcb::network::size () const
 {
 	return tcp_channels.size () + udp_channels.size ();
 }
 
-size_t nano::network::size_sqrt () const
+size_t btcb::network::size_sqrt () const
 {
 	return (static_cast<size_t> (std::ceil (std::sqrt (size ()))));
 }
 
-bool nano::network::empty () const
+bool btcb::network::empty () const
 {
 	return size () == 0;
 }
 
-bool nano::block_arrival::add (nano::block_hash const & hash_a)
+bool btcb::block_arrival::add (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto now (std::chrono::steady_clock::now ());
-	auto inserted (arrival.insert (nano::block_arrival_info{ now, hash_a }));
+	auto inserted (arrival.insert (btcb::block_arrival_info{ now, hash_a }));
 	auto result (!inserted.second);
 	return result;
 }
 
-bool nano::block_arrival::recent (nano::block_hash const & hash_a)
+bool btcb::block_arrival::recent (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto now (std::chrono::steady_clock::now ());
@@ -2641,7 +2641,7 @@ bool nano::block_arrival::recent (nano::block_hash const & hash_a)
 	return arrival.get<1> ().find (hash_a) != arrival.get<1> ().end ();
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (block_arrival & block_arrival, const std::string & name)
 {
@@ -2658,7 +2658,7 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (block_arrival & bl
 }
 }
 
-nano::online_reps::online_reps (nano::node & node_a, nano::uint128_t minimum_a) :
+btcb::online_reps::online_reps (btcb::node & node_a, btcb::uint128_t minimum_a) :
 node (node_a),
 minimum (minimum_a)
 {
@@ -2666,7 +2666,7 @@ minimum (minimum_a)
 	online = trend (transaction);
 }
 
-void nano::online_reps::observe (nano::account const & rep_a)
+void btcb::online_reps::observe (btcb::account const & rep_a)
 {
 	auto transaction (node.ledger.store.tx_begin_read ());
 	if (node.ledger.weight (transaction, rep_a) > 0)
@@ -2676,7 +2676,7 @@ void nano::online_reps::observe (nano::account const & rep_a)
 	}
 }
 
-void nano::online_reps::sample ()
+void btcb::online_reps::sample ()
 {
 	auto transaction (node.ledger.store.tx_begin_write ());
 	// Discard oldest entries
@@ -2687,8 +2687,8 @@ void nano::online_reps::sample ()
 		node.ledger.store.online_weight_del (transaction, oldest->first);
 	}
 	// Calculate current active rep weight
-	nano::uint128_t current;
-	std::unordered_set<nano::account> reps_copy;
+	btcb::uint128_t current;
+	std::unordered_set<btcb::account> reps_copy;
 	{
 		std::lock_guard<std::mutex> lock (mutex);
 		reps_copy.swap (reps);
@@ -2703,9 +2703,9 @@ void nano::online_reps::sample ()
 	online = trend_l;
 }
 
-nano::uint128_t nano::online_reps::trend (nano::transaction & transaction_a)
+btcb::uint128_t btcb::online_reps::trend (btcb::transaction & transaction_a)
 {
-	std::vector<nano::uint128_t> items;
+	std::vector<btcb::uint128_t> items;
 	items.reserve (node.network_params.node.max_weight_samples + 1);
 	items.push_back (minimum);
 	for (auto i (node.ledger.store.online_weight_begin (transaction_a)), n (node.ledger.store.online_weight_end ()); i != n; ++i)
@@ -2716,18 +2716,18 @@ nano::uint128_t nano::online_reps::trend (nano::transaction & transaction_a)
 	// Pick median value for our target vote weight
 	auto median_idx = items.size () / 2;
 	nth_element (items.begin (), items.begin () + median_idx, items.end ());
-	return nano::uint128_t{ items[median_idx] };
+	return btcb::uint128_t{ items[median_idx] };
 }
 
-nano::uint128_t nano::online_reps::online_stake () const
+btcb::uint128_t btcb::online_reps::online_stake () const
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return std::max (online, minimum);
 }
 
-std::vector<nano::account> nano::online_reps::list ()
+std::vector<btcb::account> btcb::online_reps::list ()
 {
-	std::vector<nano::account> result;
+	std::vector<btcb::account> result;
 	std::lock_guard<std::mutex> lock (mutex);
 	for (auto & i : reps)
 	{
@@ -2736,7 +2736,7 @@ std::vector<nano::account> nano::online_reps::list ()
 	return result;
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (online_reps & online_reps, const std::string & name)
 {
@@ -2753,18 +2753,18 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (online_reps & onli
 }
 }
 
-std::shared_ptr<nano::node> nano::node::shared ()
+std::shared_ptr<btcb::node> btcb::node::shared ()
 {
 	return shared_from_this ();
 }
 
-nano::election_vote_result::election_vote_result (bool replay_a, bool processed_a)
+btcb::election_vote_result::election_vote_result (bool replay_a, bool processed_a)
 {
 	replay = replay_a;
 	processed = processed_a;
 }
 
-nano::election::election (nano::node & node_a, std::shared_ptr<nano::block> block_a, std::function<void(std::shared_ptr<nano::block>)> const & confirmation_action_a) :
+btcb::election::election (btcb::node & node_a, std::shared_ptr<btcb::block> block_a, std::function<void(std::shared_ptr<btcb::block>)> const & confirmation_action_a) :
 confirmation_action (confirmation_action_a),
 node (node_a),
 election_start (std::chrono::steady_clock::now ()),
@@ -2773,23 +2773,23 @@ confirmed (false),
 stopped (false),
 announcements (0)
 {
-	last_votes.insert (std::make_pair (node.network_params.random.not_an_account, nano::vote_info{ std::chrono::steady_clock::now (), 0, block_a->hash () }));
+	last_votes.insert (std::make_pair (node.network_params.random.not_an_account, btcb::vote_info{ std::chrono::steady_clock::now (), 0, block_a->hash () }));
 	blocks.insert (std::make_pair (block_a->hash (), block_a));
 	update_dependent ();
 }
 
-void nano::election::compute_rep_votes (nano::transaction const & transaction_a)
+void btcb::election::compute_rep_votes (btcb::transaction const & transaction_a)
 {
 	if (node.config.enable_voting)
 	{
-		node.wallets.foreach_representative (transaction_a, [this, &transaction_a](nano::public_key const & pub_a, nano::raw_key const & prv_a) {
+		node.wallets.foreach_representative (transaction_a, [this, &transaction_a](btcb::public_key const & pub_a, btcb::raw_key const & prv_a) {
 			auto vote (this->node.store.vote_generate (transaction_a, pub_a, prv_a, status.winner));
-			this->node.vote_processor.vote (vote, std::make_shared<nano::transport::channel_udp> (this->node.network.udp_channels, this->node.network.endpoint ()));
+			this->node.vote_processor.vote (vote, std::make_shared<btcb::transport::channel_udp> (this->node.network.udp_channels, this->node.network.endpoint ()));
 		});
 	}
 }
 
-void nano::election::confirm_once ()
+void btcb::election::confirm_once ()
 {
 	if (!confirmed.exchange (true))
 	{
@@ -2809,12 +2809,12 @@ void nano::election::confirm_once ()
 	}
 }
 
-void nano::election::stop ()
+void btcb::election::stop ()
 {
 	stopped = true;
 }
 
-bool nano::election::have_quorum (nano::tally_t const & tally_a, nano::uint128_t tally_sum) const
+bool btcb::election::have_quorum (btcb::tally_t const & tally_a, btcb::uint128_t tally_sum) const
 {
 	bool result = false;
 	if (tally_sum >= node.config.online_weight_minimum.number ())
@@ -2829,15 +2829,15 @@ bool nano::election::have_quorum (nano::tally_t const & tally_a, nano::uint128_t
 	return result;
 }
 
-nano::tally_t nano::election::tally (nano::transaction const & transaction_a)
+btcb::tally_t btcb::election::tally (btcb::transaction const & transaction_a)
 {
-	std::unordered_map<nano::block_hash, nano::uint128_t> block_weights;
+	std::unordered_map<btcb::block_hash, btcb::uint128_t> block_weights;
 	for (auto vote_info : last_votes)
 	{
 		block_weights[vote_info.second.hash] += node.ledger.weight (transaction_a, vote_info.first);
 	}
 	last_tally = block_weights;
-	nano::tally_t result;
+	btcb::tally_t result;
 	for (auto item : block_weights)
 	{
 		auto block (blocks.find (item.first));
@@ -2849,14 +2849,14 @@ nano::tally_t nano::election::tally (nano::transaction const & transaction_a)
 	return result;
 }
 
-void nano::election::confirm_if_quorum (nano::transaction const & transaction_a)
+void btcb::election::confirm_if_quorum (btcb::transaction const & transaction_a)
 {
 	auto tally_l (tally (transaction_a));
 	assert (!tally_l.empty ());
 	auto winner (tally_l.begin ());
 	auto block_l (winner->second);
 	status.tally = winner->first;
-	nano::uint128_t sum (0);
+	btcb::uint128_t sum (0);
 	for (auto & i : tally_l)
 	{
 		sum += i.first;
@@ -2879,7 +2879,7 @@ void nano::election::confirm_if_quorum (nano::transaction const & transaction_a)
 	}
 }
 
-void nano::election::log_votes (nano::tally_t const & tally_a) const
+void btcb::election::log_votes (btcb::tally_t const & tally_a) const
 {
 	std::stringstream tally;
 	tally << boost::str (boost::format ("\nVote tally for root %1%") % status.winner->root ().to_string ());
@@ -2894,7 +2894,7 @@ void nano::election::log_votes (nano::tally_t const & tally_a) const
 	node.logger.try_log (tally.str ());
 }
 
-nano::election_vote_result nano::election::vote (nano::account rep, uint64_t sequence, nano::block_hash block_hash)
+btcb::election_vote_result btcb::election::vote (btcb::account rep, uint64_t sequence, btcb::block_hash block_hash)
 {
 	// see republish_vote documentation for an explanation of these rules
 	auto transaction (node.store.tx_begin_read ());
@@ -2946,13 +2946,13 @@ nano::election_vote_result nano::election::vote (nano::account rep, uint64_t seq
 			}
 		}
 	}
-	return nano::election_vote_result (replay, should_process);
+	return btcb::election_vote_result (replay, should_process);
 }
 
-bool nano::node::validate_block_by_previous (nano::transaction const & transaction, std::shared_ptr<nano::block> block_a)
+bool btcb::node::validate_block_by_previous (btcb::transaction const & transaction, std::shared_ptr<btcb::block> block_a)
 {
 	bool result (false);
-	nano::account account;
+	btcb::account account;
 	if (!block_a->previous ().is_zero ())
 	{
 		if (store.block_exists (transaction, block_a->previous ()))
@@ -2968,10 +2968,10 @@ bool nano::node::validate_block_by_previous (nano::transaction const & transacti
 	{
 		account = block_a->root ();
 	}
-	if (!result && block_a->type () == nano::block_type::state)
+	if (!result && block_a->type () == btcb::block_type::state)
 	{
-		std::shared_ptr<nano::state_block> block_l (std::static_pointer_cast<nano::state_block> (block_a));
-		nano::amount prev_balance (0);
+		std::shared_ptr<btcb::state_block> block_l (std::static_pointer_cast<btcb::state_block> (block_a));
+		btcb::amount prev_balance (0);
 		if (!block_l->hashables.previous.is_zero ())
 		{
 			if (store.block_exists (transaction, block_l->hashables.previous))
@@ -2991,14 +2991,14 @@ bool nano::node::validate_block_by_previous (nano::transaction const & transacti
 			}
 		}
 	}
-	if (!result && (account.is_zero () || nano::validate_message (account, block_a->hash (), block_a->block_signature ())))
+	if (!result && (account.is_zero () || btcb::validate_message (account, block_a->hash (), block_a->block_signature ())))
 	{
 		result = true;
 	}
 	return result;
 }
 
-bool nano::election::publish (std::shared_ptr<nano::block> block_a)
+bool btcb::election::publish (std::shared_ptr<btcb::block> block_a)
 {
 	auto result (false);
 	if (blocks.size () >= 10)
@@ -3025,16 +3025,16 @@ bool nano::election::publish (std::shared_ptr<nano::block> block_a)
 	return result;
 }
 
-size_t nano::election::last_votes_size ()
+size_t btcb::election::last_votes_size ()
 {
 	std::lock_guard<std::mutex> lock (node.active.mutex);
 	return last_votes.size ();
 }
 
-void nano::election::update_dependent ()
+void btcb::election::update_dependent ()
 {
 	assert (!node.active.mutex.try_lock ());
-	std::vector<nano::block_hash> blocks_search;
+	std::vector<btcb::block_hash> blocks_search;
 	auto hash (status.winner->hash ());
 	auto previous (status.winner->previous ());
 	if (!previous.is_zero ())
@@ -3064,13 +3064,13 @@ void nano::election::update_dependent ()
 	}
 }
 
-int nano::node::store_version ()
+int btcb::node::store_version ()
 {
 	auto transaction (store.tx_begin_read ());
 	return store.version_get (transaction);
 }
 
-nano::inactive_node::inactive_node (boost::filesystem::path const & path_a, uint16_t peering_port_a) :
+btcb::inactive_node::inactive_node (boost::filesystem::path const & path_a, uint16_t peering_port_a) :
 path (path_a),
 io_context (std::make_shared<boost::asio::io_context> ()),
 alarm (*io_context),
@@ -3083,19 +3083,19 @@ peering_port (peering_port_a)
 	 * @warning May throw a filesystem exception
 	 */
 	boost::filesystem::create_directories (path);
-	nano::set_secure_perm_directory (path, error_chmod);
+	btcb::set_secure_perm_directory (path, error_chmod);
 	logging.max_size = std::numeric_limits<std::uintmax_t>::max ();
 	logging.init (path);
-	node = std::make_shared<nano::node> (init, *io_context, peering_port, path, alarm, logging, work);
+	node = std::make_shared<btcb::node> (init, *io_context, peering_port, path, alarm, logging, work);
 	node->active.stop ();
 }
 
-nano::inactive_node::~inactive_node ()
+btcb::inactive_node::~inactive_node ()
 {
 	node->stop ();
 }
 
-nano::message_buffer_manager::message_buffer_manager (nano::stat & stats_a, size_t size, size_t count) :
+btcb::message_buffer_manager::message_buffer_manager (btcb::stat & stats_a, size_t size, size_t count) :
 stats (stats_a),
 free (count),
 full (count),
@@ -3109,19 +3109,19 @@ stopped (false)
 	auto entry_data (entries.data ());
 	for (auto i (0); i < count; ++i, ++entry_data)
 	{
-		*entry_data = { slab_data + i * size, 0, nano::endpoint () };
+		*entry_data = { slab_data + i * size, 0, btcb::endpoint () };
 		free.push_back (entry_data);
 	}
 }
-nano::message_buffer * nano::message_buffer_manager::allocate ()
+btcb::message_buffer * btcb::message_buffer_manager::allocate ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (!stopped && free.empty () && full.empty ())
 	{
-		stats.inc (nano::stat::type::udp, nano::stat::detail::blocking, nano::stat::dir::in);
+		stats.inc (btcb::stat::type::udp, btcb::stat::detail::blocking, btcb::stat::dir::in);
 		condition.wait (lock);
 	}
-	nano::message_buffer * result (nullptr);
+	btcb::message_buffer * result (nullptr);
 	if (!free.empty ())
 	{
 		result = free.front ();
@@ -3131,12 +3131,12 @@ nano::message_buffer * nano::message_buffer_manager::allocate ()
 	{
 		result = full.front ();
 		full.pop_front ();
-		stats.inc (nano::stat::type::udp, nano::stat::detail::overflow, nano::stat::dir::in);
+		stats.inc (btcb::stat::type::udp, btcb::stat::detail::overflow, btcb::stat::dir::in);
 	}
 	release_assert (result || stopped);
 	return result;
 }
-void nano::message_buffer_manager::enqueue (nano::message_buffer * data_a)
+void btcb::message_buffer_manager::enqueue (btcb::message_buffer * data_a)
 {
 	assert (data_a != nullptr);
 	{
@@ -3145,14 +3145,14 @@ void nano::message_buffer_manager::enqueue (nano::message_buffer * data_a)
 	}
 	condition.notify_all ();
 }
-nano::message_buffer * nano::message_buffer_manager::dequeue ()
+btcb::message_buffer * btcb::message_buffer_manager::dequeue ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (!stopped && full.empty ())
 	{
 		condition.wait (lock);
 	}
-	nano::message_buffer * result (nullptr);
+	btcb::message_buffer * result (nullptr);
 	if (!full.empty ())
 	{
 		result = full.front ();
@@ -3160,7 +3160,7 @@ nano::message_buffer * nano::message_buffer_manager::dequeue ()
 	}
 	return result;
 }
-void nano::message_buffer_manager::release (nano::message_buffer * data_a)
+void btcb::message_buffer_manager::release (btcb::message_buffer * data_a)
 {
 	assert (data_a != nullptr);
 	{
@@ -3169,7 +3169,7 @@ void nano::message_buffer_manager::release (nano::message_buffer * data_a)
 	}
 	condition.notify_all ();
 }
-void nano::message_buffer_manager::stop ()
+void btcb::message_buffer_manager::stop ()
 {
 	{
 		std::lock_guard<std::mutex> lock (mutex);

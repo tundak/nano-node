@@ -1,11 +1,11 @@
 #include <windows.h>
 
-namespace nano
+namespace btcb
 {
 bool event_log_reg_entry_exists ()
 {
 	HKEY h_key;
-	auto res = RegOpenKeyExW (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Nano\\Nano", 0, KEY_READ, &h_key);
+	auto res = RegOpenKeyExW (HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Services\\EventLog\\Btcb\\Btcb", 0, KEY_READ, &h_key);
 	auto found_key = (res == ERROR_SUCCESS);
 	if (found_key)
 	{

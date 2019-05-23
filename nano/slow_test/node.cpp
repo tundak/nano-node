@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include <nano/core_test/testutil.hpp>
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/node/transport/udp.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/node/transport/udp.hpp>
 
 #include <thread>
 
@@ -10,8 +10,8 @@ using namespace std::chrono_literals;
 
 TEST (system, generate_mass_activity)
 {
-	nano::system system (24000, 1);
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
+	btcb::system system (24000, 1);
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	uint32_t count (20);
 	system.generate_mass_activity (count, *system.nodes[0]);
 	size_t accounts (0);
@@ -24,9 +24,9 @@ TEST (system, generate_mass_activity)
 
 TEST (system, generate_mass_activity_long)
 {
-	nano::system system (24000, 1);
-	nano::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
+	btcb::system system (24000, 1);
+	btcb::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	uint32_t count (1000000000);
 	system.generate_mass_activity (count, *system.nodes[0]);
 	size_t accounts (0);
@@ -43,23 +43,23 @@ TEST (system, receive_while_synchronizing)
 {
 	std::vector<boost::thread> threads;
 	{
-		nano::system system (24000, 1);
-		nano::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
-		system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
+		btcb::system system (24000, 1);
+		btcb::thread_runner runner (system.io_ctx, system.nodes[0]->config.io_threads);
+		system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 		uint32_t count (1000);
 		system.generate_mass_activity (count, *system.nodes[0]);
-		nano::keypair key;
-		nano::node_init init1;
-		auto node1 (std::make_shared<nano::node> (init1, system.io_ctx, 24001, nano::unique_path (), system.alarm, system.logging, system.work));
+		btcb::keypair key;
+		btcb::node_init init1;
+		auto node1 (std::make_shared<btcb::node> (init1, system.io_ctx, 24001, btcb::unique_path (), system.alarm, system.logging, system.work));
 		ASSERT_FALSE (init1.error ());
-		auto channel (std::make_shared<nano::transport::channel_udp> (node1->network.udp_channels, system.nodes[0]->network.endpoint ()));
+		auto channel (std::make_shared<btcb::transport::channel_udp> (node1->network.udp_channels, system.nodes[0]->network.endpoint ()));
 		node1->network.send_keepalive (channel);
 		auto wallet (node1->wallets.create (1));
 		ASSERT_EQ (key.pub, wallet->insert_adhoc (key.prv));
 		node1->start ();
 		system.nodes.push_back (node1);
 		system.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (200), ([&system, &key]() {
-			auto hash (system.wallet (0)->send_sync (nano::test_genesis_key.pub, key.pub, system.nodes[0]->config.receive_minimum.number ()));
+			auto hash (system.wallet (0)->send_sync (btcb::test_genesis_key.pub, key.pub, system.nodes[0]->config.receive_minimum.number ()));
 			auto transaction (system.nodes[0]->store.tx_begin_read ());
 			auto block (system.nodes[0]->store.block_get (transaction, hash));
 			std::string block_text;
@@ -81,31 +81,31 @@ TEST (system, receive_while_synchronizing)
 
 TEST (ledger, deep_account_compute)
 {
-	nano::logger_mt logger;
+	btcb::logger_mt logger;
 	bool init (false);
-	nano::mdb_store store (init, logger, nano::unique_path ());
+	btcb::mdb_store store (init, logger, btcb::unique_path ());
 	ASSERT_FALSE (init);
-	nano::stat stats;
-	nano::ledger ledger (store, stats);
-	nano::genesis genesis;
+	btcb::stat stats;
+	btcb::ledger ledger (store, stats);
+	btcb::genesis genesis;
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
-	nano::keypair key;
-	auto balance (nano::genesis_amount - 1);
-	nano::send_block send (genesis.hash (), key.pub, balance, nano::test_genesis_key.prv, nano::test_genesis_key.pub, 0);
-	ASSERT_EQ (nano::process_result::progress, ledger.process (transaction, send).code);
-	nano::open_block open (send.hash (), nano::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
-	ASSERT_EQ (nano::process_result::progress, ledger.process (transaction, open).code);
+	btcb::keypair key;
+	auto balance (btcb::genesis_amount - 1);
+	btcb::send_block send (genesis.hash (), key.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send).code);
+	btcb::open_block open (send.hash (), btcb::test_genesis_key.pub, key.pub, key.prv, key.pub, 0);
+	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open).code);
 	auto sprevious (send.hash ());
 	auto rprevious (open.hash ());
 	for (auto i (0), n (100000); i != n; ++i)
 	{
 		balance -= 1;
-		nano::send_block send (sprevious, key.pub, balance, nano::test_genesis_key.prv, nano::test_genesis_key.pub, 0);
-		ASSERT_EQ (nano::process_result::progress, ledger.process (transaction, send).code);
+		btcb::send_block send (sprevious, key.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+		ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send).code);
 		sprevious = send.hash ();
-		nano::receive_block receive (rprevious, send.hash (), key.prv, key.pub, 0);
-		ASSERT_EQ (nano::process_result::progress, ledger.process (transaction, receive).code);
+		btcb::receive_block receive (rprevious, send.hash (), key.prv, key.pub, 0);
+		ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive).code);
 		rprevious = receive.hash ();
 		if (i % 100 == 0)
 		{
@@ -122,17 +122,17 @@ TEST (wallet, multithreaded_send_async)
 {
 	std::vector<boost::thread> threads;
 	{
-		nano::system system (24000, 1);
-		nano::keypair key;
+		btcb::system system (24000, 1);
+		btcb::keypair key;
 		auto wallet_l (system.wallet (0));
-		wallet_l->insert_adhoc (nano::test_genesis_key.prv);
+		wallet_l->insert_adhoc (btcb::test_genesis_key.prv);
 		wallet_l->insert_adhoc (key.prv);
 		for (auto i (0); i < 20; ++i)
 		{
 			threads.push_back (boost::thread ([wallet_l, &key]() {
 				for (auto i (0); i < 1000; ++i)
 				{
-					wallet_l->send_async (nano::test_genesis_key.pub, key.pub, 1000, [](std::shared_ptr<nano::block> block_a) {
+					wallet_l->send_async (btcb::test_genesis_key.pub, key.pub, 1000, [](std::shared_ptr<btcb::block> block_a) {
 						ASSERT_FALSE (block_a == nullptr);
 						ASSERT_FALSE (block_a->hash ().is_zero ());
 					});
@@ -140,7 +140,7 @@ TEST (wallet, multithreaded_send_async)
 			}));
 		}
 		system.deadline_set (1000s);
-		while (system.nodes[0]->balance (nano::test_genesis_key.pub) != (nano::genesis_amount - 20 * 1000 * 1000))
+		while (system.nodes[0]->balance (btcb::test_genesis_key.pub) != (btcb::genesis_amount - 20 * 1000 * 1000))
 		{
 			ASSERT_NO_ERROR (system.poll ());
 		}
@@ -153,7 +153,7 @@ TEST (wallet, multithreaded_send_async)
 
 TEST (store, load)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	std::vector<boost::thread> threads;
 	for (auto i (0); i < 100; ++i)
 	{
@@ -163,9 +163,9 @@ TEST (store, load)
 				auto transaction (system.nodes[0]->store.tx_begin_write ());
 				for (auto j (0); j != 10; ++j)
 				{
-					nano::block_hash hash;
-					nano::random_pool::generate_block (hash.bytes.data (), hash.bytes.size ());
-					system.nodes[0]->store.account_put (transaction, hash, nano::account_info ());
+					btcb::block_hash hash;
+					btcb::random_pool::generate_block (hash.bytes.data (), hash.bytes.size ());
+					system.nodes[0]->store.account_put (transaction, hash, btcb::account_info ());
 				}
 			}
 		}));
@@ -178,26 +178,26 @@ TEST (store, load)
 
 TEST (node, fork_storm)
 {
-	nano::system system (24000, 64);
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
-	auto previous (system.nodes[0]->latest (nano::test_genesis_key.pub));
-	auto balance (system.nodes[0]->balance (nano::test_genesis_key.pub));
+	btcb::system system (24000, 64);
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
+	auto previous (system.nodes[0]->latest (btcb::test_genesis_key.pub));
+	auto balance (system.nodes[0]->balance (btcb::test_genesis_key.pub));
 	ASSERT_FALSE (previous.is_zero ());
 	for (auto j (0); j != system.nodes.size (); ++j)
 	{
 		balance -= 1;
-		nano::keypair key;
-		nano::send_block send (previous, key.pub, balance, nano::test_genesis_key.prv, nano::test_genesis_key.pub, 0);
+		btcb::keypair key;
+		btcb::send_block send (previous, key.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
 		previous = send.hash ();
 		for (auto i (0); i != system.nodes.size (); ++i)
 		{
 			auto send_result (system.nodes[i]->process (send));
-			ASSERT_EQ (nano::process_result::progress, send_result.code);
-			nano::keypair rep;
-			auto open (std::make_shared<nano::open_block> (previous, rep.pub, key.pub, key.prv, key.pub, 0));
+			ASSERT_EQ (btcb::process_result::progress, send_result.code);
+			btcb::keypair rep;
+			auto open (std::make_shared<btcb::open_block> (previous, rep.pub, key.pub, key.prv, key.pub, 0));
 			system.nodes[i]->work_generate_blocking (*open);
 			auto open_result (system.nodes[i]->process (*open));
-			ASSERT_EQ (nano::process_result::progress, open_result.code);
+			ASSERT_EQ (btcb::process_result::progress, open_result.code);
 			auto transaction (system.nodes[i]->store.tx_begin_read ());
 			system.nodes[i]->network.flood_block (open);
 		}
@@ -211,7 +211,7 @@ TEST (node, fork_storm)
 	{
 		empty = 0;
 		single = 0;
-		std::for_each (system.nodes.begin (), system.nodes.end (), [&](std::shared_ptr<nano::node> const & node_a) {
+		std::for_each (system.nodes.begin (), system.nodes.end (), [&](std::shared_ptr<btcb::node> const & node_a) {
 			if (node_a->active.empty ())
 			{
 				++empty;
@@ -334,7 +334,7 @@ TEST (broadcast, sqrt_broadcast_simulate)
 					for (auto j (0); j != broadcast_count; ++j)
 					{
 						++message_count;
-						auto entry (nano::random_pool::generate_word32 (0, node_count - 1));
+						auto entry (btcb::random_pool::generate_word32 (0, node_count - 1));
 						switch (nodes[entry])
 						{
 							case 0:
@@ -364,7 +364,7 @@ TEST (broadcast, sqrt_broadcast_simulate)
 
 TEST (peer_container, random_set)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	auto old (std::chrono::steady_clock::now ());
 	auto current (std::chrono::steady_clock::now ());
 	for (auto i (0); i < 10000; ++i)
@@ -381,9 +381,9 @@ TEST (peer_container, random_set)
 
 TEST (store, unchecked_load)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<nano::send_block> (0, 0, 0, nano::test_genesis_key.prv, nano::test_genesis_key.pub, 0));
+	auto block (std::make_shared<btcb::send_block> (0, 0, 0, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
 		auto transaction (node.store.tx_begin_write ());
@@ -396,19 +396,19 @@ TEST (store, unchecked_load)
 
 TEST (store, vote_load)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	auto & node (*system.nodes[0]);
-	auto block (std::make_shared<nano::send_block> (0, 0, 0, nano::test_genesis_key.prv, nano::test_genesis_key.pub, 0));
+	auto block (std::make_shared<btcb::send_block> (0, 0, 0, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	for (auto i (0); i < 1000000; ++i)
 	{
-		auto vote (std::make_shared<nano::vote> (nano::test_genesis_key.pub, nano::test_genesis_key.prv, i, block));
-		node.vote_processor.vote (vote, std::make_shared<nano::transport::channel_udp> (system.nodes[0]->network.udp_channels, system.nodes[0]->network.endpoint ()));
+		auto vote (std::make_shared<btcb::vote> (btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, i, block));
+		node.vote_processor.vote (vote, std::make_shared<btcb::transport::channel_udp> (system.nodes[0]->network.udp_channels, system.nodes[0]->network.endpoint ()));
 	}
 }
 
 TEST (wallets, rep_scan)
 {
-	nano::system system (24000, 1);
+	btcb::system system (24000, 1);
 	auto & node (*system.nodes[0]);
 	auto wallet (system.wallet (0));
 	{
@@ -420,55 +420,55 @@ TEST (wallets, rep_scan)
 	}
 	auto transaction (node.store.tx_begin_read ());
 	auto begin (std::chrono::steady_clock::now ());
-	node.wallets.foreach_representative (transaction, [](nano::public_key const & pub_a, nano::raw_key const & prv_a) {
+	node.wallets.foreach_representative (transaction, [](btcb::public_key const & pub_a, btcb::raw_key const & prv_a) {
 	});
 	ASSERT_LT (std::chrono::steady_clock::now () - begin, std::chrono::milliseconds (5));
 }
 
 TEST (node, mass_vote_by_hash)
 {
-	nano::system system (24000, 1);
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
-	nano::genesis genesis;
-	nano::block_hash previous (genesis.hash ());
-	nano::keypair key;
-	std::vector<std::shared_ptr<nano::state_block>> blocks;
+	btcb::system system (24000, 1);
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
+	btcb::genesis genesis;
+	btcb::block_hash previous (genesis.hash ());
+	btcb::keypair key;
+	std::vector<std::shared_ptr<btcb::state_block>> blocks;
 	for (auto i (0); i < 10000; ++i)
 	{
-		auto block (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, nano::genesis_amount - (i + 1) * nano::Gxrb_ratio, key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto block (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, btcb::genesis_amount - (i + 1) * btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		previous = block->hash ();
 		blocks.push_back (block);
 	}
 	for (auto i (blocks.begin ()), n (blocks.end ()); i != n; ++i)
 	{
-		system.nodes[0]->block_processor.add (*i, nano::seconds_since_epoch ());
+		system.nodes[0]->block_processor.add (*i, btcb::seconds_since_epoch ());
 	}
 }
 
 TEST (confirmation_height, many_accounts)
 {
 	bool delay_frontier_confirmation_height_updating = true;
-	nano::system system;
-	nano::node_config node_config (24000, system.logging);
+	btcb::system system;
+	btcb::node_config node_config (24000, system.logging);
 	node_config.online_weight_minimum = 100;
 	auto node = system.add_node (node_config, delay_frontier_confirmation_height_updating);
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 
 	// The number of frontiers should be more than the batch_write_size to test the amount of blocks confirmed is correct.
-	auto num_accounts = nano::confirmation_height_processor::batch_write_size * 2 + 50;
-	nano::keypair last_keypair = nano::test_genesis_key;
-	auto last_open_hash = node->latest (nano::test_genesis_key.pub);
+	auto num_accounts = btcb::confirmation_height_processor::batch_write_size * 2 + 50;
+	btcb::keypair last_keypair = btcb::test_genesis_key;
+	auto last_open_hash = node->latest (btcb::test_genesis_key.pub);
 	{
 		auto transaction = node->store.tx_begin_write ();
 		for (auto i = num_accounts - 1; i > 0; --i)
 		{
-			nano::keypair key;
+			btcb::keypair key;
 			system.wallet (0)->insert_adhoc (key.prv);
 
-			nano::send_block send (last_open_hash, key.pub, nano::Gxrb_ratio, last_keypair.prv, last_keypair.pub, system.work.generate (last_open_hash));
-			ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, send).code);
-			nano::open_block open (send.hash (), last_keypair.pub, key.pub, key.prv, key.pub, system.work.generate (key.pub));
-			ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, open).code);
+			btcb::send_block send (last_open_hash, key.pub, btcb::Gxrb_ratio, last_keypair.prv, last_keypair.pub, system.work.generate (last_open_hash));
+			ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send).code);
+			btcb::open_block open (send.hash (), last_keypair.pub, key.pub, key.prv, key.pub, system.work.generate (key.pub));
+			ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, open).code);
 			last_open_hash = open.hash ();
 			last_keypair = key;
 		}
@@ -511,28 +511,28 @@ TEST (confirmation_height, many_accounts)
 		}
 	}
 
-	ASSERT_EQ (node->ledger.stats.count (nano::stat::type::confirmation_height, nano::stat::detail::blocks_confirmed, nano::stat::dir::in), num_accounts * 2 - 2);
+	ASSERT_EQ (node->ledger.stats.count (btcb::stat::type::confirmation_height, btcb::stat::detail::blocks_confirmed, btcb::stat::dir::in), num_accounts * 2 - 2);
 }
 
 TEST (confirmation_height, long_chains)
 {
 	bool delay_frontier_confirmation_height_updating = true;
-	nano::system system;
-	auto node = system.add_node (nano::node_config (24000, system.logging), delay_frontier_confirmation_height_updating);
-	nano::keypair key1;
-	system.wallet (0)->insert_adhoc (nano::test_genesis_key.prv);
-	nano::block_hash latest (node->latest (nano::test_genesis_key.pub));
+	btcb::system system;
+	auto node = system.add_node (btcb::node_config (24000, system.logging), delay_frontier_confirmation_height_updating);
+	btcb::keypair key1;
+	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
+	btcb::block_hash latest (node->latest (btcb::test_genesis_key.pub));
 	system.wallet (0)->insert_adhoc (key1.prv);
 
 	constexpr auto num_blocks = 10000;
 
 	// First open the other account
-	nano::send_block send (latest, key1.pub, nano::genesis_amount - nano::Gxrb_ratio + num_blocks + 1, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (latest));
-	nano::open_block open (send.hash (), nano::genesis_account, key1.pub, key1.prv, key1.pub, system.work.generate (key1.pub));
+	btcb::send_block send (latest, key1.pub, btcb::genesis_amount - btcb::Gxrb_ratio + num_blocks + 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (latest));
+	btcb::open_block open (send.hash (), btcb::genesis_account, key1.pub, key1.prv, key1.pub, system.work.generate (key1.pub));
 	{
 		auto transaction = node->store.tx_begin_write ();
-		ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, send).code);
-		ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, open).code);
+		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send).code);
+		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, open).code);
 	}
 
 	// Bulk send from genesis account to destination account
@@ -542,10 +542,10 @@ TEST (confirmation_height, long_chains)
 		auto transaction = node->store.tx_begin_write ();
 		for (auto i = num_blocks - 1; i > 0; --i)
 		{
-			nano::send_block send (previous_genesis_chain_hash, key1.pub, nano::genesis_amount - nano::Gxrb_ratio + i + 1, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
-			ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, send).code);
-			nano::receive_block receive (previous_destination_chain_hash, send.hash (), key1.prv, key1.pub, system.work.generate (previous_destination_chain_hash));
-			ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, receive).code);
+			btcb::send_block send (previous_genesis_chain_hash, key1.pub, btcb::genesis_amount - btcb::Gxrb_ratio + i + 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
+			ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send).code);
+			btcb::receive_block receive (previous_destination_chain_hash, send.hash (), key1.prv, key1.pub, system.work.generate (previous_destination_chain_hash));
+			ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, receive).code);
 
 			previous_genesis_chain_hash = send.hash ();
 			previous_destination_chain_hash = receive.hash ();
@@ -553,17 +553,17 @@ TEST (confirmation_height, long_chains)
 	}
 
 	// Send one from destination to genesis and pocket it
-	nano::send_block send1 (previous_destination_chain_hash, nano::test_genesis_key.pub, nano::Gxrb_ratio - 2, key1.prv, key1.pub, system.work.generate (previous_destination_chain_hash));
-	auto receive1 (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous_genesis_chain_hash, nano::genesis_account, nano::genesis_amount - nano::Gxrb_ratio + 1, send1.hash (), nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash)));
+	btcb::send_block send1 (previous_destination_chain_hash, btcb::test_genesis_key.pub, btcb::Gxrb_ratio - 2, key1.prv, key1.pub, system.work.generate (previous_destination_chain_hash));
+	auto receive1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous_genesis_chain_hash, btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio + 1, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash)));
 
 	// Unpocketed
-	nano::state_block send2 (nano::genesis_account, receive1->hash (), nano::genesis_account, nano::genesis_amount - nano::Gxrb_ratio, key1.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (receive1->hash ()));
+	btcb::state_block send2 (btcb::genesis_account, receive1->hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (receive1->hash ()));
 
 	{
 		auto transaction = node->store.tx_begin_write ();
-		ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, send1).code);
-		ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, *receive1).code);
-		ASSERT_EQ (nano::process_result::progress, node->ledger.process (transaction, send2).code);
+		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send1).code);
+		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, *receive1).code);
+		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send2).code);
 	}
 
 	// Call block confirm on the existing receive block on the genesis account which will confirm everything underneath on both accounts
@@ -582,8 +582,8 @@ TEST (confirmation_height, long_chains)
 	}
 
 	auto transaction (node->store.tx_begin_read ());
-	nano::account_info account_info;
-	ASSERT_FALSE (node->store.account_get (transaction, nano::test_genesis_key.pub, account_info));
+	btcb::account_info account_info;
+	ASSERT_FALSE (node->store.account_get (transaction, btcb::test_genesis_key.pub, account_info));
 	ASSERT_EQ (num_blocks + 2, account_info.confirmation_height);
 	ASSERT_EQ (num_blocks + 3, account_info.block_count); // Includes the unpocketed send
 
@@ -591,5 +591,5 @@ TEST (confirmation_height, long_chains)
 	ASSERT_EQ (num_blocks + 1, account_info.confirmation_height);
 	ASSERT_EQ (num_blocks + 1, account_info.block_count);
 
-	ASSERT_EQ (node->ledger.stats.count (nano::stat::type::confirmation_height, nano::stat::detail::blocks_confirmed, nano::stat::dir::in), num_blocks * 2 + 2);
+	ASSERT_EQ (node->ledger.stats.count (btcb::stat::type::confirmation_height, btcb::stat::detail::blocks_confirmed, btcb::stat::dir::in), num_blocks * 2 + 2);
 }

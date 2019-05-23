@@ -1,24 +1,24 @@
-#include <nano/node/node_rpc_config.hpp>
+#include <btcb/node/node_rpc_config.hpp>
 
-#include <nano/lib/blocks.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/lib/rpcconfig.hpp>
+#include <btcb/lib/blocks.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/lib/rpcconfig.hpp>
 
-nano::error nano::node_rpc_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::node_rpc_config::serialize_json (btcb::jsonconfig & json) const
 {
 	json.put ("version", json_version ());
 	json.put ("enable_sign_hash", enable_sign_hash);
-	json.put ("max_work_generate_difficulty", nano::to_string_hex (max_work_generate_difficulty));
+	json.put ("max_work_generate_difficulty", btcb::to_string_hex (max_work_generate_difficulty));
 
-	nano::jsonconfig child_process_l;
+	btcb::jsonconfig child_process_l;
 	child_process_l.put ("enable", child_process.enable);
 	child_process_l.put ("rpc_path", child_process.rpc_path);
 	json.put_child ("child_process", child_process_l);
 	return json.get_error ();
 }
 
-nano::error nano::node_rpc_config::deserialize_json (bool & upgraded_a, nano::jsonconfig & json, boost::filesystem::path const & data_path)
+btcb::error btcb::node_rpc_config::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json, boost::filesystem::path const & data_path)
 {
 	auto version_l (json.get_optional<unsigned> ("version"));
 	if (!version_l)
@@ -35,7 +35,7 @@ nano::error nano::node_rpc_config::deserialize_json (bool & upgraded_a, nano::js
 		migrate (json, data_path);
 
 		json.put ("enable_sign_hash", enable_sign_hash);
-		json.put ("max_work_generate_difficulty", nano::to_string_hex (max_work_generate_difficulty));
+		json.put ("max_work_generate_difficulty", btcb::to_string_hex (max_work_generate_difficulty));
 
 		// Remove options no longer needed after migration
 		json.erase ("enable_control");
@@ -47,7 +47,7 @@ nano::error nano::node_rpc_config::deserialize_json (bool & upgraded_a, nano::js
 		version_l = 1;
 		json.put ("version", *version_l);
 
-		nano::jsonconfig child_process_l;
+		btcb::jsonconfig child_process_l;
 		child_process_l.put ("enable", child_process.enable);
 		child_process_l.put ("rpc_path", child_process.rpc_path);
 		json.put_child ("child_process", child_process_l);
@@ -59,7 +59,7 @@ nano::error nano::node_rpc_config::deserialize_json (bool & upgraded_a, nano::js
 	json.get_optional<std::string> ("max_work_generate_difficulty", max_work_generate_difficulty_text);
 	if (!max_work_generate_difficulty_text.empty ())
 	{
-		nano::from_string_hex (max_work_generate_difficulty_text, max_work_generate_difficulty);
+		btcb::from_string_hex (max_work_generate_difficulty_text, max_work_generate_difficulty);
 	}
 
 	auto child_process_l (json.get_optional_child ("child_process"));
@@ -72,10 +72,10 @@ nano::error nano::node_rpc_config::deserialize_json (bool & upgraded_a, nano::js
 	return json.get_error ();
 }
 
-void nano::node_rpc_config::migrate (nano::jsonconfig & json, boost::filesystem::path const & data_path)
+void btcb::node_rpc_config::migrate (btcb::jsonconfig & json, boost::filesystem::path const & data_path)
 {
-	nano::jsonconfig rpc_json;
-	auto rpc_config_path = nano::get_rpc_config_path (data_path);
+	btcb::jsonconfig rpc_json;
+	auto rpc_config_path = btcb::get_rpc_config_path (data_path);
 	auto rpc_error (rpc_json.read (rpc_config_path));
 	if (rpc_error || rpc_json.empty ())
 	{

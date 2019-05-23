@@ -1,85 +1,85 @@
-#include <nano/node/common.hpp>
-#include <nano/node/node.hpp>
-#include <nano/node/transport/transport.hpp>
+#include <btcb/node/common.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/node/transport/transport.hpp>
 
 namespace
 {
-class callback_visitor : public nano::message_visitor
+class callback_visitor : public btcb::message_visitor
 {
 public:
-	void keepalive (nano::keepalive const & message_a) override
+	void keepalive (btcb::keepalive const & message_a) override
 	{
-		result = nano::stat::detail::keepalive;
+		result = btcb::stat::detail::keepalive;
 	}
-	void publish (nano::publish const & message_a) override
+	void publish (btcb::publish const & message_a) override
 	{
-		result = nano::stat::detail::publish;
+		result = btcb::stat::detail::publish;
 	}
-	void confirm_req (nano::confirm_req const & message_a) override
+	void confirm_req (btcb::confirm_req const & message_a) override
 	{
-		result = nano::stat::detail::confirm_req;
+		result = btcb::stat::detail::confirm_req;
 	}
-	void confirm_ack (nano::confirm_ack const & message_a) override
+	void confirm_ack (btcb::confirm_ack const & message_a) override
 	{
-		result = nano::stat::detail::confirm_ack;
+		result = btcb::stat::detail::confirm_ack;
 	}
-	void bulk_pull (nano::bulk_pull const & message_a) override
+	void bulk_pull (btcb::bulk_pull const & message_a) override
 	{
-		result = nano::stat::detail::bulk_pull;
+		result = btcb::stat::detail::bulk_pull;
 	}
-	void bulk_pull_account (nano::bulk_pull_account const & message_a) override
+	void bulk_pull_account (btcb::bulk_pull_account const & message_a) override
 	{
-		result = nano::stat::detail::bulk_pull_account;
+		result = btcb::stat::detail::bulk_pull_account;
 	}
-	void bulk_push (nano::bulk_push const & message_a) override
+	void bulk_push (btcb::bulk_push const & message_a) override
 	{
-		result = nano::stat::detail::bulk_push;
+		result = btcb::stat::detail::bulk_push;
 	}
-	void frontier_req (nano::frontier_req const & message_a) override
+	void frontier_req (btcb::frontier_req const & message_a) override
 	{
-		result = nano::stat::detail::frontier_req;
+		result = btcb::stat::detail::frontier_req;
 	}
-	void node_id_handshake (nano::node_id_handshake const & message_a) override
+	void node_id_handshake (btcb::node_id_handshake const & message_a) override
 	{
-		result = nano::stat::detail::node_id_handshake;
+		result = btcb::stat::detail::node_id_handshake;
 	}
-	nano::stat::detail result;
+	btcb::stat::detail result;
 };
 }
 
-nano::endpoint nano::transport::map_endpoint_to_v6 (nano::endpoint const & endpoint_a)
+btcb::endpoint btcb::transport::map_endpoint_to_v6 (btcb::endpoint const & endpoint_a)
 {
 	auto endpoint_l (endpoint_a);
 	if (endpoint_l.address ().is_v4 ())
 	{
-		endpoint_l = nano::endpoint (boost::asio::ip::address_v6::v4_mapped (endpoint_l.address ().to_v4 ()), endpoint_l.port ());
+		endpoint_l = btcb::endpoint (boost::asio::ip::address_v6::v4_mapped (endpoint_l.address ().to_v4 ()), endpoint_l.port ());
 	}
 	return endpoint_l;
 }
 
-nano::endpoint nano::transport::map_tcp_to_endpoint (nano::tcp_endpoint const & endpoint_a)
+btcb::endpoint btcb::transport::map_tcp_to_endpoint (btcb::tcp_endpoint const & endpoint_a)
 {
-	return nano::endpoint (endpoint_a.address (), endpoint_a.port ());
+	return btcb::endpoint (endpoint_a.address (), endpoint_a.port ());
 }
 
-nano::tcp_endpoint nano::transport::map_endpoint_to_tcp (nano::endpoint const & endpoint_a)
+btcb::tcp_endpoint btcb::transport::map_endpoint_to_tcp (btcb::endpoint const & endpoint_a)
 {
-	return nano::tcp_endpoint (endpoint_a.address (), endpoint_a.port ());
+	return btcb::tcp_endpoint (endpoint_a.address (), endpoint_a.port ());
 }
 
-nano::transport::channel::channel (nano::node & node_a) :
+btcb::transport::channel::channel (btcb::node & node_a) :
 node (node_a)
 {
 }
 
-void nano::transport::channel::send (nano::message const & message_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a)
+void btcb::transport::channel::send (btcb::message const & message_a, std::function<void(boost::system::error_code const &, size_t)> const & callback_a)
 {
 	callback_visitor visitor;
 	message_a.visit (visitor);
 	auto buffer (message_a.to_bytes ());
 	auto detail (visitor.result);
 	send_buffer (buffer, detail, callback_a);
-	node.stats.inc (nano::stat::type::message, detail, nano::stat::dir::out);
+	node.stats.inc (btcb::stat::type::message, detail, btcb::stat::dir::out);
 }
 
 namespace
@@ -90,7 +90,7 @@ boost::asio::ip::address_v6 mapped_from_v4_bytes (unsigned long address_a)
 }
 }
 
-bool nano::transport::reserved_address (nano::endpoint const & endpoint_a, bool allow_local_peers)
+bool btcb::transport::reserved_address (btcb::endpoint const & endpoint_a, bool allow_local_peers)
 {
 	assert (endpoint_a.address ().is_v6 ());
 	auto bytes (endpoint_a.address ().to_v6 ());

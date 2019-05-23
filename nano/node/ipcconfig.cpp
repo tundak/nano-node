@@ -1,9 +1,9 @@
-#include <nano/lib/jsonconfig.hpp>
-#include <nano/node/ipcconfig.hpp>
+#include <btcb/lib/jsonconfig.hpp>
+#include <btcb/node/ipcconfig.hpp>
 
-nano::error nano::ipc::ipc_config::serialize_json (nano::jsonconfig & json) const
+btcb::error btcb::ipc::ipc_config::serialize_json (btcb::jsonconfig & json) const
 {
-	nano::jsonconfig tcp_l;
+	btcb::jsonconfig tcp_l;
 	// Only write out experimental config values if they're previously set explicitly in the config file
 	if (transport_tcp.io_threads >= 0)
 	{
@@ -14,7 +14,7 @@ nano::error nano::ipc::ipc_config::serialize_json (nano::jsonconfig & json) cons
 	tcp_l.put ("io_timeout", transport_tcp.io_timeout);
 	json.put_child ("tcp", tcp_l);
 
-	nano::jsonconfig domain_l;
+	btcb::jsonconfig domain_l;
 	domain_l.put ("version", transport_domain.json_version ());
 	if (transport_domain.io_threads >= 0)
 	{
@@ -28,7 +28,7 @@ nano::error nano::ipc::ipc_config::serialize_json (nano::jsonconfig & json) cons
 	return json.get_error ();
 }
 
-nano::error nano::ipc::ipc_config::deserialize_json (bool & upgraded_a, nano::jsonconfig & json)
+btcb::error btcb::ipc::ipc_config::deserialize_json (bool & upgraded_a, btcb::jsonconfig & json)
 {
 	auto tcp_l (json.get_optional_child ("tcp"));
 	if (tcp_l)

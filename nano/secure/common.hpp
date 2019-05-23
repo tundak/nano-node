@@ -1,11 +1,11 @@
 #pragma once
 
-#include <nano/lib/blockbuilders.hpp>
-#include <nano/lib/blocks.hpp>
-#include <nano/lib/config.hpp>
-#include <nano/lib/numbers.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/secure/utility.hpp>
+#include <btcb/lib/blockbuilders.hpp>
+#include <btcb/lib/blocks.hpp>
+#include <btcb/lib/config.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/secure/utility.hpp>
 
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -18,25 +18,25 @@
 namespace boost
 {
 template <>
-struct hash<::nano::uint256_union>
+struct hash<::btcb::uint256_union>
 {
-	size_t operator() (::nano::uint256_union const & value_a) const
+	size_t operator() (::btcb::uint256_union const & value_a) const
 	{
-		std::hash<::nano::uint256_union> hash;
+		std::hash<::btcb::uint256_union> hash;
 		return hash (value_a);
 	}
 };
 template <>
-struct hash<::nano::uint512_union>
+struct hash<::btcb::uint512_union>
 {
-	size_t operator() (::nano::uint512_union const & value_a) const
+	size_t operator() (::btcb::uint512_union const & value_a) const
 	{
-		std::hash<::nano::uint512_union> hash;
+		std::hash<::btcb::uint512_union> hash;
 		return hash (value_a);
 	}
 };
 }
-namespace nano
+namespace btcb
 {
 const uint8_t protocol_version = 0x10;
 const uint8_t protocol_version_min = 0x0d;
@@ -57,9 +57,9 @@ class keypair
 public:
 	keypair ();
 	keypair (std::string const &);
-	keypair (nano::raw_key &&);
-	nano::public_key pub;
-	nano::raw_key prv;
+	keypair (btcb::raw_key &&);
+	btcb::public_key pub;
+	btcb::raw_key prv;
 };
 
 /**
@@ -80,20 +80,20 @@ class account_info final
 {
 public:
 	account_info () = default;
-	account_info (nano::block_hash const &, nano::block_hash const &, nano::block_hash const &, nano::amount const &, uint64_t, uint64_t, uint64_t, epoch);
-	bool deserialize (nano::stream &);
-	bool operator== (nano::account_info const &) const;
-	bool operator!= (nano::account_info const &) const;
+	account_info (btcb::block_hash const &, btcb::block_hash const &, btcb::block_hash const &, btcb::amount const &, uint64_t, uint64_t, uint64_t, epoch);
+	bool deserialize (btcb::stream &);
+	bool operator== (btcb::account_info const &) const;
+	bool operator!= (btcb::account_info const &) const;
 	size_t db_size () const;
-	nano::block_hash head{ 0 };
-	nano::block_hash rep_block{ 0 };
-	nano::block_hash open_block{ 0 };
-	nano::amount balance{ 0 };
+	btcb::block_hash head{ 0 };
+	btcb::block_hash rep_block{ 0 };
+	btcb::block_hash open_block{ 0 };
+	btcb::amount balance{ 0 };
 	/** Seconds since posix epoch */
 	uint64_t modified{ 0 };
 	uint64_t block_count{ 0 };
 	uint64_t confirmation_height{ 0 };
-	nano::epoch epoch{ nano::epoch::epoch_0 };
+	btcb::epoch epoch{ btcb::epoch::epoch_0 };
 };
 
 /**
@@ -103,23 +103,23 @@ class pending_info final
 {
 public:
 	pending_info () = default;
-	pending_info (nano::account const &, nano::amount const &, epoch);
-	bool deserialize (nano::stream &);
-	bool operator== (nano::pending_info const &) const;
-	nano::account source{ 0 };
-	nano::amount amount{ 0 };
-	nano::epoch epoch{ nano::epoch::epoch_0 };
+	pending_info (btcb::account const &, btcb::amount const &, epoch);
+	bool deserialize (btcb::stream &);
+	bool operator== (btcb::pending_info const &) const;
+	btcb::account source{ 0 };
+	btcb::amount amount{ 0 };
+	btcb::epoch epoch{ btcb::epoch::epoch_0 };
 };
 class pending_key final
 {
 public:
 	pending_key () = default;
-	pending_key (nano::account const &, nano::block_hash const &);
-	bool deserialize (nano::stream &);
-	bool operator== (nano::pending_key const &) const;
-	nano::block_hash key () const;
-	nano::account account{ 0 };
-	nano::block_hash hash{ 0 };
+	pending_key (btcb::account const &, btcb::block_hash const &);
+	bool deserialize (btcb::stream &);
+	bool operator== (btcb::pending_key const &) const;
+	btcb::block_hash key () const;
+	btcb::account account{ 0 };
+	btcb::block_hash hash{ 0 };
 };
 
 class endpoint_key final
@@ -175,23 +175,23 @@ class unchecked_info final
 {
 public:
 	unchecked_info () = default;
-	unchecked_info (std::shared_ptr<nano::block>, nano::account const &, uint64_t, nano::signature_verification = nano::signature_verification::unknown);
-	void serialize (nano::stream &) const;
-	bool deserialize (nano::stream &);
-	std::shared_ptr<nano::block> block;
-	nano::account account{ 0 };
+	unchecked_info (std::shared_ptr<btcb::block>, btcb::account const &, uint64_t, btcb::signature_verification = btcb::signature_verification::unknown);
+	void serialize (btcb::stream &) const;
+	bool deserialize (btcb::stream &);
+	std::shared_ptr<btcb::block> block;
+	btcb::account account{ 0 };
 	/** Seconds since posix epoch */
 	uint64_t modified{ 0 };
-	nano::signature_verification verified{ nano::signature_verification::unknown };
+	btcb::signature_verification verified{ btcb::signature_verification::unknown };
 };
 
 class block_info final
 {
 public:
 	block_info () = default;
-	block_info (nano::account const &, nano::amount const &);
-	nano::account account{ 0 };
-	nano::amount balance{ 0 };
+	block_info (btcb::account const &, btcb::amount const &);
+	btcb::account account{ 0 };
+	btcb::amount balance{ 0 };
 };
 class block_counts final
 {
@@ -204,43 +204,43 @@ public:
 	size_t state_v0{ 0 };
 	size_t state_v1{ 0 };
 };
-using vote_blocks_vec_iter = std::vector<boost::variant<std::shared_ptr<nano::block>, nano::block_hash>>::const_iterator;
+using vote_blocks_vec_iter = std::vector<boost::variant<std::shared_ptr<btcb::block>, btcb::block_hash>>::const_iterator;
 class iterate_vote_blocks_as_hash final
 {
 public:
 	iterate_vote_blocks_as_hash () = default;
-	nano::block_hash operator() (boost::variant<std::shared_ptr<nano::block>, nano::block_hash> const & item) const;
+	btcb::block_hash operator() (boost::variant<std::shared_ptr<btcb::block>, btcb::block_hash> const & item) const;
 };
 class vote final
 {
 public:
 	vote () = default;
-	vote (nano::vote const &);
-	vote (bool &, nano::stream &, nano::block_uniquer * = nullptr);
-	vote (bool &, nano::stream &, nano::block_type, nano::block_uniquer * = nullptr);
-	vote (nano::account const &, nano::raw_key const &, uint64_t, std::shared_ptr<nano::block>);
-	vote (nano::account const &, nano::raw_key const &, uint64_t, std::vector<nano::block_hash> const &);
+	vote (btcb::vote const &);
+	vote (bool &, btcb::stream &, btcb::block_uniquer * = nullptr);
+	vote (bool &, btcb::stream &, btcb::block_type, btcb::block_uniquer * = nullptr);
+	vote (btcb::account const &, btcb::raw_key const &, uint64_t, std::shared_ptr<btcb::block>);
+	vote (btcb::account const &, btcb::raw_key const &, uint64_t, std::vector<btcb::block_hash> const &);
 	std::string hashes_string () const;
-	nano::uint256_union hash () const;
-	nano::uint256_union full_hash () const;
-	bool operator== (nano::vote const &) const;
-	bool operator!= (nano::vote const &) const;
-	void serialize (nano::stream &, nano::block_type) const;
-	void serialize (nano::stream &) const;
+	btcb::uint256_union hash () const;
+	btcb::uint256_union full_hash () const;
+	bool operator== (btcb::vote const &) const;
+	bool operator!= (btcb::vote const &) const;
+	void serialize (btcb::stream &, btcb::block_type) const;
+	void serialize (btcb::stream &) const;
 	void serialize_json (boost::property_tree::ptree & tree) const;
-	bool deserialize (nano::stream &, nano::block_uniquer * = nullptr);
+	bool deserialize (btcb::stream &, btcb::block_uniquer * = nullptr);
 	bool validate () const;
-	boost::transform_iterator<nano::iterate_vote_blocks_as_hash, nano::vote_blocks_vec_iter> begin () const;
-	boost::transform_iterator<nano::iterate_vote_blocks_as_hash, nano::vote_blocks_vec_iter> end () const;
+	boost::transform_iterator<btcb::iterate_vote_blocks_as_hash, btcb::vote_blocks_vec_iter> begin () const;
+	boost::transform_iterator<btcb::iterate_vote_blocks_as_hash, btcb::vote_blocks_vec_iter> end () const;
 	std::string to_json () const;
 	// Vote round sequence number
 	uint64_t sequence;
 	// The blocks, or block hashes, that this vote is for
-	std::vector<boost::variant<std::shared_ptr<nano::block>, nano::block_hash>> blocks;
+	std::vector<boost::variant<std::shared_ptr<btcb::block>, btcb::block_hash>> blocks;
 	// Account that's voting
-	nano::account account;
+	btcb::account account;
 	// Signature of sequence + block hashes
-	nano::signature signature;
+	btcb::signature signature;
 	static const std::string hash_prefix;
 };
 /**
@@ -249,14 +249,14 @@ public:
 class vote_uniquer final
 {
 public:
-	using value_type = std::pair<const nano::uint256_union, std::weak_ptr<nano::vote>>;
+	using value_type = std::pair<const btcb::uint256_union, std::weak_ptr<btcb::vote>>;
 
-	vote_uniquer (nano::block_uniquer &);
-	std::shared_ptr<nano::vote> unique (std::shared_ptr<nano::vote>);
+	vote_uniquer (btcb::block_uniquer &);
+	std::shared_ptr<btcb::vote> unique (std::shared_ptr<btcb::vote>);
 	size_t size ();
 
 private:
-	nano::block_uniquer & uniquer;
+	btcb::block_uniquer & uniquer;
 	std::mutex mutex;
 	std::unordered_map<std::remove_const_t<value_type::first_type>, value_type::second_type> votes;
 	static unsigned constexpr cleanup_count = 2;
@@ -289,12 +289,12 @@ enum class process_result
 class process_return final
 {
 public:
-	nano::process_result code;
-	nano::account account;
-	nano::amount amount;
-	nano::account pending_account;
+	btcb::process_result code;
+	btcb::account account;
+	btcb::amount amount;
+	btcb::account pending_account;
 	boost::optional<bool> state_is_send;
-	nano::signature_verification verified;
+	btcb::signature_verification verified;
 };
 enum class tally_result
 {
@@ -307,8 +307,8 @@ class genesis final
 {
 public:
 	genesis ();
-	nano::block_hash hash () const;
-	std::shared_ptr<nano::block> open;
+	btcb::block_hash hash () const;
+	std::shared_ptr<btcb::block> open;
 };
 
 class network_params;
@@ -317,20 +317,20 @@ class network_params;
 class ledger_constants
 {
 public:
-	ledger_constants (nano::network_constants & network_constants);
-	ledger_constants (nano::nano_networks network_a);
-	nano::keypair zero_key;
-	nano::keypair test_genesis_key;
-	nano::account nano_test_account;
-	nano::account nano_beta_account;
-	nano::account nano_live_account;
-	std::string nano_test_genesis;
-	std::string nano_beta_genesis;
-	std::string nano_live_genesis;
-	nano::account genesis_account;
+	ledger_constants (btcb::network_constants & network_constants);
+	ledger_constants (btcb::btcb_networks network_a);
+	btcb::keypair zero_key;
+	btcb::keypair test_genesis_key;
+	btcb::account btcb_test_account;
+	btcb::account btcb_beta_account;
+	btcb::account btcb_live_account;
+	std::string btcb_test_genesis;
+	std::string btcb_beta_genesis;
+	std::string btcb_live_genesis;
+	btcb::account genesis_account;
 	std::string genesis_block;
-	nano::uint128_t genesis_amount;
-	nano::account burn_account;
+	btcb::uint128_t genesis_amount;
+	btcb::account burn_account;
 };
 
 /** Constants which depend on random values (this class should never be used globally due to CryptoPP globals potentially not being initialized) */
@@ -338,15 +338,15 @@ class random_constants
 {
 public:
 	random_constants ();
-	nano::account not_an_account;
-	nano::uint128_union random_128;
+	btcb::account not_an_account;
+	btcb::uint128_union random_128;
 };
 
 /** Node related constants whose value depends on the active network */
 class node_constants
 {
 public:
-	node_constants (nano::network_constants & network_constants);
+	node_constants (btcb::network_constants & network_constants);
 	std::chrono::seconds period;
 	std::chrono::seconds cutoff;
 	std::chrono::seconds syn_cookie_cutoff;
@@ -365,7 +365,7 @@ public:
 class voting_constants
 {
 public:
-	voting_constants (nano::network_constants & network_constants);
+	voting_constants (btcb::network_constants & network_constants);
 	size_t max_cache;
 };
 
@@ -373,7 +373,7 @@ public:
 class portmapping_constants
 {
 public:
-	portmapping_constants (nano::network_constants & network_constants);
+	portmapping_constants (btcb::network_constants & network_constants);
 	// Timeouts are primes so they infrequently happen at the same time
 	int mapping_timeout;
 	int check_timeout;
@@ -383,7 +383,7 @@ public:
 class bootstrap_constants
 {
 public:
-	bootstrap_constants (nano::network_constants & network_constants);
+	bootstrap_constants (btcb::network_constants & network_constants);
 	uint64_t lazy_max_pull_blocks;
 };
 
@@ -395,7 +395,7 @@ public:
 	network_params ();
 
 	/** Populate values based on \p network_a */
-	network_params (nano::nano_networks network_a);
+	network_params (btcb::btcb_networks network_a);
 
 	std::array<uint8_t, 2> header_magic_number;
 	unsigned kdf_work;

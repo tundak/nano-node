@@ -4,13 +4,13 @@ set -e
 scripts="$(dirname "$0")"
 
 if [ -n "$DOCKER_PASSWORD" ]; then
-    echo "$DOCKER_PASSWORD" | docker login -u nanoreleaseteam --password-stdin
+    echo "$DOCKER_PASSWORD" | docker login -u btcbreleaseteam --password-stdin
 
     # We push this just so it can be a cache next time
     if [ "$TRAVIS_BRANCH" = "master" ]; then
         for compiler in gcc clang; do
-            ci_image_name="nanocurrency/nano-ci-${compiler}"
-            ci/build-docker-image.sh docker/ci/Dockerfile-${compiler} nanocurrency/nano-ci-${compiler};
+            ci_image_name="btcbcurrency/btcb-ci-${compiler}"
+            ci/build-docker-image.sh docker/ci/Dockerfile-${compiler} btcbcurrency/btcb-ci-${compiler};
             "$scripts"/custom-timeout.sh 30 docker push "$ci_image_name"
         done
     fi
@@ -31,7 +31,7 @@ if [ -n "$DOCKER_PASSWORD" ]; then
             network_tag_suffix="-${network}"
         fi
 
-        docker_image_name="nanocurrency/nano${network_tag_suffix}"
+        docker_image_name="btcbcurrency/btcb${network_tag_suffix}"
 
         "$scripts"/custom-timeout.sh 30 docker build --build-arg NETWORK="$network" -f docker/node/Dockerfile -t "$docker_image_name" .
         for tag in "${tags[@]}"; do

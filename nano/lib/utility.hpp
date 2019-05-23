@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-namespace nano
+namespace btcb
 {
 /* These containers are used to collect information about sequence containers.
  * It makes use of the composite design pattern to collect information
@@ -104,13 +104,13 @@ namespace thread_role
 	/*
 	 * Get/Set the identifier for the current thread
 	 */
-	nano::thread_role::name get ();
-	void set (nano::thread_role::name);
+	btcb::thread_role::name get ();
+	void set (btcb::thread_role::name);
 
 	/*
 	 * Get the thread name as a string from enum
 	 */
-	std::string get_string (nano::thread_role::name);
+	std::string get_string (btcb::thread_role::name);
 
 	/*
 	 * Get the current thread's role as a string

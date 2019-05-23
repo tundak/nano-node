@@ -1,12 +1,12 @@
 #include <cassert>
-#include <nano/lib/timer.hpp>
-#include <nano/node/blockprocessor.hpp>
-#include <nano/node/node.hpp>
-#include <nano/secure/blockstore.hpp>
+#include <btcb/lib/timer.hpp>
+#include <btcb/node/blockprocessor.hpp>
+#include <btcb/node/node.hpp>
+#include <btcb/secure/blockstore.hpp>
 
-std::chrono::milliseconds constexpr nano::block_processor::confirmation_request_delay;
+std::chrono::milliseconds constexpr btcb::block_processor::confirmation_request_delay;
 
-nano::block_processor::block_processor (nano::node & node_a) :
+btcb::block_processor::block_processor (btcb::node & node_a) :
 generator (node_a),
 stopped (false),
 active (false),
@@ -15,12 +15,12 @@ node (node_a)
 {
 }
 
-nano::block_processor::~block_processor ()
+btcb::block_processor::~block_processor ()
 {
 	stop ();
 }
 
-void nano::block_processor::stop ()
+void btcb::block_processor::stop ()
 {
 	generator.stop ();
 	{
@@ -30,7 +30,7 @@ void nano::block_processor::stop ()
 	condition.notify_all ();
 }
 
-void nano::block_processor::flush ()
+void btcb::block_processor::flush ()
 {
 	node.checker.flush ();
 	std::unique_lock<std::mutex> lock (mutex);
@@ -40,28 +40,28 @@ void nano::block_processor::flush ()
 	}
 }
 
-bool nano::block_processor::full ()
+bool btcb::block_processor::full ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	return (blocks.size () + state_blocks.size ()) > node.flags.block_processor_full_size;
 }
 
-void nano::block_processor::add (std::shared_ptr<nano::block> block_a, uint64_t origination)
+void btcb::block_processor::add (std::shared_ptr<btcb::block> block_a, uint64_t origination)
 {
-	nano::unchecked_info info (block_a, 0, origination, nano::signature_verification::unknown);
+	btcb::unchecked_info info (block_a, 0, origination, btcb::signature_verification::unknown);
 	add (info);
 }
 
-void nano::block_processor::add (nano::unchecked_info const & info_a)
+void btcb::block_processor::add (btcb::unchecked_info const & info_a)
 {
-	if (!nano::work_validate (info_a.block->root (), info_a.block->block_work ()))
+	if (!btcb::work_validate (info_a.block->root (), info_a.block->block_work ()))
 	{
 		{
 			auto hash (info_a.block->hash ());
 			std::lock_guard<std::mutex> lock (mutex);
 			if (blocks_hashes.find (hash) == blocks_hashes.end () && rolled_back.get<1> ().find (hash) == rolled_back.get<1> ().end ())
 			{
-				if (info_a.verified == nano::signature_verification::unknown && (info_a.block->type () == nano::block_type::state || info_a.block->type () == nano::block_type::open || !info_a.account.is_zero ()))
+				if (info_a.verified == btcb::signature_verification::unknown && (info_a.block->type () == btcb::block_type::state || info_a.block->type () == btcb::block_type::open || !info_a.account.is_zero ()))
 				{
 					state_blocks.push_back (info_a);
 				}
@@ -76,12 +76,12 @@ void nano::block_processor::add (nano::unchecked_info const & info_a)
 	}
 	else
 	{
-		node.logger.try_log ("nano::block_processor::add called for hash ", info_a.block->hash ().to_string (), " with invalid work ", nano::to_string_hex (info_a.block->block_work ()));
-		assert (false && "nano::block_processor::add called with invalid work");
+		node.logger.try_log ("btcb::block_processor::add called for hash ", info_a.block->hash ().to_string (), " with invalid work ", btcb::to_string_hex (info_a.block->block_work ()));
+		assert (false && "btcb::block_processor::add called with invalid work");
 	}
 }
 
-void nano::block_processor::force (std::shared_ptr<nano::block> block_a)
+void btcb::block_processor::force (std::shared_ptr<btcb::block> block_a)
 {
 	{
 		std::lock_guard<std::mutex> lock (mutex);
@@ -90,7 +90,7 @@ void nano::block_processor::force (std::shared_ptr<nano::block> block_a)
 	condition.notify_all ();
 }
 
-void nano::block_processor::process_blocks ()
+void btcb::block_processor::process_blocks ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (!stopped)
@@ -111,7 +111,7 @@ void nano::block_processor::process_blocks ()
 	}
 }
 
-bool nano::block_processor::should_log (bool first_time)
+bool btcb::block_processor::should_log (bool first_time)
 {
 	auto result (false);
 	auto now (std::chrono::steady_clock::now ());
@@ -123,17 +123,17 @@ bool nano::block_processor::should_log (bool first_time)
 	return result;
 }
 
-bool nano::block_processor::have_blocks ()
+bool btcb::block_processor::have_blocks ()
 {
 	assert (!mutex.try_lock ());
 	return !blocks.empty () || !forced.empty () || !state_blocks.empty ();
 }
 
-void nano::block_processor::verify_state_blocks (nano::transaction const & transaction_a, std::unique_lock<std::mutex> & lock_a, size_t max_count)
+void btcb::block_processor::verify_state_blocks (btcb::transaction const & transaction_a, std::unique_lock<std::mutex> & lock_a, size_t max_count)
 {
 	assert (!mutex.try_lock ());
-	nano::timer<std::chrono::milliseconds> timer_l (nano::timer_state::started);
-	std::deque<nano::unchecked_info> items;
+	btcb::timer<std::chrono::milliseconds> timer_l (btcb::timer_state::started);
+	std::deque<btcb::unchecked_info> items;
 	for (auto i (0); i < max_count && !state_blocks.empty (); i++)
 	{
 		auto item (state_blocks.front ());
@@ -147,17 +147,17 @@ void nano::block_processor::verify_state_blocks (nano::transaction const & trans
 	if (!items.empty ())
 	{
 		auto size (items.size ());
-		std::vector<nano::uint256_union> hashes;
+		std::vector<btcb::uint256_union> hashes;
 		hashes.reserve (size);
 		std::vector<unsigned char const *> messages;
 		messages.reserve (size);
 		std::vector<size_t> lengths;
 		lengths.reserve (size);
-		std::vector<nano::account> accounts;
+		std::vector<btcb::account> accounts;
 		accounts.reserve (size);
 		std::vector<unsigned char const *> pub_keys;
 		pub_keys.reserve (size);
-		std::vector<nano::uint512_union> blocks_signatures;
+		std::vector<btcb::uint512_union> blocks_signatures;
 		blocks_signatures.reserve (size);
 		std::vector<unsigned char const *> signatures;
 		signatures.reserve (size);
@@ -169,7 +169,7 @@ void nano::block_processor::verify_state_blocks (nano::transaction const & trans
 			hashes.push_back (item.block->hash ());
 			messages.push_back (hashes.back ().bytes.data ());
 			lengths.push_back (sizeof (decltype (hashes)::value_type));
-			nano::account account (item.block->account ());
+			btcb::account account (item.block->account ());
 			if (!item.block->link ().is_zero () && node.ledger.is_epoch_link (item.block->link ()))
 			{
 				account = node.ledger.epoch_signer;
@@ -183,7 +183,7 @@ void nano::block_processor::verify_state_blocks (nano::transaction const & trans
 			blocks_signatures.push_back (item.block->block_signature ());
 			signatures.push_back (blocks_signatures.back ().bytes.data ());
 		}
-		nano::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
+		btcb::signature_check_set check = { size, messages.data (), lengths.data (), pub_keys.data (), signatures.data (), verifications.data () };
 		node.checker.verify (check);
 		lock_a.lock ();
 		for (auto i (0); i < size; ++i)
@@ -195,20 +195,20 @@ void nano::block_processor::verify_state_blocks (nano::transaction const & trans
 				// Epoch blocks
 				if (verifications[i] == 1)
 				{
-					item.verified = nano::signature_verification::valid_epoch;
+					item.verified = btcb::signature_verification::valid_epoch;
 					blocks.push_back (item);
 				}
 				else
 				{
 					// Possible regular state blocks with epoch link (send subtype)
-					item.verified = nano::signature_verification::unknown;
+					item.verified = btcb::signature_verification::unknown;
 					blocks.push_back (item);
 				}
 			}
 			else if (verifications[i] == 1)
 			{
 				// Non epoch blocks
-				item.verified = nano::signature_verification::valid;
+				item.verified = btcb::signature_verification::valid;
 				blocks.push_back (item);
 			}
 			items.pop_front ();
@@ -224,9 +224,9 @@ void nano::block_processor::verify_state_blocks (nano::transaction const & trans
 	}
 }
 
-void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a)
+void btcb::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a)
 {
-	nano::timer<std::chrono::milliseconds> timer_l;
+	btcb::timer<std::chrono::milliseconds> timer_l;
 	lock_a.lock ();
 	timer_l.start ();
 	// Limit state blocks verification time
@@ -269,7 +269,7 @@ void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a
 			first_time = false;
 			node.logger.always_log (boost::str (boost::format ("%1% blocks (+ %2% state blocks) (+ %3% forced) in processing queue") % blocks.size () % state_blocks.size () % forced.size ()));
 		}
-		nano::unchecked_info info;
+		btcb::unchecked_info info;
 		bool force (false);
 		if (forced.empty ())
 		{
@@ -279,7 +279,7 @@ void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a
 		}
 		else
 		{
-			info = nano::unchecked_info (forced.front (), 0, nano::seconds_since_epoch (), nano::signature_verification::unknown);
+			info = btcb::unchecked_info (forced.front (), 0, btcb::seconds_since_epoch (), btcb::signature_verification::unknown);
 			forced.pop_front ();
 			force = true;
 			number_of_forced_processed++;
@@ -293,10 +293,10 @@ void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a
 			{
 				// Replace our block with the winner and roll back any dependent blocks
 				node.logger.always_log (boost::str (boost::format ("Rolling back %1% and replacing with %2%") % successor->hash ().to_string () % hash.to_string ()));
-				std::vector<nano::block_hash> rollback_list;
+				std::vector<btcb::block_hash> rollback_list;
 				if (node.ledger.rollback (transaction, successor->hash (), rollback_list))
 				{
-					node.logger.always_log (nano::severity_level::error, boost::str (boost::format ("Failed to roll back %1% because it or a successor was confirmed") % successor->hash ().to_string ()));
+					node.logger.always_log (btcb::severity_level::error, boost::str (boost::format ("Failed to roll back %1% because it or a successor was confirmed") % successor->hash ().to_string ()));
 				}
 				else
 				{
@@ -304,7 +304,7 @@ void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a
 				}
 				lock_a.lock ();
 				// Prevent rolled back blocks second insertion
-				auto inserted (rolled_back.insert (nano::rolled_hash{ std::chrono::steady_clock::now (), successor->hash () }));
+				auto inserted (rolled_back.insert (btcb::rolled_hash{ std::chrono::steady_clock::now (), successor->hash () }));
 				if (inserted.second)
 				{
 					// Possible election winner change
@@ -342,7 +342,7 @@ void nano::block_processor::process_batch (std::unique_lock<std::mutex> & lock_a
 	}
 }
 
-void nano::block_processor::process_live (nano::block_hash const & hash_a, std::shared_ptr<nano::block> block_a)
+void btcb::block_processor::process_live (btcb::block_hash const & hash_a, std::shared_ptr<btcb::block> block_a)
 {
 	// Start collecting quorum on block
 	node.active.start (block_a);
@@ -354,7 +354,7 @@ void nano::block_processor::process_live (nano::block_hash const & hash_a, std::
 		generator.add (hash_a);
 	}
 	// Request confirmation for new block with delay
-	std::weak_ptr<nano::node> node_w (node.shared ());
+	std::weak_ptr<btcb::node> node_w (node.shared ());
 	node.alarm.add (std::chrono::steady_clock::now () + confirmation_request_delay, [node_w, block_a]() {
 		if (auto node_l = node_w.lock ())
 		{
@@ -377,14 +377,14 @@ void nano::block_processor::process_live (nano::block_hash const & hash_a, std::
 	});
 }
 
-nano::process_return nano::block_processor::process_one (nano::transaction const & transaction_a, nano::unchecked_info info_a)
+btcb::process_return btcb::block_processor::process_one (btcb::transaction const & transaction_a, btcb::unchecked_info info_a)
 {
-	nano::process_return result;
+	btcb::process_return result;
 	auto hash (info_a.block->hash ());
 	result = node.ledger.process (transaction_a, *(info_a.block), info_a.verified);
 	switch (result.code)
 	{
-		case nano::process_result::progress:
+		case btcb::process_result::progress:
 		{
 			release_assert (info_a.account.is_zero () || info_a.account == result.account);
 			if (node.config.logging.ledger_logging ())
@@ -393,14 +393,14 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 				info_a.block->serialize_json (block);
 				node.logger.try_log (boost::str (boost::format ("Processing block %1%: %2%") % hash.to_string () % block));
 			}
-			if (info_a.modified > nano::seconds_since_epoch () - 300 && node.block_arrival.recent (hash))
+			if (info_a.modified > btcb::seconds_since_epoch () - 300 && node.block_arrival.recent (hash))
 			{
 				process_live (hash, info_a.block);
 			}
 			queue_unchecked (transaction_a, hash);
 			break;
 		}
-		case nano::process_result::gap_previous:
+		case btcb::process_result::gap_previous:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -409,13 +409,13 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			info_a.verified = result.verified;
 			if (info_a.modified == 0)
 			{
-				info_a.modified = nano::seconds_since_epoch ();
+				info_a.modified = btcb::seconds_since_epoch ();
 			}
-			node.store.unchecked_put (transaction_a, nano::unchecked_key (info_a.block->previous (), hash), info_a);
+			node.store.unchecked_put (transaction_a, btcb::unchecked_key (info_a.block->previous (), hash), info_a);
 			node.gap_cache.add (transaction_a, hash);
 			break;
 		}
-		case nano::process_result::gap_source:
+		case btcb::process_result::gap_source:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -424,13 +424,13 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			info_a.verified = result.verified;
 			if (info_a.modified == 0)
 			{
-				info_a.modified = nano::seconds_since_epoch ();
+				info_a.modified = btcb::seconds_since_epoch ();
 			}
-			node.store.unchecked_put (transaction_a, nano::unchecked_key (node.ledger.block_source (transaction_a, *(info_a.block)), hash), info_a);
+			node.store.unchecked_put (transaction_a, btcb::unchecked_key (node.ledger.block_source (transaction_a, *(info_a.block)), hash), info_a);
 			node.gap_cache.add (transaction_a, hash);
 			break;
 		}
-		case nano::process_result::old:
+		case btcb::process_result::old:
 		{
 			if (node.config.logging.ledger_duplicate_logging ())
 			{
@@ -443,7 +443,7 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			node.active.update_difficulty (*(info_a.block));
 			break;
 		}
-		case nano::process_result::bad_signature:
+		case btcb::process_result::bad_signature:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -451,7 +451,7 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			}
 			break;
 		}
-		case nano::process_result::negative_spend:
+		case btcb::process_result::negative_spend:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -459,7 +459,7 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			}
 			break;
 		}
-		case nano::process_result::unreceivable:
+		case btcb::process_result::unreceivable:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -467,22 +467,22 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			}
 			break;
 		}
-		case nano::process_result::fork:
+		case btcb::process_result::fork:
 		{
 			node.process_fork (transaction_a, info_a.block);
-			node.stats.inc (nano::stat::type::ledger, nano::stat::detail::fork, nano::stat::dir::in);
+			node.stats.inc (btcb::stat::type::ledger, btcb::stat::detail::fork, btcb::stat::dir::in);
 			if (node.config.logging.ledger_logging ())
 			{
 				node.logger.try_log (boost::str (boost::format ("Fork for: %1% root: %2%") % hash.to_string () % info_a.block->root ().to_string ()));
 			}
 			break;
 		}
-		case nano::process_result::opened_burn_account:
+		case btcb::process_result::opened_burn_account:
 		{
 			node.logger.always_log (boost::str (boost::format ("*** Rejecting open block for burn account ***: %1%") % hash.to_string ()));
 			break;
 		}
-		case nano::process_result::balance_mismatch:
+		case btcb::process_result::balance_mismatch:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -490,7 +490,7 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			}
 			break;
 		}
-		case nano::process_result::representative_mismatch:
+		case btcb::process_result::representative_mismatch:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -498,7 +498,7 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 			}
 			break;
 		}
-		case nano::process_result::block_position:
+		case btcb::process_result::block_position:
 		{
 			if (node.config.logging.ledger_logging ())
 			{
@@ -510,21 +510,21 @@ nano::process_return nano::block_processor::process_one (nano::transaction const
 	return result;
 }
 
-nano::process_return nano::block_processor::process_one (nano::transaction const & transaction_a, std::shared_ptr<nano::block> block_a)
+btcb::process_return btcb::block_processor::process_one (btcb::transaction const & transaction_a, std::shared_ptr<btcb::block> block_a)
 {
-	nano::unchecked_info info (block_a, block_a->account (), 0, nano::signature_verification::unknown);
+	btcb::unchecked_info info (block_a, block_a->account (), 0, btcb::signature_verification::unknown);
 	auto result (process_one (transaction_a, info));
 	return result;
 }
 
-void nano::block_processor::queue_unchecked (nano::transaction const & transaction_a, nano::block_hash const & hash_a)
+void btcb::block_processor::queue_unchecked (btcb::transaction const & transaction_a, btcb::block_hash const & hash_a)
 {
 	auto unchecked_blocks (node.store.unchecked_get (transaction_a, hash_a));
 	for (auto & info : unchecked_blocks)
 	{
 		if (!node.flags.fast_bootstrap)
 		{
-			node.store.unchecked_del (transaction_a, nano::unchecked_key (hash_a, info.block->hash ()));
+			node.store.unchecked_del (transaction_a, btcb::unchecked_key (hash_a, info.block->hash ()));
 		}
 		add (info);
 	}

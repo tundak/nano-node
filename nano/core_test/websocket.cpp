@@ -10,10 +10,10 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <memory>
-#include <nano/core_test/testutil.hpp>
-#include <nano/crypto_lib/random_pool.hpp>
-#include <nano/node/testing.hpp>
-#include <nano/node/websocket.hpp>
+#include <btcb/core_test/testutil.hpp>
+#include <btcb/crypto_lib/random_pool.hpp>
+#include <btcb/node/testing.hpp>
+#include <btcb/node/websocket.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -78,16 +78,16 @@ boost::optional<std::string> websocket_test_call (std::string host, std::string 
 /** Subscribes to block confirmations, confirms a block and then awaits websocket notification */
 TEST (websocket, confirmation)
 {
-	nano::system system (24000, 1);
-	nano::node_init init1;
-	nano::node_config config;
-	nano::node_flags node_flags;
+	btcb::system system (24000, 1);
+	btcb::node_init init1;
+	btcb::node_config config;
+	btcb::node_flags node_flags;
 	config.websocket_config.enabled = true;
 	config.websocket_config.port = 24078;
 
-	auto node1 (std::make_shared<nano::node> (init1, system.io_ctx, nano::unique_path (), system.alarm, config, system.work, node_flags));
-	nano::uint256_union wallet;
-	nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+	auto node1 (std::make_shared<btcb::node> (init1, system.io_ctx, btcb::unique_path (), system.alarm, config, system.work, node_flags));
+	btcb::uint256_union wallet;
+	btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 	node1->wallets.create (wallet);
 	node1->start ();
 	system.nodes.push_back (node1);
@@ -95,7 +95,7 @@ TEST (websocket, confirmation)
 	// Start websocket test-client in a separate thread
 	ack_ready = false;
 	std::atomic<bool> confirmation_event_received{ false };
-	ASSERT_FALSE (node1->websocket_server->any_subscribers (nano::websocket::topic::confirmation));
+	ASSERT_FALSE (node1->websocket_server->any_subscribers (btcb::websocket::topic::confirmation));
 	std::thread client_thread ([&confirmation_event_received]() {
 		// This will expect two results: the acknowledgement of the subscription
 		// and then the block confirmation message
@@ -118,17 +118,17 @@ TEST (websocket, confirmation)
 	}
 	ack_ready = false;
 
-	ASSERT_TRUE (node1->websocket_server->any_subscribers (nano::websocket::topic::confirmation));
+	ASSERT_TRUE (node1->websocket_server->any_subscribers (btcb::websocket::topic::confirmation));
 
-	nano::keypair key;
-	system.wallet (1)->insert_adhoc (nano::test_genesis_key.prv);
-	auto balance = nano::genesis_amount;
+	btcb::keypair key;
+	system.wallet (1)->insert_adhoc (btcb::test_genesis_key.prv);
+	auto balance = btcb::genesis_amount;
 	auto send_amount = node1->config.online_weight_minimum.number () + 1;
 	// Quick-confirm a block, legacy blocks should work without filtering
 	{
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::send_block> (previous, key.pub, balance, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::send_block> (previous, key.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	}
 
@@ -168,9 +168,9 @@ TEST (websocket, confirmation)
 
 	// Quick confirm a state block
 	{
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, balance, key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, balance, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	}
 
@@ -189,16 +189,16 @@ TEST (websocket, confirmation)
 /** Tests the filtering options of block confirmations */
 TEST (websocket, confirmation_options)
 {
-	nano::system system (24000, 1);
-	nano::node_init init1;
-	nano::node_config config;
-	nano::node_flags node_flags;
+	btcb::system system (24000, 1);
+	btcb::node_init init1;
+	btcb::node_config config;
+	btcb::node_flags node_flags;
 	config.websocket_config.enabled = true;
 	config.websocket_config.port = 24078;
 
-	auto node1 (std::make_shared<nano::node> (init1, system.io_ctx, nano::unique_path (), system.alarm, config, system.work, node_flags));
-	nano::uint256_union wallet;
-	nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+	auto node1 (std::make_shared<btcb::node> (init1, system.io_ctx, btcb::unique_path (), system.alarm, config, system.work, node_flags));
+	btcb::uint256_union wallet;
+	btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 	node1->wallets.create (wallet);
 	node1->start ();
 	system.nodes.push_back (node1);
@@ -206,7 +206,7 @@ TEST (websocket, confirmation_options)
 	// Start websocket test-client in a separate thread
 	ack_ready = false;
 	std::atomic<bool> client_thread_finished{ false };
-	ASSERT_FALSE (node1->websocket_server->any_subscribers (nano::websocket::topic::confirmation));
+	ASSERT_FALSE (node1->websocket_server->any_subscribers (btcb::websocket::topic::confirmation));
 	std::thread client_thread ([&client_thread_finished]() {
 		// Subscribe initially with a specific invalid account
 		auto response = websocket_test_call ("::1", "24078",
@@ -225,14 +225,14 @@ TEST (websocket, confirmation_options)
 	ack_ready = false;
 
 	// Confirm a state block for an in-wallet account
-	system.wallet (1)->insert_adhoc (nano::test_genesis_key.prv);
-	nano::keypair key;
-	auto balance = nano::genesis_amount;
+	system.wallet (1)->insert_adhoc (btcb::test_genesis_key.prv);
+	btcb::keypair key;
+	auto balance = btcb::genesis_amount;
 	auto send_amount = node1->config.online_weight_minimum.number () + 1;
 	{
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, balance, key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, balance, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	}
 
@@ -268,13 +268,13 @@ TEST (websocket, confirmation_options)
 	}
 	ack_ready = false;
 
-	ASSERT_TRUE (node1->websocket_server->any_subscribers (nano::websocket::topic::confirmation));
+	ASSERT_TRUE (node1->websocket_server->any_subscribers (btcb::websocket::topic::confirmation));
 
 	// Quick-confirm another block
 	{
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, balance, key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, balance, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	}
 
@@ -298,9 +298,9 @@ TEST (websocket, confirmation_options)
 	// Confirm a legacy block
 	// When filtering options are enabled, legacy blocks are always filtered
 	{
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::send_block> (previous, key.pub, balance, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::send_block> (previous, key.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	}
 
@@ -321,16 +321,16 @@ TEST (websocket, confirmation_options)
 /** Subscribes to votes, sends a block and awaits websocket notification of a vote arrival */
 TEST (websocket, vote)
 {
-	nano::system system (24000, 1);
-	nano::node_init init1;
-	nano::node_config config;
-	nano::node_flags node_flags;
+	btcb::system system (24000, 1);
+	btcb::node_init init1;
+	btcb::node_config config;
+	btcb::node_flags node_flags;
 	config.websocket_config.enabled = true;
 	config.websocket_config.port = 24078;
 
-	auto node1 (std::make_shared<nano::node> (init1, system.io_ctx, nano::unique_path (), system.alarm, config, system.work, node_flags));
-	nano::uint256_union wallet;
-	nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+	auto node1 (std::make_shared<btcb::node> (init1, system.io_ctx, btcb::unique_path (), system.alarm, config, system.work, node_flags));
+	btcb::uint256_union wallet;
+	btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 	node1->wallets.create (wallet);
 	node1->start ();
 	system.nodes.push_back (node1);
@@ -338,7 +338,7 @@ TEST (websocket, vote)
 	// Start websocket test-client in a separate thread
 	ack_ready = false;
 	std::atomic<bool> client_thread_finished{ false };
-	ASSERT_FALSE (node1->websocket_server->any_subscribers (nano::websocket::topic::vote));
+	ASSERT_FALSE (node1->websocket_server->any_subscribers (btcb::websocket::topic::vote));
 	std::thread client_thread ([&client_thread_finished]() {
 		// This will expect two results: the acknowledgement of the subscription
 		// and then the vote message
@@ -362,13 +362,13 @@ TEST (websocket, vote)
 	}
 	ack_ready = false;
 
-	ASSERT_TRUE (node1->websocket_server->any_subscribers (nano::websocket::topic::vote));
+	ASSERT_TRUE (node1->websocket_server->any_subscribers (btcb::websocket::topic::vote));
 
 	// Quick-confirm a block
-	nano::keypair key;
-	system.wallet (1)->insert_adhoc (nano::test_genesis_key.prv);
-	nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
-	auto send (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, nano::genesis_amount - (node1->config.online_weight_minimum.number () + 1), key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+	btcb::keypair key;
+	system.wallet (1)->insert_adhoc (btcb::test_genesis_key.prv);
+	btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
+	auto send (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, btcb::genesis_amount - (node1->config.online_weight_minimum.number () + 1), key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 	node1->process_active (send);
 
 	// Wait for the websocket client to receive the vote message
@@ -385,16 +385,16 @@ TEST (websocket, vote)
 /** Tests vote subscription options */
 TEST (websocket, vote_options)
 {
-	nano::system system (24000, 1);
-	nano::node_init init1;
-	nano::node_config config;
-	nano::node_flags node_flags;
+	btcb::system system (24000, 1);
+	btcb::node_init init1;
+	btcb::node_config config;
+	btcb::node_flags node_flags;
 	config.websocket_config.enabled = true;
 	config.websocket_config.port = 24078;
 
-	auto node1 (std::make_shared<nano::node> (init1, system.io_ctx, nano::unique_path (), system.alarm, config, system.work, node_flags));
-	nano::uint256_union wallet;
-	nano::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
+	auto node1 (std::make_shared<btcb::node> (init1, system.io_ctx, btcb::unique_path (), system.alarm, config, system.work, node_flags));
+	btcb::uint256_union wallet;
+	btcb::random_pool::generate_block (wallet.bytes.data (), wallet.bytes.size ());
 	node1->wallets.create (wallet);
 	node1->start ();
 	system.nodes.push_back (node1);
@@ -402,11 +402,11 @@ TEST (websocket, vote_options)
 	// Start websocket test-client in a separate thread
 	ack_ready = false;
 	std::atomic<bool> client_thread_finished{ false };
-	ASSERT_FALSE (node1->websocket_server->any_subscribers (nano::websocket::topic::vote));
+	ASSERT_FALSE (node1->websocket_server->any_subscribers (btcb::websocket::topic::vote));
 	std::thread client_thread ([&client_thread_finished]() {
 		std::ostringstream data;
 		data << R"json({"action": "subscribe", "topic": "vote", "ack": true, "options": {"representatives": [")json"
-		     << nano::test_genesis_key.pub.to_account ()
+		     << btcb::test_genesis_key.pub.to_account ()
 		     << R"json("]}})json";
 		auto response = websocket_test_call ("::1", "24078", data.str (), true, true);
 
@@ -427,24 +427,24 @@ TEST (websocket, vote_options)
 	}
 	ack_ready = false;
 
-	ASSERT_TRUE (node1->websocket_server->any_subscribers (nano::websocket::topic::vote));
+	ASSERT_TRUE (node1->websocket_server->any_subscribers (btcb::websocket::topic::vote));
 
 	// Quick-confirm a block
-	nano::keypair key;
-	auto balance = nano::genesis_amount;
-	system.wallet (1)->insert_adhoc (nano::test_genesis_key.prv);
+	btcb::keypair key;
+	auto balance = btcb::genesis_amount;
+	system.wallet (1)->insert_adhoc (btcb::test_genesis_key.prv);
 	auto send_amount = node1->config.online_weight_minimum.number () + 1;
 	auto confirm_block = [&]() {
-		nano::block_hash previous (node1->latest (nano::test_genesis_key.pub));
+		btcb::block_hash previous (node1->latest (btcb::test_genesis_key.pub));
 		balance -= send_amount;
-		auto send (std::make_shared<nano::state_block> (nano::test_genesis_key.pub, previous, nano::test_genesis_key.pub, balance, key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, system.work.generate (previous)));
+		auto send (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, previous, btcb::test_genesis_key.pub, balance, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous)));
 		node1->process_active (send);
 	};
 	confirm_block ();
 
 	// Wait for the websocket client to receive the vote message
 	system.deadline_set (5s);
-	while (!client_thread_finished || node1->websocket_server->any_subscribers (nano::websocket::topic::vote))
+	while (!client_thread_finished || node1->websocket_server->any_subscribers (btcb::websocket::topic::vote))
 	{
 		ASSERT_NO_ERROR (system.poll ());
 	}
@@ -467,7 +467,7 @@ TEST (websocket, vote_options)
 	}
 	ack_ready = false;
 
-	ASSERT_TRUE (node1->websocket_server->any_subscribers (nano::websocket::topic::vote));
+	ASSERT_TRUE (node1->websocket_server->any_subscribers (btcb::websocket::topic::vote));
 
 	// Confirm another block
 	confirm_block ();

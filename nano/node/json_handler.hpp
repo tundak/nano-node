@@ -2,20 +2,20 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <functional>
-#include <nano/lib/numbers.hpp>
-#include <nano/node/wallet.hpp>
-#include <nano/rpc/rpc.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/node/wallet.hpp>
+#include <btcb/rpc/rpc.hpp>
 #include <string>
 
-namespace nano
+namespace btcb
 {
 class node;
 class node_rpc_config;
 
-class json_handler : public std::enable_shared_from_this<nano::json_handler>
+class json_handler : public std::enable_shared_from_this<btcb::json_handler>
 {
 public:
-	json_handler (nano::node &, nano::node_rpc_config const &, std::string const &, std::function<void(std::string const &)> const &, std::function<void()> stop_callback = []() {});
+	json_handler (btcb::node &, btcb::node_rpc_config const &, std::string const &, std::function<void(std::string const &)> const &, std::function<void()> stop_callback = []() {});
 	void process_request (bool unsafe = false);
 	void account_balance ();
 	void account_block_count ();
@@ -65,8 +65,8 @@ public:
 	void key_create ();
 	void key_expand ();
 	void ledger ();
-	void mnano_to_raw (nano::uint128_t = nano::Mxrb_ratio);
-	void mnano_from_raw (nano::uint128_t = nano::Mxrb_ratio);
+	void mbtcb_to_raw (btcb::uint128_t = btcb::Mxrb_ratio);
+	void mbtcb_from_raw (btcb::uint128_t = btcb::Mxrb_ratio);
 	void node_id ();
 	void node_id_delete ();
 	void password_change ();
@@ -130,35 +130,35 @@ public:
 	void work_set ();
 	void work_validate ();
 	std::string body;
-	nano::node & node;
+	btcb::node & node;
 	boost::property_tree::ptree request;
 	std::function<void(std::string const &)> response;
 	void response_errors ();
 	std::error_code ec;
 	std::string action;
 	boost::property_tree::ptree response_l;
-	std::shared_ptr<nano::wallet> wallet_impl ();
-	bool wallet_locked_impl (nano::transaction const &, std::shared_ptr<nano::wallet>);
-	bool wallet_account_impl (nano::transaction const &, std::shared_ptr<nano::wallet>, nano::account const &);
-	nano::account account_impl (std::string = "");
-	nano::amount amount_impl ();
-	std::shared_ptr<nano::block> block_impl (bool = true);
-	std::shared_ptr<nano::block> block_json_impl (bool = true);
-	nano::block_hash hash_impl (std::string = "hash");
-	nano::amount threshold_optional_impl ();
+	std::shared_ptr<btcb::wallet> wallet_impl ();
+	bool wallet_locked_impl (btcb::transaction const &, std::shared_ptr<btcb::wallet>);
+	bool wallet_account_impl (btcb::transaction const &, std::shared_ptr<btcb::wallet>, btcb::account const &);
+	btcb::account account_impl (std::string = "");
+	btcb::amount amount_impl ();
+	std::shared_ptr<btcb::block> block_impl (bool = true);
+	std::shared_ptr<btcb::block> block_json_impl (bool = true);
+	btcb::block_hash hash_impl (std::string = "hash");
+	btcb::amount threshold_optional_impl ();
 	uint64_t work_optional_impl ();
 	uint64_t count_impl ();
 	uint64_t count_optional_impl (uint64_t = std::numeric_limits<uint64_t>::max ());
 	uint64_t offset_optional_impl (uint64_t = 0);
 	bool enable_sign_hash{ false };
 	std::function<void()> stop_callback;
-	nano::node_rpc_config const & node_rpc_config;
+	btcb::node_rpc_config const & node_rpc_config;
 };
 
-class inprocess_rpc_handler final : public nano::rpc_handler_interface
+class inprocess_rpc_handler final : public btcb::rpc_handler_interface
 {
 public:
-	inprocess_rpc_handler (nano::node & node_a, nano::node_rpc_config const & node_rpc_config_a, std::function<void()> stop_callback_a = []() {}) :
+	inprocess_rpc_handler (btcb::node & node_a, btcb::node_rpc_config const & node_rpc_config_a, std::function<void()> stop_callback_a = []() {}) :
 	node (node_a),
 	stop_callback (stop_callback_a),
 	node_rpc_config (node_rpc_config_a)
@@ -168,7 +168,7 @@ public:
 	void process_request (std::string const &, std::string const & body_a, std::function<void(std::string const &)> response_a) override
 	{
 		// Note that if the rpc action is async, the shared_ptr<json_handler> lifetime will be extended by the action handler
-		auto handler (std::make_shared<nano::json_handler> (node, node_rpc_config, body_a, response_a, [this]() {
+		auto handler (std::make_shared<btcb::json_handler> (node, node_rpc_config, body_a, response_a, [this]() {
 			this->stop_callback ();
 			this->stop ();
 		}));
@@ -183,15 +183,15 @@ public:
 		}
 	}
 
-	void rpc_instance (nano::rpc & rpc_a) override
+	void rpc_instance (btcb::rpc & rpc_a) override
 	{
 		rpc = rpc_a;
 	}
 
 private:
-	nano::node & node;
-	boost::optional<nano::rpc &> rpc;
+	btcb::node & node;
+	boost::optional<btcb::rpc &> rpc;
 	std::function<void()> stop_callback;
-	nano::node_rpc_config const & node_rpc_config;
+	btcb::node_rpc_config const & node_rpc_config;
 };
 }

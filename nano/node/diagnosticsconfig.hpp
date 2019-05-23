@@ -1,9 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <nano/lib/errors.hpp>
+#include <btcb/lib/errors.hpp>
 
-namespace nano
+namespace btcb
 {
 class jsonconfig;
 
@@ -21,8 +21,8 @@ public:
 class diagnostics_config final
 {
 public:
-	nano::error serialize_json (nano::jsonconfig &) const;
-	nano::error deserialize_json (nano::jsonconfig &);
+	btcb::error serialize_json (btcb::jsonconfig &) const;
+	btcb::error deserialize_json (btcb::jsonconfig &);
 
 	txn_tracking_config txn_tracking;
 };

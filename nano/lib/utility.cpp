@@ -1,7 +1,7 @@
 #include <iostream>
-#include <nano/lib/utility.hpp>
+#include <btcb/lib/utility.hpp>
 
-namespace nano
+namespace btcb
 {
 seq_con_info_composite::seq_con_info_composite (const std::string & name) :
 name (name)
@@ -44,68 +44,68 @@ const seq_con_info & seq_con_info_leaf::get_info () const
 namespace thread_role
 {
 	/*
-	 * nano::thread_role namespace
+	 * btcb::thread_role namespace
 	 *
 	 * Manage thread role
 	 */
-	static thread_local nano::thread_role::name current_thread_role = nano::thread_role::name::unknown;
-	nano::thread_role::name get ()
+	static thread_local btcb::thread_role::name current_thread_role = btcb::thread_role::name::unknown;
+	btcb::thread_role::name get ()
 	{
 		return current_thread_role;
 	}
 
-	std::string get_string (nano::thread_role::name role)
+	std::string get_string (btcb::thread_role::name role)
 	{
 		std::string thread_role_name_string;
 
 		switch (role)
 		{
-			case nano::thread_role::name::unknown:
+			case btcb::thread_role::name::unknown:
 				thread_role_name_string = "<unknown>";
 				break;
-			case nano::thread_role::name::io:
+			case btcb::thread_role::name::io:
 				thread_role_name_string = "I/O";
 				break;
-			case nano::thread_role::name::work:
+			case btcb::thread_role::name::work:
 				thread_role_name_string = "Work pool";
 				break;
-			case nano::thread_role::name::packet_processing:
+			case btcb::thread_role::name::packet_processing:
 				thread_role_name_string = "Pkt processing";
 				break;
-			case nano::thread_role::name::alarm:
+			case btcb::thread_role::name::alarm:
 				thread_role_name_string = "Alarm";
 				break;
-			case nano::thread_role::name::vote_processing:
+			case btcb::thread_role::name::vote_processing:
 				thread_role_name_string = "Vote processing";
 				break;
-			case nano::thread_role::name::block_processing:
+			case btcb::thread_role::name::block_processing:
 				thread_role_name_string = "Blck processing";
 				break;
-			case nano::thread_role::name::request_loop:
+			case btcb::thread_role::name::request_loop:
 				thread_role_name_string = "Request loop";
 				break;
-			case nano::thread_role::name::wallet_actions:
+			case btcb::thread_role::name::wallet_actions:
 				thread_role_name_string = "Wallet actions";
 				break;
-			case nano::thread_role::name::work_watcher:
+			case btcb::thread_role::name::work_watcher:
 				thread_role_name_string = "Work watcher";
 				break;
-			case nano::thread_role::name::bootstrap_initiator:
+			case btcb::thread_role::name::bootstrap_initiator:
 				thread_role_name_string = "Bootstrap init";
 				break;
-			case nano::thread_role::name::voting:
+			case btcb::thread_role::name::voting:
 				thread_role_name_string = "Voting";
 				break;
-			case nano::thread_role::name::signature_checking:
+			case btcb::thread_role::name::signature_checking:
 				thread_role_name_string = "Signature check";
 				break;
-			case nano::thread_role::name::rpc_request_processor:
+			case btcb::thread_role::name::rpc_request_processor:
 				thread_role_name_string = "RPC processor";
 				break;
-			case nano::thread_role::name::rpc_process_container:
+			case btcb::thread_role::name::rpc_process_container:
 				thread_role_name_string = "RPC process";
 				break;
-			case nano::thread_role::name::confirmation_height_processing:
+			case btcb::thread_role::name::confirmation_height_processing:
 				thread_role_name_string = "Conf height";
 				break;
 		}
@@ -125,32 +125,32 @@ namespace thread_role
 		return get_string (current_thread_role);
 	}
 
-	void set (nano::thread_role::name role)
+	void set (btcb::thread_role::name role)
 	{
 		auto thread_role_name_string (get_string (role));
 
-		nano::thread_role::set_os_name (thread_role_name_string);
+		btcb::thread_role::set_os_name (thread_role_name_string);
 
-		nano::thread_role::current_thread_role = role;
+		btcb::thread_role::current_thread_role = role;
 	}
 }
 }
 
-void nano::thread_attributes::set (boost::thread::attributes & attrs)
+void btcb::thread_attributes::set (boost::thread::attributes & attrs)
 {
 	auto attrs_l (&attrs);
 	attrs_l->set_stack_size (8000000); //8MB
 }
 
-nano::thread_runner::thread_runner (boost::asio::io_context & io_ctx_a, unsigned service_threads_a) :
+btcb::thread_runner::thread_runner (boost::asio::io_context & io_ctx_a, unsigned service_threads_a) :
 io_guard (boost::asio::make_work_guard (io_ctx_a))
 {
 	boost::thread::attributes attrs;
-	nano::thread_attributes::set (attrs);
+	btcb::thread_attributes::set (attrs);
 	for (auto i (0u); i < service_threads_a; ++i)
 	{
 		threads.push_back (boost::thread (attrs, [&io_ctx_a]() {
-			nano::thread_role::set (nano::thread_role::name::io);
+			btcb::thread_role::set (btcb::thread_role::name::io);
 			try
 			{
 				io_ctx_a.run ();
@@ -177,12 +177,12 @@ io_guard (boost::asio::make_work_guard (io_ctx_a))
 	}
 }
 
-nano::thread_runner::~thread_runner ()
+btcb::thread_runner::~thread_runner ()
 {
 	join ();
 }
 
-void nano::thread_runner::join ()
+void btcb::thread_runner::join ()
 {
 	io_guard.reset ();
 	for (auto & i : threads)
@@ -194,7 +194,7 @@ void nano::thread_runner::join ()
 	}
 }
 
-void nano::thread_runner::stop_event_processing ()
+void btcb::thread_runner::stop_event_processing ()
 {
 	io_guard.get_executor ().context ().stop ();
 }

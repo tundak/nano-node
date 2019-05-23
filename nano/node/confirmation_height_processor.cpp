@@ -1,17 +1,17 @@
-#include <nano/node/confirmation_height_processor.hpp>
+#include <btcb/node/confirmation_height_processor.hpp>
 
 #include <boost/optional.hpp>
 #include <cassert>
-#include <nano/lib/logger_mt.hpp>
-#include <nano/lib/numbers.hpp>
-#include <nano/lib/utility.hpp>
-#include <nano/node/active_transactions.hpp>
-#include <nano/node/stats.hpp>
-#include <nano/secure/blockstore.hpp>
-#include <nano/secure/common.hpp>
+#include <btcb/lib/logger_mt.hpp>
+#include <btcb/lib/numbers.hpp>
+#include <btcb/lib/utility.hpp>
+#include <btcb/node/active_transactions.hpp>
+#include <btcb/node/stats.hpp>
+#include <btcb/secure/blockstore.hpp>
+#include <btcb/secure/common.hpp>
 #include <numeric>
 
-nano::confirmation_height_processor::confirmation_height_processor (nano::pending_confirmation_height & pending_confirmation_height_a, nano::block_store & store_a, nano::stat & stats_a, nano::active_transactions & active_a, nano::block_hash const & epoch_link_a, nano::logger_mt & logger_a) :
+btcb::confirmation_height_processor::confirmation_height_processor (btcb::pending_confirmation_height & pending_confirmation_height_a, btcb::block_store & store_a, btcb::stat & stats_a, btcb::active_transactions & active_a, btcb::block_hash const & epoch_link_a, btcb::logger_mt & logger_a) :
 pending_confirmations (pending_confirmation_height_a),
 store (store_a),
 stats (stats_a),
@@ -19,18 +19,18 @@ active (active_a),
 epoch_link (epoch_link_a),
 logger (logger_a),
 thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::confirmation_height_processing);
+	btcb::thread_role::set (btcb::thread_role::name::confirmation_height_processing);
 	this->run ();
 })
 {
 }
 
-nano::confirmation_height_processor::~confirmation_height_processor ()
+btcb::confirmation_height_processor::~confirmation_height_processor ()
 {
 	stop ();
 }
 
-void nano::confirmation_height_processor::stop ()
+void btcb::confirmation_height_processor::stop ()
 {
 	stopped = true;
 	condition.notify_one ();
@@ -40,7 +40,7 @@ void nano::confirmation_height_processor::stop ()
 	}
 }
 
-void nano::confirmation_height_processor::run ()
+void btcb::confirmation_height_processor::run ()
 {
 	std::unique_lock<std::mutex> lk (pending_confirmations.mutex);
 	while (!stopped)
@@ -63,7 +63,7 @@ void nano::confirmation_height_processor::run ()
 	}
 }
 
-void nano::confirmation_height_processor::add (nano::block_hash const & hash_a)
+void btcb::confirmation_height_processor::add (btcb::block_hash const & hash_a)
 {
 	{
 		std::lock_guard<std::mutex> lk (pending_confirmations.mutex);
@@ -73,7 +73,7 @@ void nano::confirmation_height_processor::add (nano::block_hash const & hash_a)
 }
 
 // This only check top-level blocks having their confirmation height sets, not anything below
-bool nano::confirmation_height_processor::is_processing_block (nano::block_hash const & hash_a)
+bool btcb::confirmation_height_processor::is_processing_block (btcb::block_hash const & hash_a)
 {
 	return pending_confirmations.is_processing_block (hash_a);
 }
@@ -84,11 +84,11 @@ bool nano::confirmation_height_processor::is_processing_block (nano::block_hash 
  * To limit write locking and to keep the confirmation height ledger correctly synced, confirmations are
  * written from the ground upwards in batches.
  */
-void nano::confirmation_height_processor::add_confirmation_height (nano::block_hash const & hash_a)
+void btcb::confirmation_height_processor::add_confirmation_height (btcb::block_hash const & hash_a)
 {
 	boost::optional<conf_height_details> receive_details;
 	auto current = hash_a;
-	nano::account_info account_info;
+	btcb::account_info account_info;
 	std::deque<conf_height_details> pending_writes;
 	assert (receive_source_pairs_size == 0);
 
@@ -120,7 +120,7 @@ void nano::confirmation_height_processor::add_confirmation_height (nano::block_h
 		}
 
 		auto block_height (store.block_account_height (read_transaction, current));
-		nano::account account (store.block_account (read_transaction, current));
+		btcb::account account (store.block_account (read_transaction, current));
 		release_assert (!store.account_get (read_transaction, account, account_info));
 		auto confirmation_height = account_info.confirmation_height;
 
@@ -223,9 +223,9 @@ void nano::confirmation_height_processor::add_confirmation_height (nano::block_h
 /*
  * Returns true if there was an error in finding one of the blocks to write a confirmation height for, false otherwise
  */
-bool nano::confirmation_height_processor::write_pending (std::deque<conf_height_details> & all_pending_a, int64_t total_pending_write_block_count_a)
+bool btcb::confirmation_height_processor::write_pending (std::deque<conf_height_details> & all_pending_a, int64_t total_pending_write_block_count_a)
 {
-	nano::account_info account_info;
+	btcb::account_info account_info;
 	auto total_pending_write_block_count (total_pending_write_block_count_a);
 
 	// Write in batches
@@ -242,7 +242,7 @@ bool nano::confirmation_height_processor::write_pending (std::deque<conf_height_
 			{
 #ifndef NDEBUG
 				// Do more thorough checking in Debug mode, indicates programming error.
-				nano::block_sideband sideband;
+				btcb::block_sideband sideband;
 				auto block = store.block_get (transaction, pending.hash, &sideband);
 				assert (block != nullptr);
 				assert (sideband.height == pending.height);
@@ -253,11 +253,11 @@ bool nano::confirmation_height_processor::write_pending (std::deque<conf_height_
 				if (!block)
 				{
 					logger.always_log ("Failed to write confirmation height for: ", pending.hash.to_string ());
-					stats.inc (nano::stat::type::confirmation_height, nano::stat::detail::invalid_block);
+					stats.inc (btcb::stat::type::confirmation_height, btcb::stat::detail::invalid_block);
 					return true;
 				}
 
-				stats.add (nano::stat::type::confirmation_height, nano::stat::detail::blocks_confirmed, nano::stat::dir::in, pending.height - account_info.confirmation_height);
+				stats.add (btcb::stat::type::confirmation_height, btcb::stat::detail::blocks_confirmed, btcb::stat::dir::in, pending.height - account_info.confirmation_height);
 				assert (pending.num_blocks_confirmed == pending.height - account_info.confirmation_height);
 				account_info.confirmation_height = pending.height;
 				store.account_put (transaction, pending.account, account_info);
@@ -276,7 +276,7 @@ bool nano::confirmation_height_processor::write_pending (std::deque<conf_height_
 	return false;
 }
 
-void nano::confirmation_height_processor::collect_unconfirmed_receive_and_sources_for_account (uint64_t block_height_a, uint64_t confirmation_height_a, nano::block_hash const & hash_a, nano::account const & account_a, nano::read_transaction const & transaction_a)
+void btcb::confirmation_height_processor::collect_unconfirmed_receive_and_sources_for_account (uint64_t block_height_a, uint64_t confirmation_height_a, btcb::block_hash const & hash_a, btcb::account const & account_a, btcb::read_transaction const & transaction_a)
 {
 	auto hash (hash_a);
 	auto num_to_confirm = block_height_a - confirmation_height_a;
@@ -329,9 +329,9 @@ void nano::confirmation_height_processor::collect_unconfirmed_receive_and_source
 	}
 }
 
-namespace nano
+namespace btcb
 {
-confirmation_height_processor::conf_height_details::conf_height_details (nano::account const & account_a, nano::block_hash const & hash_a, uint64_t height_a, uint64_t num_blocks_confirmed_a) :
+confirmation_height_processor::conf_height_details::conf_height_details (btcb::account const & account_a, btcb::block_hash const & hash_a, uint64_t height_a, uint64_t num_blocks_confirmed_a) :
 account (account_a),
 hash (hash_a),
 height (height_a),
@@ -354,13 +354,13 @@ std::unique_ptr<seq_con_info_component> collect_seq_con_info (confirmation_heigh
 }
 }
 
-size_t nano::pending_confirmation_height::size ()
+size_t btcb::pending_confirmation_height::size ()
 {
 	std::lock_guard<std::mutex> lk (mutex);
 	return pending.size ();
 }
 
-bool nano::pending_confirmation_height::is_processing_block (nano::block_hash const & hash_a)
+bool btcb::pending_confirmation_height::is_processing_block (btcb::block_hash const & hash_a)
 {
 	// First check the hash currently being processed
 	std::lock_guard<std::mutex> lk (mutex);
@@ -373,19 +373,19 @@ bool nano::pending_confirmation_height::is_processing_block (nano::block_hash co
 	return pending.find (hash_a) != pending.cend ();
 }
 
-nano::block_hash nano::pending_confirmation_height::current ()
+btcb::block_hash btcb::pending_confirmation_height::current ()
 {
 	std::lock_guard<std::mutex> lk (mutex);
 	return current_hash;
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (pending_confirmation_height & pending_confirmation_height_a, const std::string & name_a)
 {
 	size_t pending_count = pending_confirmation_height_a.size ();
 	auto composite = std::make_unique<seq_con_info_composite> (name_a);
-	composite->add_component (std::make_unique<seq_con_info_leaf> (seq_con_info{ "pending", pending_count, sizeof (nano::block_hash) }));
+	composite->add_component (std::make_unique<seq_con_info_leaf> (seq_con_info{ "pending", pending_count, sizeof (btcb::block_hash) }));
 	return composite;
 }
 }

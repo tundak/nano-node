@@ -1,7 +1,7 @@
 #pragma once
 
 class QApplication;
-namespace nano
+namespace btcb
 {
 void set_application_icon (QApplication &);
 }

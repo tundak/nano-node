@@ -1,20 +1,20 @@
-#include <nano/node/active_transactions.hpp>
+#include <btcb/node/active_transactions.hpp>
 
-#include <nano/node/node.hpp>
+#include <btcb/node/node.hpp>
 #include <numeric>
 
-size_t constexpr nano::active_transactions::max_broadcast_queue;
+size_t constexpr btcb::active_transactions::max_broadcast_queue;
 
 using namespace std::chrono;
 
-nano::active_transactions::active_transactions (nano::node & node_a, bool delay_frontier_confirmation_height_updating) :
+btcb::active_transactions::active_transactions (btcb::node & node_a, bool delay_frontier_confirmation_height_updating) :
 node (node_a),
 multipliers_cb (20, 1.),
 trended_active_difficulty (node.network_params.network.publish_threshold),
 next_frontier_check (steady_clock::now () + (delay_frontier_confirmation_height_updating ? 60s : 0s)),
 counter (),
 thread ([this]() {
-	nano::thread_role::set (nano::thread_role::name::request_loop);
+	btcb::thread_role::set (btcb::thread_role::name::request_loop);
 	request_loop ();
 })
 {
@@ -25,12 +25,12 @@ thread ([this]() {
 	}
 }
 
-nano::active_transactions::~active_transactions ()
+btcb::active_transactions::~active_transactions ()
 {
 	stop ();
 }
 
-void nano::active_transactions::confirm_frontiers (nano::transaction const & transaction_a)
+void btcb::active_transactions::confirm_frontiers (btcb::transaction const & transaction_a)
 {
 	// Limit maximum count of elections to start
 	bool representative (node.config.enable_voting && node.wallets.reps_count > 0);
@@ -45,7 +45,7 @@ void nano::active_transactions::confirm_frontiers (nano::transaction const & tra
 		size_t elections_count (0);
 		for (auto i (node.store.latest_begin (transaction_a, next_frontier_account)), n (node.store.latest_end ()); i != n && !stopped && elections_count < max_elections; ++i)
 		{
-			nano::account_info info (i->second);
+			btcb::account_info info (i->second);
 			if (info.block_count != info.confirmation_height)
 			{
 				auto block (node.store.block_get (transaction_a, info.head));
@@ -71,16 +71,16 @@ void nano::active_transactions::confirm_frontiers (nano::transaction const & tra
 	}
 }
 
-void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & lock_a)
+void btcb::active_transactions::request_confirm (std::unique_lock<std::mutex> & lock_a)
 {
-	std::unordered_set<nano::qualified_root> inactive;
+	std::unordered_set<btcb::qualified_root> inactive;
 	auto transaction (node.store.tx_begin_read ());
 	unsigned unconfirmed_count (0);
 	unsigned unconfirmed_announcements (0);
 	unsigned could_fit_delay = node.network_params.network.is_test_network () ? announcement_long - 1 : 1;
-	std::unordered_map<std::shared_ptr<nano::transport::channel>, std::vector<std::pair<nano::block_hash, nano::block_hash>>> requests_bundle;
-	std::deque<std::shared_ptr<nano::block>> rebroadcast_bundle;
-	std::deque<std::pair<std::shared_ptr<nano::block>, std::shared_ptr<std::vector<std::shared_ptr<nano::transport::channel>>>>> confirm_req_bundle;
+	std::unordered_map<std::shared_ptr<btcb::transport::channel>, std::vector<std::pair<btcb::block_hash, btcb::block_hash>>> requests_bundle;
+	std::deque<std::shared_ptr<btcb::block>> rebroadcast_bundle;
+	std::deque<std::pair<std::shared_ptr<btcb::block>, std::shared_ptr<std::vector<std::shared_ptr<btcb::transport::channel>>>>> confirm_req_bundle;
 
 	auto roots_size (roots.size ());
 	for (auto i (roots.get<1> ().begin ()), n (roots.get<1> ().end ()); i != n; ++i)
@@ -116,7 +116,7 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 				if there are less than 100 active elections */
 				if (election_l->announcements % announcement_long == 1 && roots_size < 100 && !node.network_params.network.is_test_network ())
 				{
-					std::shared_ptr<nano::block> previous;
+					std::shared_ptr<btcb::block> previous;
 					auto previous_hash (election_l->status.winner->previous ());
 					if (!previous_hash.is_zero ())
 					{
@@ -163,12 +163,12 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 			}
 			if (election_l->announcements % 4 == 1)
 			{
-				auto rep_channels (std::make_shared<std::vector<std::shared_ptr<nano::transport::channel>>> ());
+				auto rep_channels (std::make_shared<std::vector<std::shared_ptr<btcb::transport::channel>>> ());
 				auto reps (node.rep_crawler.representatives (std::numeric_limits<size_t>::max ()));
 
 				// Add all rep endpoints that haven't already voted. We use a set since multiple
 				// reps may exist on an endpoint.
-				std::unordered_set<std::shared_ptr<nano::transport::channel>> channels;
+				std::unordered_set<std::shared_ptr<btcb::transport::channel>> channels;
 				for (auto & rep : reps)
 				{
 					if (election_l->last_votes.find (rep.account) == election_l->last_votes.end ())
@@ -205,11 +205,11 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 							{
 								if (requests_bundle.size () < max_broadcast_queue)
 								{
-									std::vector<std::pair<nano::block_hash, nano::block_hash>> insert_vector = { root_hash };
+									std::vector<std::pair<btcb::block_hash, btcb::block_hash>> insert_vector = { root_hash };
 									requests_bundle.insert (std::make_pair (rep, insert_vector));
 								}
 							}
-							else if (rep_request->second.size () < max_broadcast_queue * nano::network::confirm_req_hashes_max)
+							else if (rep_request->second.size () < max_broadcast_queue * btcb::network::confirm_req_hashes_max)
 							{
 								rep_request->second.push_back (root_hash);
 							}
@@ -221,7 +221,7 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 					if (node.network_params.network.is_live_network ())
 					{
 						auto deque_l (node.network.udp_channels.random_set (100));
-						auto vec (std::make_shared<std::vector<std::shared_ptr<nano::transport::channel>>> ());
+						auto vec (std::make_shared<std::vector<std::shared_ptr<btcb::transport::channel>>> ());
 						for (auto i : deque_l)
 						{
 							vec->push_back (i);
@@ -237,7 +237,7 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 							auto root_hash (std::make_pair (block->hash (), block->root ()));
 							if (rep_request == requests_bundle.end ())
 							{
-								std::vector<std::pair<nano::block_hash, nano::block_hash>> insert_vector = { root_hash };
+								std::vector<std::pair<btcb::block_hash, btcb::block_hash>> insert_vector = { root_hash };
 								requests_bundle.insert (std::make_pair (rep, insert_vector));
 							}
 							else
@@ -297,7 +297,7 @@ void nano::active_transactions::request_confirm (std::unique_lock<std::mutex> & 
 	}
 }
 
-void nano::active_transactions::request_loop ()
+void btcb::active_transactions::request_loop ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	started = true;
@@ -322,7 +322,7 @@ void nano::active_transactions::request_loop ()
 	}
 }
 
-void nano::active_transactions::stop ()
+void btcb::active_transactions::stop ()
 {
 	std::unique_lock<std::mutex> lock (mutex);
 	while (!started)
@@ -340,13 +340,13 @@ void nano::active_transactions::stop ()
 	roots.clear ();
 }
 
-bool nano::active_transactions::start (std::shared_ptr<nano::block> block_a, std::function<void(std::shared_ptr<nano::block>)> const & confirmation_action_a)
+bool btcb::active_transactions::start (std::shared_ptr<btcb::block> block_a, std::function<void(std::shared_ptr<btcb::block>)> const & confirmation_action_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return add (block_a, confirmation_action_a);
 }
 
-bool nano::active_transactions::add (std::shared_ptr<nano::block> block_a, std::function<void(std::shared_ptr<nano::block>)> const & confirmation_action_a)
+bool btcb::active_transactions::add (std::shared_ptr<btcb::block> block_a, std::function<void(std::shared_ptr<btcb::block>)> const & confirmation_action_a)
 {
 	auto error (true);
 	if (!stopped)
@@ -355,11 +355,11 @@ bool nano::active_transactions::add (std::shared_ptr<nano::block> block_a, std::
 		auto existing (roots.find (root));
 		if (existing == roots.end ())
 		{
-			auto election (std::make_shared<nano::election> (node, block_a, confirmation_action_a));
+			auto election (std::make_shared<btcb::election> (node, block_a, confirmation_action_a));
 			uint64_t difficulty (0);
-			auto error (nano::work_validate (*block_a, &difficulty));
+			auto error (btcb::work_validate (*block_a, &difficulty));
 			release_assert (!error);
-			roots.insert (nano::conflict_info{ root, difficulty, difficulty, election });
+			roots.insert (btcb::conflict_info{ root, difficulty, difficulty, election });
 			blocks.insert (std::make_pair (block_a->hash (), election));
 			adjust_difficulty (block_a->hash ());
 		}
@@ -377,9 +377,9 @@ bool nano::active_transactions::add (std::shared_ptr<nano::block> block_a, std::
 }
 
 // Validate a vote and apply it to the current election if one exists
-bool nano::active_transactions::vote (std::shared_ptr<nano::vote> vote_a, bool single_lock)
+bool btcb::active_transactions::vote (std::shared_ptr<btcb::vote> vote_a, bool single_lock)
 {
-	std::shared_ptr<nano::election> election;
+	std::shared_ptr<btcb::election> election;
 	bool replay (false);
 	bool processed (false);
 	{
@@ -390,10 +390,10 @@ bool nano::active_transactions::vote (std::shared_ptr<nano::vote> vote_a, bool s
 		}
 		for (auto vote_block : vote_a->blocks)
 		{
-			nano::election_vote_result result;
+			btcb::election_vote_result result;
 			if (vote_block.which ())
 			{
-				auto block_hash (boost::get<nano::block_hash> (vote_block));
+				auto block_hash (boost::get<btcb::block_hash> (vote_block));
 				auto existing (blocks.find (block_hash));
 				if (existing != blocks.end ())
 				{
@@ -402,7 +402,7 @@ bool nano::active_transactions::vote (std::shared_ptr<nano::vote> vote_a, bool s
 			}
 			else
 			{
-				auto block (boost::get<std::shared_ptr<nano::block>> (vote_block));
+				auto block (boost::get<std::shared_ptr<btcb::block>> (vote_block));
 				auto existing (roots.find (block->qualified_root ()));
 				if (existing != roots.end ())
 				{
@@ -420,29 +420,29 @@ bool nano::active_transactions::vote (std::shared_ptr<nano::vote> vote_a, bool s
 	return replay;
 }
 
-bool nano::active_transactions::active (nano::qualified_root const & root_a)
+bool btcb::active_transactions::active (btcb::qualified_root const & root_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return roots.find (root_a) != roots.end ();
 }
 
-bool nano::active_transactions::active (nano::block const & block_a)
+bool btcb::active_transactions::active (btcb::block const & block_a)
 {
 	return active (block_a.qualified_root ());
 }
 
-void nano::active_transactions::update_difficulty (nano::block const & block_a)
+void btcb::active_transactions::update_difficulty (btcb::block const & block_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (roots.find (block_a.qualified_root ()));
 	if (existing != roots.end ())
 	{
 		uint64_t difficulty;
-		auto error (nano::work_validate (block_a, &difficulty));
+		auto error (btcb::work_validate (block_a, &difficulty));
 		assert (!error);
 		if (difficulty > existing->difficulty)
 		{
-			roots.modify (existing, [difficulty](nano::conflict_info & info_a) {
+			roots.modify (existing, [difficulty](btcb::conflict_info & info_a) {
 				info_a.difficulty = difficulty;
 			});
 			adjust_difficulty (block_a.hash ());
@@ -450,13 +450,13 @@ void nano::active_transactions::update_difficulty (nano::block const & block_a)
 	}
 }
 
-void nano::active_transactions::adjust_difficulty (nano::block_hash const & hash_a)
+void btcb::active_transactions::adjust_difficulty (btcb::block_hash const & hash_a)
 {
 	assert (!mutex.try_lock ());
-	std::deque<std::pair<nano::block_hash, int64_t>> remaining_blocks;
+	std::deque<std::pair<btcb::block_hash, int64_t>> remaining_blocks;
 	remaining_blocks.emplace_back (hash_a, 0);
-	std::unordered_set<nano::block_hash> processed_blocks;
-	std::vector<std::pair<nano::qualified_root, int64_t>> elections_list;
+	std::unordered_set<btcb::block_hash> processed_blocks;
+	std::vector<std::pair<btcb::qualified_root, int64_t>> elections_list;
 	double sum (0.);
 	while (!remaining_blocks.empty ())
 	{
@@ -488,11 +488,11 @@ void nano::active_transactions::adjust_difficulty (nano::block_hash const & hash
 					remaining_blocks.emplace_back (dependent_block, level - 1);
 				}
 				processed_blocks.insert (hash);
-				nano::qualified_root root (previous, existing->second->status.winner->root ());
+				btcb::qualified_root root (previous, existing->second->status.winner->root ());
 				auto existing_root (roots.find (root));
 				if (existing_root != roots.end ())
 				{
-					sum += nano::difficulty::to_multiplier (existing_root->difficulty, node.network_params.network.publish_threshold);
+					sum += btcb::difficulty::to_multiplier (existing_root->difficulty, node.network_params.network.publish_threshold);
 					elections_list.emplace_back (root, level);
 				}
 			}
@@ -502,7 +502,7 @@ void nano::active_transactions::adjust_difficulty (nano::block_hash const & hash
 	if (!elections_list.empty ())
 	{
 		double multiplier = sum / elections_list.size ();
-		uint64_t average = nano::difficulty::from_multiplier (multiplier, node.network_params.network.publish_threshold);
+		uint64_t average = btcb::difficulty::from_multiplier (multiplier, node.network_params.network.publish_threshold);
 		auto highest_level = elections_list.back ().second;
 		uint64_t divider = 1;
 		// Possible overflow check, will not occur for negative levels
@@ -516,14 +516,14 @@ void nano::active_transactions::adjust_difficulty (nano::block_hash const & hash
 		{
 			auto existing_root (roots.find (item.first));
 			uint64_t difficulty_a = average + item.second / divider;
-			roots.modify (existing_root, [difficulty_a](nano::conflict_info & info_a) {
+			roots.modify (existing_root, [difficulty_a](btcb::conflict_info & info_a) {
 				info_a.adjusted_difficulty = difficulty_a;
 			});
 		}
 	}
 }
 
-void nano::active_transactions::update_active_difficulty (std::unique_lock<std::mutex> & lock_a)
+void btcb::active_transactions::update_active_difficulty (std::unique_lock<std::mutex> & lock_a)
 {
 	assert (lock_a.mutex () == &mutex && lock_a.owns_lock ());
 	double multiplier (1.);
@@ -540,27 +540,27 @@ void nano::active_transactions::update_active_difficulty (std::unique_lock<std::
 		}
 		if (!active_root_difficulties.empty ())
 		{
-			multiplier = nano::difficulty::to_multiplier (active_root_difficulties[active_root_difficulties.size () / 2], node.network_params.network.publish_threshold);
+			multiplier = btcb::difficulty::to_multiplier (active_root_difficulties[active_root_difficulties.size () / 2], node.network_params.network.publish_threshold);
 		}
 	}
 	assert (multiplier >= 1);
 	multipliers_cb.push_front (multiplier);
 	auto sum (std::accumulate (multipliers_cb.begin (), multipliers_cb.end (), double(0)));
-	auto difficulty = nano::difficulty::from_multiplier (sum / multipliers_cb.size (), node.network_params.network.publish_threshold);
+	auto difficulty = btcb::difficulty::from_multiplier (sum / multipliers_cb.size (), node.network_params.network.publish_threshold);
 	assert (difficulty >= node.network_params.network.publish_threshold);
 	trended_active_difficulty = difficulty;
 }
 
-uint64_t nano::active_transactions::active_difficulty ()
+uint64_t btcb::active_transactions::active_difficulty ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return trended_active_difficulty;
 }
 
 // List of active blocks in elections
-std::deque<std::shared_ptr<nano::block>> nano::active_transactions::list_blocks (bool single_lock)
+std::deque<std::shared_ptr<btcb::block>> btcb::active_transactions::list_blocks (bool single_lock)
 {
-	std::deque<std::shared_ptr<nano::block>> result;
+	std::deque<std::shared_ptr<btcb::block>> result;
 	std::unique_lock<std::mutex> lock;
 	if (!single_lock)
 	{
@@ -573,13 +573,13 @@ std::deque<std::shared_ptr<nano::block>> nano::active_transactions::list_blocks 
 	return result;
 }
 
-std::deque<nano::election_status> nano::active_transactions::list_confirmed ()
+std::deque<btcb::election_status> btcb::active_transactions::list_confirmed ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return confirmed;
 }
 
-void nano::active_transactions::erase (nano::block const & block_a)
+void btcb::active_transactions::erase (btcb::block const & block_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	if (roots.find (block_a.qualified_root ()) != roots.end ())
@@ -589,7 +589,7 @@ void nano::active_transactions::erase (nano::block const & block_a)
 	}
 }
 
-bool nano::active_transactions::should_flush ()
+bool btcb::active_transactions::should_flush ()
 {
 	bool result (false);
 	counter.trend_sample ();
@@ -635,7 +635,7 @@ bool nano::active_transactions::should_flush ()
 	return result;
 }
 
-void nano::active_transactions::flush_lowest ()
+void btcb::active_transactions::flush_lowest ()
 {
 	size_t count (0);
 	assert (!roots.empty ());
@@ -662,19 +662,19 @@ void nano::active_transactions::flush_lowest ()
 	}
 }
 
-bool nano::active_transactions::empty ()
+bool btcb::active_transactions::empty ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return roots.empty ();
 }
 
-size_t nano::active_transactions::size ()
+size_t btcb::active_transactions::size ()
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	return roots.size ();
 }
 
-bool nano::active_transactions::publish (std::shared_ptr<nano::block> block_a)
+bool btcb::active_transactions::publish (std::shared_ptr<btcb::block> block_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (roots.find (block_a->qualified_root ()));
@@ -690,7 +690,7 @@ bool nano::active_transactions::publish (std::shared_ptr<nano::block> block_a)
 	return result;
 }
 
-void nano::active_transactions::confirm_block (nano::block_hash const & hash_a)
+void btcb::active_transactions::confirm_block (btcb::block_hash const & hash_a)
 {
 	std::lock_guard<std::mutex> lock (mutex);
 	auto existing (blocks.find (hash_a));
@@ -700,7 +700,7 @@ void nano::active_transactions::confirm_block (nano::block_hash const & hash_a)
 	}
 }
 
-namespace nano
+namespace btcb
 {
 std::unique_ptr<seq_con_info_component> collect_seq_con_info (active_transactions & active_transactions, const std::string & name)
 {
