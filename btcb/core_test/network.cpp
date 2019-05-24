@@ -829,10 +829,10 @@ TEST (bootstrap_processor, lazy_hash)
 	btcb::keypair key1;
 	btcb::keypair key2;
 	// Generating test chain
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
-	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gxrb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
+	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gbcb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
 	auto send2 (std::make_shared<btcb::state_block> (key1.pub, receive1->hash (), key1.pub, 0, key2.pub, key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (receive1->hash ())));
-	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gxrb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
+	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gbcb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
 	// Processing test chain
 	system.nodes[0]->block_processor.add (send1);
 	system.nodes[0]->block_processor.add (receive1);
@@ -860,13 +860,13 @@ TEST (bootstrap_processor, lazy_max_pull_count)
 	btcb::keypair key1;
 	btcb::keypair key2;
 	// Generating test chain
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
-	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gxrb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
+	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gbcb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
 	auto send2 (std::make_shared<btcb::state_block> (key1.pub, receive1->hash (), key1.pub, 0, key2.pub, key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (receive1->hash ())));
-	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gxrb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
-	auto change1 (std::make_shared<btcb::state_block> (key2.pub, receive2->hash (), key1.pub, btcb::Gxrb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (receive2->hash ())));
-	auto change2 (std::make_shared<btcb::state_block> (key2.pub, change1->hash (), btcb::test_genesis_key.pub, btcb::Gxrb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (change1->hash ())));
-	auto change3 (std::make_shared<btcb::state_block> (key2.pub, change2->hash (), key2.pub, btcb::Gxrb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (change2->hash ())));
+	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gbcb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
+	auto change1 (std::make_shared<btcb::state_block> (key2.pub, receive2->hash (), key1.pub, btcb::Gbcb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (receive2->hash ())));
+	auto change2 (std::make_shared<btcb::state_block> (key2.pub, change1->hash (), btcb::test_genesis_key.pub, btcb::Gbcb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (change1->hash ())));
+	auto change3 (std::make_shared<btcb::state_block> (key2.pub, change2->hash (), key2.pub, btcb::Gbcb_ratio, 0, key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (change2->hash ())));
 	// Processing test chain
 	system.nodes[0]->block_processor.add (send1);
 	system.nodes[0]->block_processor.add (receive1);
@@ -897,10 +897,10 @@ TEST (bootstrap_processor, wallet_lazy_frontier)
 	btcb::keypair key1;
 	btcb::keypair key2;
 	// Generating test chain
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
-	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gxrb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
+	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gbcb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
 	auto send2 (std::make_shared<btcb::state_block> (key1.pub, receive1->hash (), key1.pub, 0, key2.pub, key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (receive1->hash ())));
-	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gxrb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
+	auto receive2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, btcb::Gbcb_ratio, send2->hash (), key2.prv, key2.pub, system.nodes[0]->work_generate_blocking (key2.pub)));
 	// Processing test chain
 	system.nodes[0]->block_processor.add (send1);
 	system.nodes[0]->block_processor.add (receive1);
@@ -931,8 +931,8 @@ TEST (bootstrap_processor, wallet_lazy_pending)
 	btcb::keypair key1;
 	btcb::keypair key2;
 	// Generating test chain
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
-	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gxrb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
+	auto receive1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, btcb::Gbcb_ratio, send1->hash (), key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (key1.pub)));
 	auto send2 (std::make_shared<btcb::state_block> (key1.pub, receive1->hash (), key1.pub, 0, key2.pub, key1.prv, key1.pub, system.nodes[0]->work_generate_blocking (receive1->hash ())));
 	// Processing test chain
 	system.nodes[0]->block_processor.add (send1);
@@ -1008,10 +1008,10 @@ TEST (frontier_req, count)
 	btcb::genesis genesis;
 	// Public key FB93... after genesis in accounts table
 	btcb::keypair key1 ("ED5AE0A6505B14B67435C29FD9FEEBC26F597D147BC92F6D795FFAD7AFD3D967");
-	btcb::state_block send1 (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+	btcb::state_block send1 (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
 	node1.work_generate_blocking (send1);
 	ASSERT_EQ (btcb::process_result::progress, node1.process (send1).code);
-	btcb::state_block receive1 (key1.pub, 0, btcb::test_genesis_key.pub, btcb::Gxrb_ratio, send1.hash (), key1.prv, key1.pub, 0);
+	btcb::state_block receive1 (key1.pub, 0, btcb::test_genesis_key.pub, btcb::Gbcb_ratio, send1.hash (), key1.prv, key1.pub, 0);
 	node1.work_generate_blocking (receive1);
 	ASSERT_EQ (btcb::process_result::progress, node1.process (receive1).code);
 	auto connection (std::make_shared<btcb::bootstrap_server> (nullptr, system.nodes[0]));
@@ -1673,11 +1673,11 @@ TEST (confirmation_height, gap_bootstrap)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair destination;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
-	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send2);
-	auto send3 (std::make_shared<btcb::state_block> (btcb::genesis_account, send2->hash (), btcb::genesis_account, btcb::genesis_amount - 3 * btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send3 (std::make_shared<btcb::state_block> (btcb::genesis_account, send2->hash (), btcb::genesis_account, btcb::genesis_amount - 3 * btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send3);
 	auto open1 (std::make_shared<btcb::open_block> (send1->hash (), destination.pub, destination.pub, destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*open1);
@@ -1738,11 +1738,11 @@ TEST (confirmation_height, gap_live)
 	system.wallet (1)->insert_adhoc (destination.prv);
 
 	btcb::genesis genesis;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	system.nodes[0]->work_generate_blocking (*send1);
-	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	system.nodes[0]->work_generate_blocking (*send2);
-	auto send3 (std::make_shared<btcb::state_block> (btcb::genesis_account, send2->hash (), btcb::genesis_account, btcb::genesis_amount - 3 * btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send3 (std::make_shared<btcb::state_block> (btcb::genesis_account, send2->hash (), btcb::genesis_account, btcb::genesis_amount - 3 * btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	system.nodes[0]->work_generate_blocking (*send3);
 
 	auto open1 (std::make_shared<btcb::open_block> (send1->hash (), destination.pub, destination.pub, destination.prv, destination.pub, 0));
@@ -1937,36 +1937,36 @@ TEST (confirmation_height, all_block_types)
 	btcb::keypair key1;
 	btcb::keypair key2;
 	auto & store = node->store;
-	btcb::send_block send (latest, key1.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (latest));
-	btcb::send_block send1 (send.hash (), key2.pub, btcb::genesis_amount - btcb::Gxrb_ratio * 2, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send.hash ()));
+	btcb::send_block send (latest, key1.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (latest));
+	btcb::send_block send1 (send.hash (), key2.pub, btcb::genesis_amount - btcb::Gbcb_ratio * 2, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send.hash ()));
 
 	btcb::open_block open (send.hash (), btcb::test_genesis_key.pub, key1.pub, key1.prv, key1.pub, system.work.generate (key1.pub));
-	btcb::state_block state_open (key2.pub, 0, 0, btcb::Gxrb_ratio, send1.hash (), key2.prv, key2.pub, system.work.generate (key2.pub));
+	btcb::state_block state_open (key2.pub, 0, 0, btcb::Gbcb_ratio, send1.hash (), key2.prv, key2.pub, system.work.generate (key2.pub));
 
 	btcb::send_block send2 (open.hash (), key2.pub, 0, key1.prv, key1.pub, system.work.generate (open.hash ()));
-	btcb::state_block state_receive (key2.pub, state_open.hash (), 0, btcb::Gxrb_ratio * 2, send2.hash (), key2.prv, key2.pub, system.work.generate (state_open.hash ()));
+	btcb::state_block state_receive (key2.pub, state_open.hash (), 0, btcb::Gbcb_ratio * 2, send2.hash (), key2.prv, key2.pub, system.work.generate (state_open.hash ()));
 
-	btcb::state_block state_send (key2.pub, state_receive.hash (), 0, btcb::Gxrb_ratio, key1.pub, key2.prv, key2.pub, system.work.generate (state_receive.hash ()));
+	btcb::state_block state_send (key2.pub, state_receive.hash (), 0, btcb::Gbcb_ratio, key1.pub, key2.prv, key2.pub, system.work.generate (state_receive.hash ()));
 	btcb::receive_block receive (send2.hash (), state_send.hash (), key1.prv, key1.pub, system.work.generate (send2.hash ()));
 
 	btcb::change_block change (receive.hash (), key2.pub, key1.prv, key1.pub, system.work.generate (receive.hash ()));
 
-	btcb::state_block state_change (key2.pub, state_send.hash (), btcb::test_genesis_key.pub, btcb::Gxrb_ratio, 0, key2.prv, key2.pub, system.work.generate (state_send.hash ()));
+	btcb::state_block state_change (key2.pub, state_send.hash (), btcb::test_genesis_key.pub, btcb::Gbcb_ratio, 0, key2.prv, key2.pub, system.work.generate (state_send.hash ()));
 
 	btcb::keypair epoch_key;
 	node->ledger.epoch_signer = epoch_key.pub;
 
-	btcb::state_block epoch (key2.pub, state_change.hash (), btcb::test_genesis_key.pub, btcb::Gxrb_ratio, node->ledger.epoch_link, epoch_key.prv, epoch_key.pub, system.work.generate (state_change.hash ()));
+	btcb::state_block epoch (key2.pub, state_change.hash (), btcb::test_genesis_key.pub, btcb::Gbcb_ratio, node->ledger.epoch_link, epoch_key.prv, epoch_key.pub, system.work.generate (state_change.hash ()));
 
-	btcb::state_block epoch1 (key1.pub, change.hash (), key2.pub, btcb::Gxrb_ratio, node->ledger.epoch_link, epoch_key.prv, epoch_key.pub, system.work.generate (change.hash ()));
-	btcb::state_block state_send1 (key1.pub, epoch1.hash (), 0, btcb::Gxrb_ratio - 1, key2.pub, key1.prv, key1.pub, system.work.generate (epoch1.hash ()));
-	btcb::state_block state_receive2 (key2.pub, epoch.hash (), 0, btcb::Gxrb_ratio + 1, state_send1.hash (), key2.prv, key2.pub, system.work.generate (epoch.hash ()));
+	btcb::state_block epoch1 (key1.pub, change.hash (), key2.pub, btcb::Gbcb_ratio, node->ledger.epoch_link, epoch_key.prv, epoch_key.pub, system.work.generate (change.hash ()));
+	btcb::state_block state_send1 (key1.pub, epoch1.hash (), 0, btcb::Gbcb_ratio - 1, key2.pub, key1.prv, key1.pub, system.work.generate (epoch1.hash ()));
+	btcb::state_block state_receive2 (key2.pub, epoch.hash (), 0, btcb::Gbcb_ratio + 1, state_send1.hash (), key2.prv, key2.pub, system.work.generate (epoch.hash ()));
 
-	auto state_send2 = std::make_shared<btcb::state_block> (key2.pub, state_receive2.hash (), 0, btcb::Gxrb_ratio, key1.pub, key2.prv, key2.pub, system.work.generate (state_receive2.hash ()));
-	btcb::state_block state_send3 (key2.pub, state_send2->hash (), 0, btcb::Gxrb_ratio - 1, key1.pub, key2.prv, key2.pub, system.work.generate (state_send2->hash ()));
+	auto state_send2 = std::make_shared<btcb::state_block> (key2.pub, state_receive2.hash (), 0, btcb::Gbcb_ratio, key1.pub, key2.prv, key2.pub, system.work.generate (state_receive2.hash ()));
+	btcb::state_block state_send3 (key2.pub, state_send2->hash (), 0, btcb::Gbcb_ratio - 1, key1.pub, key2.prv, key2.pub, system.work.generate (state_send2->hash ()));
 
-	btcb::state_block state_send4 (key1.pub, state_send1.hash (), 0, btcb::Gxrb_ratio - 2, btcb::test_genesis_key.pub, key1.prv, key1.pub, system.work.generate (state_send1.hash ()));
-	btcb::state_block state_receive3 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio * 2 + 1, state_send4.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1.hash ()));
+	btcb::state_block state_send4 (key1.pub, state_send1.hash (), 0, btcb::Gbcb_ratio - 2, btcb::test_genesis_key.pub, key1.prv, key1.pub, system.work.generate (state_send1.hash ()));
+	btcb::state_block state_receive3 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio * 2 + 1, state_send4.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1.hash ()));
 
 	{
 		auto transaction (store.tx_begin_write ());

@@ -30,9 +30,9 @@ TEST (active_transactions, long_unconfirmed_size)
 	btcb::genesis genesis;
 	wallet.insert_adhoc (btcb::test_genesis_key.prv);
 	btcb::keypair key1;
-	auto send1 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mxrb_ratio));
-	auto send2 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mxrb_ratio));
-	auto send3 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mxrb_ratio));
+	auto send1 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mbcb_ratio));
+	auto send2 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mbcb_ratio));
+	auto send3 (wallet.send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Mbcb_ratio));
 	system.deadline_set (10s);
 	while (node1.active.size () != 3)
 	{
@@ -78,10 +78,10 @@ TEST (active_transactions, adjusted_difficulty_priority)
 	btcb::keypair key1, key2, key3;
 	auto transaction (node1.store.tx_begin_read ());
 
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 10 * btcb::xrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (genesis.hash ())));
-	auto send2 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send1->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 20 * btcb::xrb_ratio, key2.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1->hash ())));
-	auto open1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, 10 * btcb::xrb_ratio, send1->hash (), key1.prv, key1.pub, system.work.generate (key1.pub)));
-	auto open2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, 10 * btcb::xrb_ratio, send2->hash (), key2.prv, key2.pub, system.work.generate (key2.pub)));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 10 * btcb::bcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (genesis.hash ())));
+	auto send2 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send1->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 20 * btcb::bcb_ratio, key2.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1->hash ())));
+	auto open1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, 10 * btcb::bcb_ratio, send1->hash (), key1.prv, key1.pub, system.work.generate (key1.pub)));
+	auto open2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, 10 * btcb::bcb_ratio, send2->hash (), key2.prv, key2.pub, system.work.generate (key2.pub)));
 	node1.process_active (send1);
 	node1.process_active (send2);
 	node1.process_active (open1);
@@ -112,12 +112,12 @@ TEST (active_transactions, adjusted_difficulty_priority)
 
 	//genesis and key1,key2 are opened
 	//start chain of 2 on each
-	auto send3 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send2->hash (), btcb::test_genesis_key.pub, 9 * btcb::xrb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send2->hash (), btcb::difficulty::from_multiplier (1500, node1.network_params.network.publish_threshold))));
-	auto send4 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send3->hash (), btcb::test_genesis_key.pub, 8 * btcb::xrb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send3->hash (), btcb::difficulty::from_multiplier (1500, node1.network_params.network.publish_threshold))));
-	auto send5 (std::make_shared<btcb::state_block> (key1.pub, open1->hash (), key1.pub, 9 * btcb::xrb_ratio, key3.pub, key1.prv, key1.pub, system.work.generate (open1->hash (), btcb::difficulty::from_multiplier (100, node1.network_params.network.publish_threshold))));
-	auto send6 (std::make_shared<btcb::state_block> (key1.pub, send5->hash (), key1.pub, 8 * btcb::xrb_ratio, key3.pub, key1.prv, key1.pub, system.work.generate (send5->hash (), btcb::difficulty::from_multiplier (100, node1.network_params.network.publish_threshold))));
-	auto send7 (std::make_shared<btcb::state_block> (key2.pub, open2->hash (), key2.pub, 9 * btcb::xrb_ratio, key3.pub, key2.prv, key2.pub, system.work.generate (open2->hash (), btcb::difficulty::from_multiplier (500, node1.network_params.network.publish_threshold))));
-	auto send8 (std::make_shared<btcb::state_block> (key2.pub, send7->hash (), key2.pub, 8 * btcb::xrb_ratio, key3.pub, key2.prv, key2.pub, system.work.generate (send7->hash (), btcb::difficulty::from_multiplier (500, node1.network_params.network.publish_threshold))));
+	auto send3 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send2->hash (), btcb::test_genesis_key.pub, 9 * btcb::bcb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send2->hash (), btcb::difficulty::from_multiplier (1500, node1.network_params.network.publish_threshold))));
+	auto send4 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send3->hash (), btcb::test_genesis_key.pub, 8 * btcb::bcb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send3->hash (), btcb::difficulty::from_multiplier (1500, node1.network_params.network.publish_threshold))));
+	auto send5 (std::make_shared<btcb::state_block> (key1.pub, open1->hash (), key1.pub, 9 * btcb::bcb_ratio, key3.pub, key1.prv, key1.pub, system.work.generate (open1->hash (), btcb::difficulty::from_multiplier (100, node1.network_params.network.publish_threshold))));
+	auto send6 (std::make_shared<btcb::state_block> (key1.pub, send5->hash (), key1.pub, 8 * btcb::bcb_ratio, key3.pub, key1.prv, key1.pub, system.work.generate (send5->hash (), btcb::difficulty::from_multiplier (100, node1.network_params.network.publish_threshold))));
+	auto send7 (std::make_shared<btcb::state_block> (key2.pub, open2->hash (), key2.pub, 9 * btcb::bcb_ratio, key3.pub, key2.prv, key2.pub, system.work.generate (open2->hash (), btcb::difficulty::from_multiplier (500, node1.network_params.network.publish_threshold))));
+	auto send8 (std::make_shared<btcb::state_block> (key2.pub, send7->hash (), key2.pub, 8 * btcb::bcb_ratio, key3.pub, key2.prv, key2.pub, system.work.generate (send7->hash (), btcb::difficulty::from_multiplier (500, node1.network_params.network.publish_threshold))));
 
 	node1.process_active (send3); //genesis
 	node1.process_active (send5); //key1
@@ -179,9 +179,9 @@ TEST (active_transactions, keep_local)
 			it++;
 		}
 	}
-	auto open1 (std::make_shared<btcb::state_block> (key3.pub, 0, key3.pub, btcb::xrb_ratio, send3->hash (), key3.prv, key3.pub, system.work.generate (key3.pub)));
+	auto open1 (std::make_shared<btcb::state_block> (key3.pub, 0, key3.pub, btcb::bcb_ratio, send3->hash (), key3.prv, key3.pub, system.work.generate (key3.pub)));
 	node1.process_active (open1);
-	auto open2 (std::make_shared<btcb::state_block> (key4.pub, 0, key4.pub, btcb::xrb_ratio, send4->hash (), key4.prv, key4.pub, system.work.generate (key4.pub)));
+	auto open2 (std::make_shared<btcb::state_block> (key4.pub, 0, key4.pub, btcb::bcb_ratio, send4->hash (), key4.prv, key4.pub, system.work.generate (key4.pub)));
 	node1.process_active (open2);
 	//none are dropped since none are long_unconfirmed
 	system.deadline_set (10s);
@@ -222,14 +222,14 @@ TEST (active_transactions, prioritize_chains)
 	btcb::genesis genesis;
 	btcb::keypair key1, key2, key3;
 
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 10 * btcb::xrb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (genesis.hash ())));
-	auto open1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, 10 * btcb::xrb_ratio, send1->hash (), key1.prv, key1.pub, system.work.generate (key1.pub)));
-	auto send2 (std::make_shared<btcb::state_block> (key1.pub, open1->hash (), key1.pub, btcb::xrb_ratio * 9, key2.pub, key1.prv, key1.pub, system.work.generate (open1->hash ())));
-	auto send3 (std::make_shared<btcb::state_block> (key1.pub, send2->hash (), key1.pub, btcb::xrb_ratio * 8, key2.pub, key1.prv, key1.pub, system.work.generate (send2->hash ())));
-	auto send4 (std::make_shared<btcb::state_block> (key1.pub, send3->hash (), key1.pub, btcb::xrb_ratio * 7, key2.pub, key1.prv, key1.pub, system.work.generate (send3->hash ())));
-	auto send5 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send1->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 20 * btcb::xrb_ratio, key2.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1->hash ())));
-	auto send6 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send5->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 30 * btcb::xrb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send5->hash ())));
-	auto open2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, 10 * btcb::xrb_ratio, send5->hash (), key2.prv, key2.pub, system.work.generate (key2.pub, btcb::difficulty::from_multiplier (50., node1.network_params.network.publish_threshold))));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 10 * btcb::bcb_ratio, key1.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (genesis.hash ())));
+	auto open1 (std::make_shared<btcb::state_block> (key1.pub, 0, key1.pub, 10 * btcb::bcb_ratio, send1->hash (), key1.prv, key1.pub, system.work.generate (key1.pub)));
+	auto send2 (std::make_shared<btcb::state_block> (key1.pub, open1->hash (), key1.pub, btcb::bcb_ratio * 9, key2.pub, key1.prv, key1.pub, system.work.generate (open1->hash ())));
+	auto send3 (std::make_shared<btcb::state_block> (key1.pub, send2->hash (), key1.pub, btcb::bcb_ratio * 8, key2.pub, key1.prv, key1.pub, system.work.generate (send2->hash ())));
+	auto send4 (std::make_shared<btcb::state_block> (key1.pub, send3->hash (), key1.pub, btcb::bcb_ratio * 7, key2.pub, key1.prv, key1.pub, system.work.generate (send3->hash ())));
+	auto send5 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send1->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 20 * btcb::bcb_ratio, key2.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send1->hash ())));
+	auto send6 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, send5->hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - 30 * btcb::bcb_ratio, key3.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (send5->hash ())));
+	auto open2 (std::make_shared<btcb::state_block> (key2.pub, 0, key2.pub, 10 * btcb::bcb_ratio, send5->hash (), key2.prv, key2.pub, system.work.generate (key2.pub, btcb::difficulty::from_multiplier (50., node1.network_params.network.publish_threshold))));
 	uint64_t difficulty1 (0);
 	btcb::work_validate (*open2, &difficulty1);
 	uint64_t difficulty2 (0);

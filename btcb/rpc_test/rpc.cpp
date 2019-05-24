@@ -1333,7 +1333,7 @@ TEST (rpc, history)
 	ASSERT_NE (nullptr, receive);
 	auto node0 (system.nodes[0]);
 	btcb::genesis genesis;
-	btcb::state_block usend (btcb::genesis_account, node0->latest (btcb::genesis_account), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (node0->latest (btcb::genesis_account)));
+	btcb::state_block usend (btcb::genesis_account, node0->latest (btcb::genesis_account), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (node0->latest (btcb::genesis_account)));
 	btcb::state_block ureceive (btcb::genesis_account, usend.hash (), btcb::genesis_account, btcb::genesis_amount, usend.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (usend.hash ()));
 	btcb::state_block uchange (btcb::genesis_account, ureceive.hash (), btcb::keypair ().pub, btcb::genesis_amount, 0, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (ureceive.hash ()));
 	{
@@ -1370,12 +1370,12 @@ TEST (rpc, history)
 	ASSERT_EQ ("receive", std::get<0> (history_l[0]));
 	ASSERT_EQ (ureceive.hash ().to_string (), std::get<3> (history_l[0]));
 	ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[0]));
-	ASSERT_EQ (btcb::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[0]));
+	ASSERT_EQ (btcb::Gbcb_ratio.convert_to<std::string> (), std::get<2> (history_l[0]));
 	ASSERT_EQ (5, history_l.size ());
 	ASSERT_EQ ("send", std::get<0> (history_l[1]));
 	ASSERT_EQ (usend.hash ().to_string (), std::get<3> (history_l[1]));
 	ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[1]));
-	ASSERT_EQ (btcb::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[1]));
+	ASSERT_EQ (btcb::Gbcb_ratio.convert_to<std::string> (), std::get<2> (history_l[1]));
 	ASSERT_EQ ("receive", std::get<0> (history_l[2]));
 	ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[2]));
 	ASSERT_EQ (system.nodes[0]->config.receive_minimum.to_string_dec (), std::get<2> (history_l[2]));
@@ -1402,7 +1402,7 @@ TEST (rpc, account_history)
 	ASSERT_NE (nullptr, receive);
 	auto node0 (system.nodes[0]);
 	btcb::genesis genesis;
-	btcb::state_block usend (btcb::genesis_account, node0->latest (btcb::genesis_account), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (node0->latest (btcb::genesis_account)));
+	btcb::state_block usend (btcb::genesis_account, node0->latest (btcb::genesis_account), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (node0->latest (btcb::genesis_account)));
 	btcb::state_block ureceive (btcb::genesis_account, usend.hash (), btcb::genesis_account, btcb::genesis_amount, usend.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (usend.hash ()));
 	btcb::state_block uchange (btcb::genesis_account, ureceive.hash (), btcb::keypair ().pub, btcb::genesis_amount, 0, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (ureceive.hash ()));
 	{
@@ -1440,12 +1440,12 @@ TEST (rpc, account_history)
 		ASSERT_EQ ("receive", std::get<0> (history_l[0]));
 		ASSERT_EQ (ureceive.hash ().to_string (), std::get<3> (history_l[0]));
 		ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[0]));
-		ASSERT_EQ (btcb::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[0]));
+		ASSERT_EQ (btcb::Gbcb_ratio.convert_to<std::string> (), std::get<2> (history_l[0]));
 		ASSERT_EQ ("6", std::get<4> (history_l[0])); // change block (height 7) is skipped by account_history since "raw" is not set
 		ASSERT_EQ ("send", std::get<0> (history_l[1]));
 		ASSERT_EQ (usend.hash ().to_string (), std::get<3> (history_l[1]));
 		ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[1]));
-		ASSERT_EQ (btcb::Gxrb_ratio.convert_to<std::string> (), std::get<2> (history_l[1]));
+		ASSERT_EQ (btcb::Gbcb_ratio.convert_to<std::string> (), std::get<2> (history_l[1]));
 		ASSERT_EQ ("5", std::get<4> (history_l[1]));
 		ASSERT_EQ ("receive", std::get<0> (history_l[2]));
 		ASSERT_EQ (btcb::test_genesis_key.pub.to_account (), std::get<1> (history_l[2]));
@@ -1645,7 +1645,7 @@ TEST (rpc, process_subtype_send)
 	btcb::keypair key;
 	auto latest (system.nodes[0]->latest (btcb::test_genesis_key.pub));
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
+	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
 	enable_ipc_transport_tcp (node1.config.ipc_config.transport_tcp);
 	btcb::node_rpc_config node_rpc_config;
 	btcb::ipc::ipc_server ipc_server (node1, node_rpc_config);
@@ -1697,13 +1697,13 @@ TEST (rpc, process_subtype_open)
 	btcb::keypair key;
 	auto latest (system.nodes[0]->latest (btcb::test_genesis_key.pub));
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
+	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
 	{
 		auto transaction (node1.store.tx_begin_write ());
 		ASSERT_EQ (btcb::process_result::progress, node1.ledger.process (transaction, send).code);
 	}
 	node1.active.start (std::make_shared<btcb::state_block> (send));
-	btcb::state_block open (key.pub, 0, key.pub, btcb::Gxrb_ratio, send.hash (), key.prv, key.pub, node1.work_generate_blocking (key.pub));
+	btcb::state_block open (key.pub, 0, key.pub, btcb::Gbcb_ratio, send.hash (), key.prv, key.pub, node1.work_generate_blocking (key.pub));
 	enable_ipc_transport_tcp (node1.config.ipc_config.transport_tcp);
 	btcb::node_rpc_config node_rpc_config;
 	btcb::ipc::ipc_server ipc_server (node1, node_rpc_config);
@@ -1754,7 +1754,7 @@ TEST (rpc, process_subtype_receive)
 	btcb::system system (24000, 2);
 	auto latest (system.nodes[0]->latest (btcb::test_genesis_key.pub));
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
+	btcb::state_block send (btcb::genesis_account, latest, btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, node1.work_generate_blocking (latest));
 	{
 		auto transaction (node1.store.tx_begin_write ());
 		ASSERT_EQ (btcb::process_result::progress, node1.ledger.process (transaction, send).code);
@@ -2102,7 +2102,7 @@ TEST (rpc, payment_wait)
 	boost::property_tree::ptree request1;
 	request1.put ("action", "payment_wait");
 	request1.put ("account", key.pub.to_account ());
-	request1.put ("amount", btcb::amount (btcb::Mxrb_ratio).to_string_dec ());
+	request1.put ("amount", btcb::amount (btcb::Mbcb_ratio).to_string_dec ());
 	request1.put ("timeout", "100");
 	test_response response1 (request1, rpc.config.port, system.io_ctx);
 	system.deadline_set (5s);
@@ -2113,9 +2113,9 @@ TEST (rpc, payment_wait)
 	ASSERT_EQ (200, response1.status);
 	ASSERT_EQ ("nothing", response1.json.get<std::string> ("status"));
 	request1.put ("timeout", "100000");
-	system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Mxrb_ratio);
+	system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Mbcb_ratio);
 	system.alarm.add (std::chrono::steady_clock::now () + std::chrono::milliseconds (500), [&]() {
-		system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Mxrb_ratio);
+		system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Mbcb_ratio);
 	});
 	test_response response2 (request1, rpc.config.port, system.io_ctx);
 	while (response2.status == 0)
@@ -2124,7 +2124,7 @@ TEST (rpc, payment_wait)
 	}
 	ASSERT_EQ (200, response2.status);
 	ASSERT_EQ ("success", response2.json.get<std::string> ("status"));
-	request1.put ("amount", btcb::amount (btcb::Mxrb_ratio * 2).to_string_dec ());
+	request1.put ("amount", btcb::amount (btcb::Mbcb_ratio * 2).to_string_dec ());
 	test_response response3 (request1, rpc.config.port, system.io_ctx);
 	system.deadline_set (5s);
 	while (response3.status == 0)
@@ -2816,7 +2816,7 @@ TEST (rpc, mrai_to_raw)
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (btcb::Mxrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (btcb::Mbcb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, mrai_from_raw)
@@ -2832,7 +2832,7 @@ TEST (rpc, mrai_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "mrai_from_raw");
-	request1.put ("amount", btcb::Mxrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", btcb::Mbcb_ratio.convert_to<std::string> ());
 	test_response response1 (request1, rpc.config.port, system.io_ctx);
 	system.deadline_set (5s);
 	while (response1.status == 0)
@@ -2864,7 +2864,7 @@ TEST (rpc, krai_to_raw)
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (btcb::kxrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (btcb::kbcb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, krai_from_raw)
@@ -2880,7 +2880,7 @@ TEST (rpc, krai_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "krai_from_raw");
-	request1.put ("amount", btcb::kxrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", btcb::kbcb_ratio.convert_to<std::string> ());
 	test_response response1 (request1, rpc.config.port, system.io_ctx);
 	system.deadline_set (5s);
 	while (response1.status == 0)
@@ -2912,7 +2912,7 @@ TEST (rpc, btcb_to_raw)
 		ASSERT_NO_ERROR (system.poll ());
 	}
 	ASSERT_EQ (200, response1.status);
-	ASSERT_EQ (btcb::xrb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
+	ASSERT_EQ (btcb::bcb_ratio.convert_to<std::string> (), response1.json.get<std::string> ("amount"));
 }
 
 TEST (rpc, btcb_from_raw)
@@ -2928,7 +2928,7 @@ TEST (rpc, btcb_from_raw)
 	rpc.start ();
 	boost::property_tree::ptree request1;
 	request1.put ("action", "btcb_from_raw");
-	request1.put ("amount", btcb::xrb_ratio.convert_to<std::string> ());
+	request1.put ("amount", btcb::bcb_ratio.convert_to<std::string> ());
 	test_response response1 (request1, rpc.config.port, system.io_ctx);
 	system.deadline_set (5s);
 	while (response1.status == 0)
@@ -4382,7 +4382,7 @@ TEST (rpc, json_block_input)
 	btcb::system system (24000, 1);
 	btcb::keypair key;
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
 	enable_ipc_transport_tcp (node1.config.ipc_config.transport_tcp);
 	btcb::node_rpc_config node_rpc_config;
 	btcb::ipc::ipc_server ipc_server (node1, node_rpc_config);
@@ -4522,9 +4522,9 @@ TEST (rpc, blocks_info_subtype)
 	btcb::keypair key;
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	system.wallet (0)->insert_adhoc (key.prv);
-	auto send (system.wallet (0)->send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Gxrb_ratio));
+	auto send (system.wallet (0)->send_action (btcb::test_genesis_key.pub, btcb::test_genesis_key.pub, btcb::Gbcb_ratio));
 	ASSERT_NE (nullptr, send);
-	auto receive (system.wallet (0)->receive_action (*send, key.pub, btcb::Gxrb_ratio));
+	auto receive (system.wallet (0)->receive_action (*send, key.pub, btcb::Gbcb_ratio));
 	ASSERT_NE (nullptr, receive);
 	auto change (system.wallet (0)->change_action (btcb::test_genesis_key.pub, key.pub));
 	ASSERT_NE (nullptr, change);
@@ -4913,7 +4913,7 @@ TEST (rpc, block_create_state)
 	request.put ("account", btcb::test_genesis_key.pub.to_account ());
 	request.put ("previous", genesis.hash ().to_string ());
 	request.put ("representative", btcb::test_genesis_key.pub.to_account ());
-	request.put ("balance", (btcb::genesis_amount - btcb::Gxrb_ratio).convert_to<std::string> ());
+	request.put ("balance", (btcb::genesis_amount - btcb::Gbcb_ratio).convert_to<std::string> ());
 	request.put ("link", key.pub.to_account ());
 	request.put ("work", btcb::to_string_hex (system.nodes[0]->work_generate_blocking (genesis.hash ())));
 	auto node = system.nodes.front ();
@@ -4950,7 +4950,7 @@ TEST (rpc, block_create_state_open)
 	btcb::keypair key;
 	btcb::genesis genesis;
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
-	auto send_block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
+	auto send_block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
 	ASSERT_NE (nullptr, send_block);
 	boost::property_tree::ptree request;
 	request.put ("action", "block_create");
@@ -4959,7 +4959,7 @@ TEST (rpc, block_create_state_open)
 	request.put ("account", key.pub.to_account ());
 	request.put ("previous", 0);
 	request.put ("representative", btcb::test_genesis_key.pub.to_account ());
-	request.put ("balance", btcb::Gxrb_ratio.convert_to<std::string> ());
+	request.put ("balance", btcb::Gbcb_ratio.convert_to<std::string> ());
 	request.put ("link", send_block->hash ().to_string ());
 	request.put ("work", btcb::to_string_hex (system.nodes[0]->work_generate_blocking (key.pub)));
 	auto node = system.nodes.front ();
@@ -5012,7 +5012,7 @@ TEST (rpc, block_create_state_request_work)
 		request.put ("wallet", system.nodes[0]->wallets.items.begin ()->first.to_string ());
 		request.put ("account", btcb::test_genesis_key.pub.to_account ());
 		request.put ("representative", btcb::test_genesis_key.pub.to_account ());
-		request.put ("balance", (btcb::genesis_amount - btcb::Gxrb_ratio).convert_to<std::string> ());
+		request.put ("balance", (btcb::genesis_amount - btcb::Gbcb_ratio).convert_to<std::string> ());
 		request.put ("link", key.pub.to_account ());
 		request.put ("previous", previous);
 		auto node = system.nodes.front ();
@@ -5273,7 +5273,7 @@ TEST (rpc, online_reps)
 	btcb::keypair key;
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	ASSERT_TRUE (system.nodes[1]->online_reps.online_stake () == system.nodes[1]->config.online_weight_minimum.number ());
-	auto send_block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
+	auto send_block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
 	ASSERT_NE (nullptr, send_block);
 	system.deadline_set (10s);
 	while (system.nodes[1]->online_reps.list ().empty ())
@@ -5384,13 +5384,13 @@ TEST (rpc, confirmation_height_currently_processing)
 		auto transaction = node->store.tx_begin_write ();
 		for (auto i = num_blocks; i > 0; --i)
 		{
-			btcb::send_block send (previous_genesis_chain_hash, btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio + i + 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
+			btcb::send_block send (previous_genesis_chain_hash, btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio + i + 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
 			ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send).code);
 			previous_genesis_chain_hash = send.hash ();
 		}
 
 		btcb::keypair key1;
-		btcb::send_block send (previous_genesis_chain_hash, key1.pub, btcb::genesis_amount - btcb::Gxrb_ratio - 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
+		btcb::send_block send (previous_genesis_chain_hash, key1.pub, btcb::genesis_amount - btcb::Gbcb_ratio - 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.work.generate (previous_genesis_chain_hash));
 		ASSERT_EQ (btcb::process_result::progress, node->ledger.process (transaction, send).code);
 		previous_genesis_chain_hash = send.hash ();
 	}
@@ -5467,7 +5467,7 @@ TEST (rpc, confirmation_history)
 	btcb::keypair key;
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	ASSERT_TRUE (system.nodes[0]->active.list_confirmed ().empty ());
-	auto block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
+	auto block (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
 	system.deadline_set (10s);
 	while (system.nodes[0]->active.list_confirmed ().empty ())
 	{
@@ -5500,7 +5500,7 @@ TEST (rpc, confirmation_history)
 	ASSERT_EQ (block->hash ().to_string (), hash);
 	btcb::amount tally_num;
 	tally_num.decode_dec (tally);
-	assert (tally_num == btcb::genesis_amount || tally_num == (btcb::genesis_amount - btcb::Gxrb_ratio));
+	assert (tally_num == btcb::genesis_amount || tally_num == (btcb::genesis_amount - btcb::Gbcb_ratio));
 	system.stop ();
 }
 
@@ -5510,9 +5510,9 @@ TEST (rpc, confirmation_history_hash)
 	btcb::keypair key;
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	ASSERT_TRUE (system.nodes[0]->active.list_confirmed ().empty ());
-	auto send1 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
-	auto send2 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
-	auto send3 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gxrb_ratio));
+	auto send1 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
+	auto send2 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
+	auto send3 (system.wallet (0)->send_action (btcb::test_genesis_key.pub, key.pub, btcb::Gbcb_ratio));
 	system.deadline_set (10s);
 	while (system.nodes[0]->active.list_confirmed ().size () != 3)
 	{
@@ -5547,7 +5547,7 @@ TEST (rpc, confirmation_history_hash)
 	ASSERT_EQ (send2->hash ().to_string (), hash);
 	btcb::amount tally_num;
 	tally_num.decode_dec (tally);
-	assert (tally_num == btcb::genesis_amount || tally_num == (btcb::genesis_amount - btcb::Gxrb_ratio) || tally_num == (btcb::genesis_amount - 2 * btcb::Gxrb_ratio) || tally_num == (btcb::genesis_amount - 3 * btcb::Gxrb_ratio));
+	assert (tally_num == btcb::genesis_amount || tally_num == (btcb::genesis_amount - btcb::Gbcb_ratio) || tally_num == (btcb::genesis_amount - 2 * btcb::Gbcb_ratio) || tally_num == (btcb::genesis_amount - 3 * btcb::Gbcb_ratio));
 	system.stop ();
 }
 
@@ -5556,7 +5556,7 @@ TEST (rpc, block_confirm)
 	btcb::system system (24000, 1);
 	system.wallet (0)->insert_adhoc (btcb::test_genesis_key.prv);
 	btcb::genesis genesis;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::test_genesis_key.pub, genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, system.nodes[0]->work_generate_blocking (genesis.hash ())));
 	{
 		auto transaction (system.nodes[0]->store.tx_begin_write ());
 		ASSERT_EQ (btcb::process_result::progress, system.nodes[0]->ledger.process (transaction, *send1).code);
@@ -5948,7 +5948,7 @@ TEST (rpc, sign_hash)
 	btcb::system system (24000, 1);
 	btcb::keypair key;
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
 	enable_ipc_transport_tcp (node1.config.ipc_config.transport_tcp);
 	btcb::node_rpc_config node_rpc_config;
 	btcb::ipc::ipc_server ipc_server (node1, node_rpc_config);
@@ -5986,7 +5986,7 @@ TEST (rpc, sign_block)
 	btcb::system system (24000, 1);
 	btcb::keypair key;
 	auto & node1 (*system.nodes[0]);
-	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
+	btcb::state_block send (btcb::genesis_account, node1.latest (btcb::test_genesis_key.pub), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0);
 	enable_ipc_transport_tcp (node1.config.ipc_config.transport_tcp);
 	btcb::node_rpc_config node_rpc_config;
 	btcb::ipc::ipc_server ipc_server (node1, node_rpc_config);

@@ -975,7 +975,7 @@ std::string btcb_qt::status::color ()
 }
 
 btcb_qt::wallet::wallet (QApplication & application_a, btcb_qt::eventloop_processor & processor_a, btcb::node & node_a, std::shared_ptr<btcb::wallet> wallet_a, btcb::account & account_a) :
-rendering_ratio (btcb::Mxrb_ratio),
+rendering_ratio (btcb::Mbcb_ratio),
 node (node_a),
 wallet_m (wallet_a),
 account (account_a),
@@ -1434,11 +1434,11 @@ std::string btcb_qt::wallet::format_balance (btcb::uint128_t const & balance) co
 {
 	auto balance_str = btcb::amount (balance).format_balance (rendering_ratio, 3, false);
 	auto unit = std::string ("BTCB");
-	if (rendering_ratio == btcb::kxrb_ratio)
+	if (rendering_ratio == btcb::kbcb_ratio)
 	{
 		unit = std::string ("kbtcb");
 	}
-	else if (rendering_ratio == btcb::xrb_ratio)
+	else if (rendering_ratio == btcb::bcb_ratio)
 	{
 		unit = std::string ("btcb");
 	}
@@ -1820,21 +1820,21 @@ wallet (wallet_a)
 		if (mbtcb_unit->isChecked ())
 		{
 			QSettings ().setValue (saved_ratio_key, ratio_group->id (mbtcb_unit));
-			this->wallet.change_rendering_ratio (btcb::Mxrb_ratio);
+			this->wallet.change_rendering_ratio (btcb::Mbcb_ratio);
 		}
 	});
 	QObject::connect (kbtcb_unit, &QRadioButton::toggled, [this]() {
 		if (kbtcb_unit->isChecked ())
 		{
 			QSettings ().setValue (saved_ratio_key, ratio_group->id (kbtcb_unit));
-			this->wallet.change_rendering_ratio (btcb::kxrb_ratio);
+			this->wallet.change_rendering_ratio (btcb::kbcb_ratio);
 		}
 	});
 	QObject::connect (btcb_unit, &QRadioButton::toggled, [this]() {
 		if (btcb_unit->isChecked ())
 		{
 			QSettings ().setValue (saved_ratio_key, ratio_group->id (btcb_unit));
-			this->wallet.change_rendering_ratio (btcb::xrb_ratio);
+			this->wallet.change_rendering_ratio (btcb::bcb_ratio);
 		}
 	});
 	QObject::connect (raw_unit, &QRadioButton::toggled, [this]() {

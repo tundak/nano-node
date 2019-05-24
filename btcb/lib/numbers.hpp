@@ -10,10 +10,10 @@ using uint128_t = boost::multiprecision::uint128_t;
 using uint256_t = boost::multiprecision::uint256_t;
 using uint512_t = boost::multiprecision::uint512_t;
 // SI dividers
-btcb::uint128_t const Gxrb_ratio = btcb::uint128_t ("1000000000000000000000000000000000"); // 10^33
-btcb::uint128_t const Mxrb_ratio = btcb::uint128_t ("1000000000000000000000000000000"); // 10^30
-btcb::uint128_t const kxrb_ratio = btcb::uint128_t ("1000000000000000000000000000"); // 10^27
-btcb::uint128_t const xrb_ratio = btcb::uint128_t ("1000000000000000000000000"); // 10^24
+btcb::uint128_t const Gbcb_ratio = btcb::uint128_t ("1000000000000000000000000000000000"); // 10^33
+btcb::uint128_t const Mbcb_ratio = btcb::uint128_t ("1000000000000000000000000000000"); // 10^30
+btcb::uint128_t const kbcb_ratio = btcb::uint128_t ("1000000000000000000000000000"); // 10^27
+btcb::uint128_t const bcb_ratio = btcb::uint128_t ("1000000000000000000000000"); // 10^24
 btcb::uint128_t const raw_ratio = btcb::uint128_t ("1"); // 10^0
 
 union uint128_union final

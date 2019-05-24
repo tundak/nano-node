@@ -65,8 +65,8 @@ public:
 	void key_create ();
 	void key_expand ();
 	void ledger ();
-	void mbtcb_to_raw (btcb::uint128_t = btcb::Mxrb_ratio);
-	void mbtcb_from_raw (btcb::uint128_t = btcb::Mxrb_ratio);
+	void mbtcb_to_raw (btcb::uint128_t = btcb::Mbcb_ratio);
+	void mbtcb_from_raw (btcb::uint128_t = btcb::Mbcb_ratio);
 	void node_id ();
 	void node_id_delete ();
 	void password_change ();

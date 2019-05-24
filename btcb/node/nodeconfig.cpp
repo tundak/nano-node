@@ -159,10 +159,10 @@ bool btcb::node_config::upgrade_json (unsigned version_a, btcb::jsonconfig & jso
 		}
 		case 3:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", btcb::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", btcb::bcb_ratio.convert_to<std::string> ());
 		case 4:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", btcb::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", btcb::bcb_ratio.convert_to<std::string> ());
 		case 5:
 			json.put ("enable_voting", enable_voting);
 			json.erase ("packet_delay_microseconds");

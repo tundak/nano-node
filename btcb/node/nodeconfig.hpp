@@ -34,9 +34,9 @@ public:
 	std::vector<std::string> preconfigured_peers;
 	std::vector<btcb::account> preconfigured_representatives;
 	unsigned bootstrap_fraction_numerator{ 1 };
-	btcb::amount receive_minimum{ btcb::xrb_ratio };
-	btcb::amount vote_minimum{ btcb::Gxrb_ratio };
-	btcb::amount online_weight_minimum{ 60000 * btcb::Gxrb_ratio };
+	btcb::amount receive_minimum{ btcb::bcb_ratio };
+	btcb::amount vote_minimum{ btcb::Gbcb_ratio };
+	btcb::amount online_weight_minimum{ 60000 * btcb::Gbcb_ratio };
 	unsigned online_weight_quorum{ 50 };
 	unsigned password_fanout{ 1024 };
 	unsigned io_threads{ std::max<unsigned> (4, boost::thread::hardware_concurrency ()) };

@@ -83,19 +83,19 @@ void btcb::json_handler::process_request (bool unsafe_a)
 			}
 			else if (action == "kbtcb_from_raw" || action == "krai_from_raw")
 			{
-				mbtcb_from_raw (btcb::kxrb_ratio);
+				mbtcb_from_raw (btcb::kbcb_ratio);
 			}
 			else if (action == "kbtcb_to_raw" || action == "krai_to_raw")
 			{
-				mbtcb_to_raw (btcb::kxrb_ratio);
+				mbtcb_to_raw (btcb::kbcb_ratio);
 			}
 			else if (action == "btcb_from_raw" || action == "rai_from_raw")
 			{
-				mbtcb_from_raw (btcb::xrb_ratio);
+				mbtcb_from_raw (btcb::bcb_ratio);
 			}
 			else if (action == "btcb_to_raw" || action == "rai_to_raw")
 			{
-				mbtcb_to_raw (btcb::xrb_ratio);
+				mbtcb_to_raw (btcb::bcb_ratio);
 			}
 			else if (action == "mbtcb_from_raw" || action == "mrai_from_raw")
 			{

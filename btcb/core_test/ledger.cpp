@@ -331,7 +331,7 @@ TEST (ledger, receive_rollback)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::send_block send (genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::send_block send (genesis.hash (), btcb::test_genesis_key.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send).code);
 	btcb::receive_block receive (send.hash (), send.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive).code);
@@ -809,7 +809,7 @@ TEST (votes, add_existing)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair key1;
-	auto send1 (std::make_shared<btcb::send_block> (genesis.hash (), key1.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::send_block> (genesis.hash (), key1.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
 	auto transaction (node1.store.tx_begin_write ());
 	ASSERT_EQ (btcb::process_result::progress, node1.ledger.process (transaction, *send1).code);
@@ -821,7 +821,7 @@ TEST (votes, add_existing)
 	auto votes1 (node1.active.roots.find (send1->qualified_root ())->election);
 	ASSERT_EQ (1, votes1->last_votes[btcb::test_genesis_key.pub].sequence);
 	btcb::keypair key2;
-	auto send2 (std::make_shared<btcb::send_block> (genesis.hash (), key2.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send2 (std::make_shared<btcb::send_block> (genesis.hash (), key2.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send2);
 	auto vote2 (std::make_shared<btcb::vote> (btcb::test_genesis_key.pub, btcb::test_genesis_key.prv, 2, send2));
 	// Pretend we've waited the timeout
@@ -1628,17 +1628,17 @@ TEST (ledger, block_destination_source)
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair dest;
 	btcb::uint128_t balance (btcb::genesis_amount);
-	balance -= btcb::Gxrb_ratio;
+	balance -= btcb::Gbcb_ratio;
 	btcb::send_block block1 (genesis.hash (), dest.pub, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
-	balance -= btcb::Gxrb_ratio;
+	balance -= btcb::Gbcb_ratio;
 	btcb::send_block block2 (block1.hash (), btcb::genesis_account, balance, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (block1.hash ()));
-	balance += btcb::Gxrb_ratio;
+	balance += btcb::Gbcb_ratio;
 	btcb::receive_block block3 (block2.hash (), block2.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (block2.hash ()));
-	balance -= btcb::Gxrb_ratio;
+	balance -= btcb::Gbcb_ratio;
 	btcb::state_block block4 (btcb::genesis_account, block3.hash (), btcb::genesis_account, balance, dest.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (block3.hash ()));
-	balance -= btcb::Gxrb_ratio;
+	balance -= btcb::Gbcb_ratio;
 	btcb::state_block block5 (btcb::genesis_account, block4.hash (), btcb::genesis_account, balance, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (block4.hash ()));
-	balance += btcb::Gxrb_ratio;
+	balance += btcb::Gbcb_ratio;
 	btcb::state_block block6 (btcb::genesis_account, block5.hash (), btcb::genesis_account, balance, block5.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (block5.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, block1).code);
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, block2).code);
@@ -1673,7 +1673,7 @@ TEST (ledger, state_account)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_EQ (btcb::genesis_account, ledger.account (transaction, send1.hash ()));
 }
@@ -1690,15 +1690,15 @@ TEST (ledger, state_send_receive)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	ASSERT_TRUE (store.pending_exists (transaction, btcb::pending_key (btcb::genesis_account, send1.hash ())));
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
@@ -1707,7 +1707,7 @@ TEST (ledger, state_send_receive)
 	ASSERT_NE (nullptr, receive2);
 	ASSERT_EQ (receive1, *receive2);
 	ASSERT_EQ (btcb::genesis_amount, ledger.balance (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, receive1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, receive1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, btcb::genesis_account));
 	ASSERT_FALSE (store.pending_exists (transaction, btcb::pending_key (btcb::genesis_account, send1.hash ())));
 }
@@ -1724,15 +1724,15 @@ TEST (ledger, state_receive)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
 	ASSERT_TRUE (store.block_exists (transaction, receive1.hash ()));
@@ -1740,7 +1740,7 @@ TEST (ledger, state_receive)
 	ASSERT_NE (nullptr, receive2);
 	ASSERT_EQ (receive1, *receive2);
 	ASSERT_EQ (btcb::genesis_amount, ledger.balance (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, receive1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, receive1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, btcb::genesis_account));
 }
 
@@ -1782,25 +1782,25 @@ TEST (ledger, state_open)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	ASSERT_TRUE (store.pending_exists (transaction, btcb::pending_key (destination.pub, send1.hash ())));
-	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
+	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
 	ASSERT_FALSE (store.pending_exists (transaction, btcb::pending_key (destination.pub, send1.hash ())));
 	ASSERT_TRUE (store.block_exists (transaction, open1.hash ()));
 	auto open2 (store.block_get (transaction, open1.hash ()));
 	ASSERT_NE (nullptr, open2);
 	ASSERT_EQ (open1, *open2);
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.balance (transaction, open1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, open1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.balance (transaction, open1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, open1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, btcb::genesis_account));
 }
 
@@ -1817,9 +1817,9 @@ TEST (ledger, send_after_state_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::send_block send2 (send1.hash (), btcb::genesis_account, btcb::genesis_amount - (2 * btcb::Gxrb_ratio), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
+	btcb::send_block send2 (send1.hash (), btcb::genesis_account, btcb::genesis_amount - (2 * btcb::Gbcb_ratio), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::block_position, ledger.process (transaction, send2).code);
 }
 
@@ -1836,7 +1836,7 @@ TEST (ledger, receive_after_state_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::receive_block receive1 (send1.hash (), send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::block_position, ledger.process (transaction, receive1).code);
@@ -1855,7 +1855,7 @@ TEST (ledger, change_after_state_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::keypair rep;
 	btcb::change_block change1 (send1.hash (), rep.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
@@ -1874,15 +1874,15 @@ TEST (ledger, state_unreceivable_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount, 1, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::gap_source, ledger.process (transaction, receive1).code);
 }
@@ -1899,16 +1899,16 @@ TEST (ledger, state_receive_bad_amount_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::send_block send1 (genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
-	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::balance_mismatch, ledger.process (transaction, receive1).code);
 }
 
@@ -1924,7 +1924,7 @@ TEST (ledger, state_no_link_amount_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::keypair rep;
 	btcb::state_block change1 (btcb::genesis_account, send1.hash (), rep.pub, btcb::genesis_amount, 0, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
@@ -1943,17 +1943,17 @@ TEST (ledger, state_receive_wrong_account_fail)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::keypair key;
-	btcb::state_block receive1 (key.pub, 0, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), key.prv, key.pub, pool.generate (key.pub));
+	btcb::state_block receive1 (key.pub, 0, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), key.prv, key.pub, pool.generate (key.pub));
 	ASSERT_EQ (btcb::process_result::unreceivable, ledger.process (transaction, receive1).code);
 }
 
@@ -1970,9 +1970,9 @@ TEST (ledger, state_open_state_fork)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
+	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
 	btcb::open_block open2 (send1.hash (), btcb::genesis_account, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::fork, ledger.process (transaction, open2).code);
@@ -1992,11 +1992,11 @@ TEST (ledger, state_state_open_fork)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::open_block open1 (send1.hash (), btcb::genesis_account, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
-	btcb::state_block open2 (destination.pub, 0, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
+	btcb::state_block open2 (destination.pub, 0, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::fork, ledger.process (transaction, open2).code);
 	ASSERT_EQ (open1.root (), open2.root ());
 }
@@ -2014,9 +2014,9 @@ TEST (ledger, state_open_previous_fail)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block open1 (destination.pub, destination.pub, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
+	btcb::state_block open1 (destination.pub, destination.pub, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::gap_previous, ledger.process (transaction, open1).code);
 }
 
@@ -2033,7 +2033,7 @@ TEST (ledger, state_open_source_fail)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, 0, 0, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::gap_source, ledger.process (transaction, open1).code);
@@ -2052,16 +2052,16 @@ TEST (ledger, state_send_change)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair rep;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), rep.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), rep.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
 	ASSERT_EQ (0, ledger.weight (transaction, btcb::genesis_account));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, rep.pub));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, rep.pub));
 }
 
 TEST (ledger, state_receive_change)
@@ -2076,15 +2076,15 @@ TEST (ledger, state_receive_change)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.balance (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, send1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.balance (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, send1.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::keypair rep;
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), rep.pub, btcb::genesis_amount, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
@@ -2093,7 +2093,7 @@ TEST (ledger, state_receive_change)
 	ASSERT_NE (nullptr, receive2);
 	ASSERT_EQ (receive1, *receive2);
 	ASSERT_EQ (btcb::genesis_amount, ledger.balance (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, receive1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, receive1.hash ()));
 	ASSERT_EQ (0, ledger.weight (transaction, btcb::genesis_account));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, rep.pub));
 }
@@ -2111,12 +2111,12 @@ TEST (ledger, state_open_old)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::open_block open1 (send1.hash (), btcb::genesis_account, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.balance (transaction, open1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, open1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.balance (transaction, open1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, open1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, btcb::genesis_account));
 }
 
@@ -2133,16 +2133,16 @@ TEST (ledger, state_receive_old)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block send2 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - (2 * btcb::Gxrb_ratio), destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
+	btcb::state_block send2 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - (2 * btcb::Gbcb_ratio), destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send2).code);
 	btcb::open_block open1 (send1.hash (), btcb::genesis_account, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
 	btcb::receive_block receive1 (open1.hash (), send2.hash (), destination.prv, destination.pub, pool.generate (open1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
-	ASSERT_EQ (2 * btcb::Gxrb_ratio, ledger.balance (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, receive1.hash ()));
+	ASSERT_EQ (2 * btcb::Gbcb_ratio, ledger.balance (transaction, receive1.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, receive1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.weight (transaction, btcb::genesis_account));
 }
 
@@ -2158,18 +2158,18 @@ TEST (ledger, state_rollback_send)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_TRUE (store.block_exists (transaction, send1.hash ()));
 	auto send2 (store.block_get (transaction, send1.hash ()));
 	ASSERT_NE (nullptr, send2);
 	ASSERT_EQ (send1, *send2);
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::pending_info info;
 	ASSERT_FALSE (store.pending_get (transaction, btcb::pending_key (btcb::genesis_account, send1.hash ()), info));
 	ASSERT_EQ (btcb::genesis_account, info.source);
-	ASSERT_EQ (btcb::Gxrb_ratio, info.amount.number ());
+	ASSERT_EQ (btcb::Gbcb_ratio, info.amount.number ());
 	ASSERT_FALSE (ledger.rollback (transaction, send1.hash ()));
 	ASSERT_FALSE (store.block_exists (transaction, send1.hash ()));
 	ASSERT_EQ (btcb::genesis_amount, ledger.account_balance (transaction, btcb::genesis_account));
@@ -2190,7 +2190,7 @@ TEST (ledger, state_rollback_receive)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
@@ -2199,10 +2199,10 @@ TEST (ledger, state_rollback_receive)
 	btcb::pending_info info;
 	ASSERT_FALSE (store.pending_get (transaction, btcb::pending_key (btcb::genesis_account, send1.hash ()), info));
 	ASSERT_EQ (btcb::genesis_account, info.source);
-	ASSERT_EQ (btcb::Gxrb_ratio, info.amount.number ());
+	ASSERT_EQ (btcb::Gbcb_ratio, info.amount.number ());
 	ASSERT_FALSE (store.block_exists (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 }
 
 TEST (ledger, state_rollback_received_send)
@@ -2218,9 +2218,9 @@ TEST (ledger, state_rollback_received_send)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair key;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, key.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block receive1 (key.pub, 0, key.pub, btcb::Gxrb_ratio, send1.hash (), key.prv, key.pub, pool.generate (key.pub));
+	btcb::state_block receive1 (key.pub, 0, key.pub, btcb::Gbcb_ratio, send1.hash (), key.prv, key.pub, pool.generate (key.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
 	ASSERT_FALSE (store.pending_exists (transaction, btcb::pending_key (btcb::genesis_account, receive1.hash ())));
 	ASSERT_FALSE (ledger.rollback (transaction, send1.hash ()));
@@ -2268,18 +2268,18 @@ TEST (ledger, state_open_rollback)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
+	btcb::state_block open1 (destination.pub, 0, btcb::genesis_account, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
 	ASSERT_FALSE (ledger.rollback (transaction, open1.hash ()));
 	ASSERT_FALSE (store.block_exists (transaction, open1.hash ()));
 	ASSERT_EQ (0, ledger.account_balance (transaction, destination.pub));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	btcb::pending_info info;
 	ASSERT_FALSE (store.pending_get (transaction, btcb::pending_key (destination.pub, send1.hash ()), info));
 	ASSERT_EQ (btcb::genesis_account, info.source);
-	ASSERT_EQ (btcb::Gxrb_ratio, info.amount.number ());
+	ASSERT_EQ (btcb::Gbcb_ratio, info.amount.number ());
 }
 
 TEST (ledger, state_send_change_rollback)
@@ -2295,7 +2295,7 @@ TEST (ledger, state_send_change_rollback)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair rep;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), rep.pub, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), rep.pub, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	ASSERT_FALSE (ledger.rollback (transaction, send1.hash ()));
 	ASSERT_FALSE (store.block_exists (transaction, send1.hash ()));
@@ -2316,15 +2316,15 @@ TEST (ledger, state_receive_change_rollback)
 	auto transaction (store.tx_begin_write ());
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::keypair rep;
 	btcb::state_block receive1 (btcb::genesis_account, send1.hash (), rep.pub, btcb::genesis_amount, send1.hash (), btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive1).code);
 	ASSERT_FALSE (ledger.rollback (transaction, receive1.hash ()));
 	ASSERT_FALSE (store.block_exists (transaction, receive1.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.account_balance (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
 	ASSERT_EQ (0, ledger.weight (transaction, rep.pub));
 }
 
@@ -2357,7 +2357,7 @@ TEST (ledger, epoch_blocks_general)
 	ASSERT_EQ (genesis_info.epoch, btcb::epoch::epoch_1);
 	btcb::change_block change1 (epoch1.hash (), btcb::genesis_account, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (epoch1.hash ()));
 	ASSERT_EQ (btcb::process_result::block_position, ledger.process (transaction, change1).code);
-	btcb::state_block send1 (btcb::genesis_account, epoch1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (epoch1.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, epoch1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (epoch1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
 	btcb::open_block open1 (send1.hash (), btcb::genesis_account, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::unreceivable, ledger.process (transaction, open1).code);
@@ -2367,13 +2367,13 @@ TEST (ledger, epoch_blocks_general)
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, epoch4).code);
 	btcb::receive_block receive1 (epoch4.hash (), send1.hash (), destination.prv, destination.pub, pool.generate (epoch4.hash ()));
 	ASSERT_EQ (btcb::process_result::block_position, ledger.process (transaction, receive1).code);
-	btcb::state_block receive2 (destination.pub, epoch4.hash (), destination.pub, btcb::Gxrb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (epoch4.hash ()));
+	btcb::state_block receive2 (destination.pub, epoch4.hash (), destination.pub, btcb::Gbcb_ratio, send1.hash (), destination.prv, destination.pub, pool.generate (epoch4.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive2).code);
 	ASSERT_EQ (0, ledger.balance (transaction, epoch4.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.balance (transaction, receive2.hash ()));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.amount (transaction, receive2.hash ()));
-	ASSERT_EQ (btcb::genesis_amount - btcb::Gxrb_ratio, ledger.weight (transaction, btcb::genesis_account));
-	ASSERT_EQ (btcb::Gxrb_ratio, ledger.weight (transaction, destination.pub));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.balance (transaction, receive2.hash ()));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.amount (transaction, receive2.hash ()));
+	ASSERT_EQ (btcb::genesis_amount - btcb::Gbcb_ratio, ledger.weight (transaction, btcb::genesis_account));
+	ASSERT_EQ (btcb::Gbcb_ratio, ledger.weight (transaction, destination.pub));
 }
 
 TEST (ledger, epoch_blocks_receive_upgrade)
@@ -2390,17 +2390,17 @@ TEST (ledger, epoch_blocks_receive_upgrade)
 	store.initialize (transaction, genesis);
 	btcb::work_pool pool (std::numeric_limits<unsigned>::max ());
 	btcb::keypair destination;
-	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
+	btcb::state_block send1 (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (genesis.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send1).code);
-	btcb::state_block epoch1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, 123, epoch_key.prv, epoch_key.pub, pool.generate (send1.hash ()));
+	btcb::state_block epoch1 (btcb::genesis_account, send1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, 123, epoch_key.prv, epoch_key.pub, pool.generate (send1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, epoch1).code);
-	btcb::state_block send2 (btcb::genesis_account, epoch1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio * 2, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (epoch1.hash ()));
+	btcb::state_block send2 (btcb::genesis_account, epoch1.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio * 2, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, pool.generate (epoch1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send2).code);
 	btcb::open_block open1 (send1.hash (), destination.pub, destination.pub, destination.prv, destination.pub, pool.generate (destination.pub));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, open1).code);
 	btcb::receive_block receive1 (open1.hash (), send2.hash (), destination.prv, destination.pub, pool.generate (open1.hash ()));
 	ASSERT_EQ (btcb::process_result::unreceivable, ledger.process (transaction, receive1).code);
-	btcb::state_block receive2 (destination.pub, open1.hash (), destination.pub, btcb::Gxrb_ratio * 2, send2.hash (), destination.prv, destination.pub, pool.generate (open1.hash ()));
+	btcb::state_block receive2 (destination.pub, open1.hash (), destination.pub, btcb::Gbcb_ratio * 2, send2.hash (), destination.prv, destination.pub, pool.generate (open1.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, receive2).code);
 	btcb::account_info destination_info;
 	ASSERT_FALSE (ledger.store.account_get (transaction, destination.pub, destination_info));
@@ -2412,7 +2412,7 @@ TEST (ledger, epoch_blocks_receive_upgrade)
 	ASSERT_FALSE (ledger.store.account_get (transaction, destination.pub, destination_info));
 	ASSERT_EQ (destination_info.epoch, btcb::epoch::epoch_1);
 	btcb::keypair destination2;
-	btcb::state_block send3 (destination.pub, receive2.hash (), destination.pub, btcb::Gxrb_ratio, destination2.pub, destination.prv, destination.pub, pool.generate (receive2.hash ()));
+	btcb::state_block send3 (destination.pub, receive2.hash (), destination.pub, btcb::Gbcb_ratio, destination2.pub, destination.prv, destination.pub, pool.generate (receive2.hash ()));
 	ASSERT_EQ (btcb::process_result::progress, ledger.process (transaction, send3).code);
 	btcb::open_block open2 (send3.hash (), destination2.pub, destination2.pub, destination2.prv, destination2.pub, pool.generate (destination2.pub));
 	ASSERT_EQ (btcb::process_result::unreceivable, ledger.process (transaction, open2).code);
@@ -2511,11 +2511,11 @@ TEST (ledger, unchecked_epoch)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair destination;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
-	auto open1 (std::make_shared<btcb::state_block> (destination.pub, 0, destination.pub, btcb::Gxrb_ratio, send1->hash (), destination.prv, destination.pub, 0));
+	auto open1 (std::make_shared<btcb::state_block> (destination.pub, 0, destination.pub, btcb::Gbcb_ratio, send1->hash (), destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*open1);
-	auto epoch1 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gxrb_ratio, node1.ledger.epoch_link, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto epoch1 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gbcb_ratio, node1.ledger.epoch_link, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*epoch1);
 	node1.block_processor.add (epoch1);
 	node1.block_processor.flush ();
@@ -2547,15 +2547,15 @@ TEST (ledger, unchecked_epoch_invalid)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair destination;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
-	auto open1 (std::make_shared<btcb::state_block> (destination.pub, 0, destination.pub, btcb::Gxrb_ratio, send1->hash (), destination.prv, destination.pub, 0));
+	auto open1 (std::make_shared<btcb::state_block> (destination.pub, 0, destination.pub, btcb::Gbcb_ratio, send1->hash (), destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*open1);
 	// Epoch block with account own signature
-	auto epoch1 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gxrb_ratio, node1.ledger.epoch_link, destination.prv, destination.pub, 0));
+	auto epoch1 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gbcb_ratio, node1.ledger.epoch_link, destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*epoch1);
 	// Pseudo epoch block (send subtype, destination - epoch link)
-	auto epoch2 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gxrb_ratio - 1, node1.ledger.epoch_link, destination.prv, destination.pub, 0));
+	auto epoch2 (std::make_shared<btcb::state_block> (destination.pub, open1->hash (), destination.pub, btcb::Gbcb_ratio - 1, node1.ledger.epoch_link, destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*epoch2);
 	node1.block_processor.add (epoch1);
 	node1.block_processor.add (epoch2);
@@ -2591,7 +2591,7 @@ TEST (ledger, unchecked_open)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair destination;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
 	auto open1 (std::make_shared<btcb::open_block> (send1->hash (), destination.pub, destination.pub, destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*open1);
@@ -2626,9 +2626,9 @@ TEST (ledger, unchecked_receive)
 	auto & node1 (*system.nodes[0]);
 	btcb::genesis genesis;
 	btcb::keypair destination;
-	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send1 (std::make_shared<btcb::state_block> (btcb::genesis_account, genesis.hash (), btcb::genesis_account, btcb::genesis_amount - btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send1);
-	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gxrb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
+	auto send2 (std::make_shared<btcb::state_block> (btcb::genesis_account, send1->hash (), btcb::genesis_account, btcb::genesis_amount - 2 * btcb::Gbcb_ratio, destination.pub, btcb::test_genesis_key.prv, btcb::test_genesis_key.pub, 0));
 	node1.work_generate_blocking (*send2);
 	auto open1 (std::make_shared<btcb::open_block> (send1->hash (), destination.pub, destination.pub, destination.prv, destination.pub, 0));
 	node1.work_generate_blocking (*open1);
