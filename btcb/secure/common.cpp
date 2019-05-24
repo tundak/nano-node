@@ -30,9 +30,9 @@ btcb::btcb_networks btcb::network_constants::active_network = btcb::btcb_network
 namespace
 {
 char const * test_private_key_data = "6C2C1C811F5771F01B41C90BB0F9194BD8AC4E1DFA34A15A4854DBE748DEAA11";
-char const * test_public_key_data = "5F513F395712E1F4E7ED526CB41F35DA342389E10BCB2B9CD7DAE4467928FBA9"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
-char const * beta_public_key_data = "A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"; // xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp
-char const * live_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
+char const * test_public_key_data = "5F513F395712E1F4E7ED526CB41F35DA342389E10BCB2B9CD7DAE4467928FBA9"; // btcb_1qtj9wwog6q3ymmytnmepihmdpjn6g6y44yd7ggfhpq6aswkjyxbkwwqe8mg
+char const * beta_public_key_data = "2F30C3FB12A24CEAB2AE629DC5BFBE1094CDAFA3B3A256E3C77C997F68BB0EF9"; // btcb_1dsirhxj7akexcscwrnxrpzuw66nspqt9ex4cujwgz6shxndp5qsp91eiebu
+char const * live_public_key_data = "3D8805975C9A98237C75FA055C82D1C25394C0A0E0DA01AF0CB12A70C04E0282"; // btcb_1hea1pdos8nr6fy9dyi7dk3f5ikmkm1c3r8t18qisebcg516w1n4qmod9e1m
 char const * test_genesis_data = R"%%%({
 	"type": "open",
     "source": "5F513F395712E1F4E7ED526CB41F35DA342389E10BCB2B9CD7DAE4467928FBA9",
@@ -44,20 +44,20 @@ char const * test_genesis_data = R"%%%({
 
 char const * beta_genesis_data = R"%%%({
 	"type": "open",
-	"source": "A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F",
-	"representative": "xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp",
-	"account": "xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp",
-	"work": "000000000f0aaeeb",
-	"signature": "A726490E3325E4FA59C1C900D5B6EEBB15FE13D99F49D475B93F0AACC5635929A0614CF3892764A04D1C6732A0D716FFEB254D4154C6F544D11E6630F201450B"
+    "source": "2F30C3FB12A24CEAB2AE629DC5BFBE1094CDAFA3B3A256E3C77C997F68BB0EF9",
+    "representative": "btcb_1dsirhxj7akexcscwrnxrpzuw66nspqt9ex4cujwgz6shxndp5qsp91eiebu",
+    "account": "btcb_1dsirhxj7akexcscwrnxrpzuw66nspqt9ex4cujwgz6shxndp5qsp91eiebu",
+    "work": "ed0f687477ebc5d3",
+    "signature": "E120619431AD2226904697090B14033AAD16D68B4489C4FC99284B216249630E6362D6DB6A679ABA0AE40F0E5E93F06A223C182CC414758E1C805997A8079B08"
 	})%%%";
 
 char const * live_genesis_data = R"%%%({
 	"type": "open",
-	"source": "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA",
-	"representative": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
-	"account": "xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3",
-	"work": "62f05417dd3fb691",
-	"signature": "9F0C933C8ADE004D808EA1985FA746A7E95BA2A38F867640F53EC8F180BDFE9E2C1268DEAD7C2664F356E37ABA362BC58E46DBA03E523A7B5A19E4B6EB12BB02"
+    "source": "3D8805975C9A98237C75FA055C82D1C25394C0A0E0DA01AF0CB12A70C04E0282",
+    "representative": "btcb_1hea1pdos8nr6fy9dyi7dk3f5ikmkm1c3r8t18qisebcg516w1n4qmod9e1m",
+    "account": "btcb_1hea1pdos8nr6fy9dyi7dk3f5ikmkm1c3r8t18qisebcg516w1n4qmod9e1m",
+    "work": "0f1644beeff01426",
+    "signature": "78FC45F4E82705A56AB14BFB9358B58D22DA6558C8BDE8D3A7BD8CF068ECA4FECDD89E699B5DA2A493CDD95E15A1A4A642C27F1CD324F5963D96E085FAB3A408"
 	})%%%";
 }
 
