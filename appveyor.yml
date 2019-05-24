@@ -39,7 +39,7 @@ after_build:
 
     cpack -G ZIP -C %CONFIGURATION% --verbose --config ./CPackConfig.cmake
 artifacts:
-- path: nano*.zip
+- path: btcb*.zip
   name: btcb_release_%network%
 - path: Btcb_Installer-*.exe
   name: Btcb_Installer_%network%
