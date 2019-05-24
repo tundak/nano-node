@@ -29,17 +29,17 @@ btcb::btcb_networks btcb::network_constants::active_network = btcb::btcb_network
 
 namespace
 {
-char const * test_private_key_data = "34F0A37AAD20F4A260F0A5B3CB3D7FB50673212263E58A380BC10474BB039CE4";
-char const * test_public_key_data = "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
+char const * test_private_key_data = "6C2C1C811F5771F01B41C90BB0F9194BD8AC4E1DFA34A15A4854DBE748DEAA11";
+char const * test_public_key_data = "5F513F395712E1F4E7ED526CB41F35DA342389E10BCB2B9CD7DAE4467928FBA9"; // xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo
 char const * beta_public_key_data = "A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F"; // xrb_3betaz86ypbygpqbookmzpnmd5jhh4efmd8arr9a3n4bdmj1zgnzad7xpmfp
 char const * live_public_key_data = "E89208DD038FBB269987689621D52292AE9C35941A7484756ECCED92A65093BA"; // xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3
 char const * test_genesis_data = R"%%%({
 	"type": "open",
-	"source": "B0311EA55708D6A53C75CDBF88300259C6D018522FE3D4D0A242E431F9E8B6D0",
-	"representative": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
-	"account": "xrb_3e3j5tkog48pnny9dmfzj1r16pg8t1e76dz5tmac6iq689wyjfpiij4txtdo",
-	"work": "7b42a00ee91d5810",
-	"signature": "ECDA914373A2F0CA1296475BAEE40500A7F0A7AD72A5A80C81D7FAB7F6C802B2CC7DB50F5DD0FB25B2EF11761FA7344A158DD5A700B21BD47DE5BD0F63153A02"
+    "source": "5F513F395712E1F4E7ED526CB41F35DA342389E10BCB2B9CD7DAE4467928FBA9",
+    "representative": "btcb_1qtj9wwog6q3ymmytnmepihmdpjn6g6y44yd7ggfhpq6aswkjyxbkwwqe8mg",
+    "account": "btcb_1qtj9wwog6q3ymmytnmepihmdpjn6g6y44yd7ggfhpq6aswkjyxbkwwqe8mg",
+    "work": "9e992f11f625b6c5",
+    "signature": "0001085291EB6E317561CAA12611DA7B0C6A64FF0151C25C5FECF69ECFCDE63ECFB6BFC4B51BC4FE56ACAB0AE877E1C85ECFECEBA022FB8F3E9AB420E2FF8708"
 	})%%%";
 
 char const * beta_genesis_data = R"%%%({
