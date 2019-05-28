@@ -19,7 +19,7 @@ public:
 	btcb::error serialize_json (btcb::jsonconfig &) const;
 	btcb::error deserialize_json (bool & upgraded_a, btcb::jsonconfig &, boost::filesystem::path const & data_path);
 	bool enable_sign_hash{ false };
-	uint64_t max_work_generate_difficulty{ 0xffffffffc0000000 };
+	uint64_t max_work_generate_difficulty{ 0xff00000000000000 };
 	btcb::rpc_child_process_config child_process;
 	static int json_version ()
 	{

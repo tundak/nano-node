@@ -48,7 +48,7 @@ public:
 	{
 		// Local work threshold for rate-limiting publishing blocks. ~5 seconds of work.
 		uint64_t constexpr publish_test_threshold = 0xff00000000000000;
-		uint64_t constexpr publish_full_threshold = 0xffffffc000000000;
+		uint64_t constexpr publish_full_threshold = 0xff00000000000000;
 		publish_threshold = is_test_network () ? publish_test_threshold : publish_full_threshold;
 
 		default_node_port = is_live_network () ? 9075 : is_beta_network () ? 34000 : 44000;
