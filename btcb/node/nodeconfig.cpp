@@ -42,7 +42,18 @@ logging (logging_a)
 			break;
 		case btcb::btcb_networks::btcb_beta_network:
 			preconfigured_peers.push_back (default_beta_peer_network);
+			preconfigured_peers.push_back ("::ffff:134.209.154.158");
+			preconfigured_peers.push_back ("::ffff:139.59.24.138");
+			preconfigured_peers.push_back ("::ffff:134.209.154.184");
+			preconfigured_peers.push_back ("::ffff:134.209.150.47");
+			preconfigured_peers.push_back ("::ffff:134.209.150.237");
+
 			preconfigured_representatives.emplace_back ("C81A2189F0BD0A8FE0E70502FE212159D3CC23DCA166C1A0CA9C04671B2C00B4");
+			preconfigured_representatives.emplace_back ("349301394DB21F309B51B68197175BB28688354D18AD941AAE1ECCDCE0C30971");
+			preconfigured_representatives.emplace_back ("DF5D530FA0EB7BB1E3278501907C7F89757906EA09D4A7FF92E4988729CBE9E0");
+			preconfigured_representatives.emplace_back ("3F6B9F68D49DF3AD4847E295D6E151BD20BB4BA0F343D184E67046548D645E0B");
+			preconfigured_representatives.emplace_back ("C94367B321B1D91951CE07AD38A2DD716766F7317F810D3DDAE6BA4B2648DA75");
+			preconfigured_representatives.emplace_back ("C2D4E5642AC7987FF75BFC3B3275A08B1F63C0266338AD94E2FB27F8E5E8C6EC");
 
 			break;
 		case btcb::btcb_networks::btcb_live_network:
