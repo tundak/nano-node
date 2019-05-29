@@ -1470,7 +1470,7 @@ startup_time (std::chrono::steady_clock::now ())
 
 		const uint8_t * weight_buffer = network_params.network.is_live_network () ? btcb_bootstrap_weights_live : btcb_bootstrap_weights_beta;
 		size_t weight_size = network_params.network.is_live_network () ? btcb_bootstrap_weights_live_size : btcb_bootstrap_weights_beta_size;
-		if (network_params.network.is_live_network () || network_params.network.is_beta_network ())
+		if (false && (network_params.network.is_live_network () || network_params.network.is_beta_network ()))
 		{
 			btcb::bufferstream weight_stream ((const uint8_t *)weight_buffer, weight_size);
 			btcb::uint128_union block_height;
