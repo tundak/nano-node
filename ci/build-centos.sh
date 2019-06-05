@@ -9,13 +9,13 @@ run_source() {
 
 run_build() {
     mkdir -p ~/rpmbuild/SOURCES/
-    mv -f ~/nano-${VERSIONS}.tar.gz ~/rpmbuild/SOURCES/.
-    scl enable llvm-toolset-7 devtoolset-7 'rpmbuild -ba nanocurrency.spec'
-    scl enable llvm-toolset-7 devtoolset-7 'rpmbuild -ba nanocurrency-beta.spec'
+    mv -f ~/btcb-${VERSIONS}.tar.gz ~/rpmbuild/SOURCES/.
+    scl enable llvm-toolset-7 devtoolset-7 'rpmbuild -ba btcbcurrency.spec'
+    scl enable llvm-toolset-7 devtoolset-7 'rpmbuild -ba btcbcurrency-beta.spec'
 }
 
 run_update() {
-    for file in ./nanocurrency*.in; do
+    for file in ./btcbcurrency*.in; do
 	outfile="$(echo "${file}" | sed 's@\.in$@@')"
     
     	echo "Updating \"${outfile}\"..."

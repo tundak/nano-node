@@ -6,7 +6,7 @@ HAVE A QUESTION? PLEASE JOIN OUR DISCORD SERVER
 
 Only use GitHub issues for reporting problems and submitting proposals. 
 
-Questions should  be asked on our Discord server, https://chat.nano.org,
+Questions should  be asked on our Discord server, https://chat.btcb.org,
 which has channels for a wide range of topics, such as development and 
 support.
 
@@ -14,11 +14,11 @@ support.
 BUG BOUNTY REPORT INFORMATION
 ---------------------------------------------------
 
-In the interest of further improving the security of the network, we have launched the Nano Bug Bounty Program.
+In the interest of further improving the security of the network, we have launched the Btcb Bug Bounty Program.
 
-WARNING! Don't disclose any information for the Nano bug.
+WARNING! Don't disclose any information for the Btcb bug.
 
-Submit any suspected bugs for bounty consideration to bugs@nano.org.
+Submit any suspected bugs for bounty consideration to bugs@btcb.org.
 
 ---------------------------------------------------
 NORMAL BUG REPORT INFORMATION
@@ -70,10 +70,10 @@ Briefly describe the problem you are having in a few paragraphs.
 
 <!--
 
-Can you please provide the Nano logs for further analysis.
+Can you please provide the Btcb logs for further analysis.
 
-How to find Nano logs:
+How to find Btcb logs:
     
-https://github.com/nanocurrency/nano-node/wiki/Log-files
+https://github.com/btcbcurrency/btcb-node/wiki/Log-files
 
 -->

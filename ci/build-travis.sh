@@ -12,20 +12,20 @@ mkdir build
 pushd build
 
 if [[ ${ASAN_INT-0} -eq 1 ]]; then
-    SANITIZERS="-DNANO_ASAN_INT=ON"
+    SANITIZERS="-DBTCB_ASAN_INT=ON"
 elif [[ ${ASAN-0} -eq 1 ]]; then
-    SANITIZERS="-DNANO_ASAN=ON"
+    SANITIZERS="-DBTCB_ASAN=ON"
 elif [[ ${TSAN-0} -eq 1 ]]; then
-    SANITIZERS="-DNANO_TSAN=ON"
+    SANITIZERS="-DBTCB_TSAN=ON"
 else
     SANITIZERS=""
 fi
 
 cmake \
     -G'Unix Makefiles' \
-    -DACTIVE_NETWORK=nano_test_network \
-    -DNANO_TEST=ON \
-    -DNANO_GUI=ON \
+    -DACTIVE_NETWORK=btcb_test_network \
+    -DBTCB_TEST=ON \
+    -DBTCB_GUI=ON \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
     -DBOOST_ROOT=/usr/local \

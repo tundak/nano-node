@@ -6,7 +6,7 @@ export PATH
 set -euo pipefail
 IFS=$'\n\t'
 
-network="$(cat /etc/nano-network)"
+network="$(cat /etc/btcb-network)"
 case "${network}" in
         live|'')
                 network='live'
@@ -21,23 +21,23 @@ case "${network}" in
 esac
 
 raidir="${HOME}/RaiBlocks${dirSuffix}"
-nanodir="${HOME}/Nano${dirSuffix}"
-dbFile="${nanodir}/data.ldb"
+btcbdir="${HOME}/Btcb${dirSuffix}"
+dbFile="${btcbdir}/data.ldb"
 
 if [ -d "${raidir}" ]; then
-	echo "Moving ${raidir} to ${nanodir}"
-	mv $raidir $nanodir
+	echo "Moving ${raidir} to ${btcbdir}"
+	mv $raidir $btcbdir
 else
-	mkdir -p "${nanodir}"
+	mkdir -p "${btcbdir}"
 fi
 
-if [ ! -f "${nanodir}/config.json" ]; then
+if [ ! -f "${btcbdir}/config.json" ]; then
         echo "Config File not found, adding default."
-        cp "/usr/share/nano/config/${network}.json" "${nanodir}/config.json"
+        cp "/usr/share/btcb/config/${network}.json" "${btcbdir}/config.json"
 fi
 
 # Start watching the log file we are going to log output to
-logfile="${nanodir}/nano-docker-output.log"
+logfile="${btcbdir}/btcb-docker-output.log"
 tail -F "${logfile}" &
 
 pid=''
@@ -60,7 +60,7 @@ while true; do
 				fi
 			done
 
-			nano_node --vacuum
+			btcb_node --vacuum
 		fi
 	fi
 
@@ -71,7 +71,7 @@ while true; do
 	fi
 
 	if [ -z "${pid}" ]; then
-		nano_node --daemon &
+		btcb_node --daemon &
 		pid="$!"
 	fi
 
