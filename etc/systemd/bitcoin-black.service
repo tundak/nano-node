@@ -1,0 +1,13 @@
+[Unit]
+Description=Btcb Daemon live network
+After=network.target
+
+[Service]
+Type=simple
+User=bitcoin-black
+WorkingDirectory=/var/bitcoin-black/Btcb
+ExecStart=/usr/bin/btcb_node --daemon
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

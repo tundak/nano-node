@@ -1,7 +1,7 @@
-add_executable (nano_rpc
+add_executable (btcb_rpc
 	entry.cpp)
 
-target_link_libraries (nano_rpc
+target_link_libraries (btcb_rpc
 	rpc
 	secure
 	Boost::filesystem
@@ -12,16 +12,16 @@ target_link_libraries (nano_rpc
 	Boost::thread
 	Boost::boost)
 
-target_compile_definitions(nano_rpc
+target_compile_definitions(btcb_rpc
 	PUBLIC
 		-DACTIVE_NETWORK=${ACTIVE_NETWORK}
 	PRIVATE
-		-DNANO_VERSION_MAJOR=${CPACK_PACKAGE_VERSION_MAJOR}
-		-DNANO_VERSION_MINOR=${CPACK_PACKAGE_VERSION_MINOR}
-		-DNANO_VERSION_PATCH=${CPACK_PACKAGE_VERSION_PATCH})
+		-DBTCB_VERSION_MAJOR=${CPACK_PACKAGE_VERSION_MAJOR}
+		-DBTCB_VERSION_MINOR=${CPACK_PACKAGE_VERSION_MINOR}
+		-DBTCB_VERSION_PATCH=${CPACK_PACKAGE_VERSION_PATCH})
 
-if ((NANO_GUI OR RAIBLOCKS_GUI) AND NOT APPLE)
-	install(TARGETS nano_rpc
+if ((BTCB_GUI OR RAIBLOCKS_GUI) AND NOT APPLE)
+	install(TARGETS btcb_rpc
 			RUNTIME DESTINATION .
 	)
 endif()

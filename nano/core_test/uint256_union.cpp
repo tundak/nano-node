@@ -371,7 +371,7 @@ TEST (uint256_union, decode_nano_variant)
 {
 	nano::uint256_union key;
 	ASSERT_FALSE (key.decode_account ("xrb_1111111111111111111111111111111111111111111111111111hifc8npp"));
-	ASSERT_FALSE (key.decode_account ("nano_1111111111111111111111111111111111111111111111111111hifc8npp"));
+	ASSERT_FALSE (key.decode_account ("bcb_1111111111111111111111111111111111111111111111111111hifc8npp"));
 }
 
 TEST (uint256_union, decode_account_variations)
@@ -388,7 +388,7 @@ TEST (uint256_union, decode_account_variations)
 
 		/*
 		 * Handle different offsets for the underscore separator
-		 * for "xrb_" prefixed and "nano_" prefixed accounts
+		 * for "xrb_" prefixed and "bcb_" prefixed accounts
 		 */
 		unsigned offset = (account[0] == 'x') ? 4 : 5;
 
@@ -413,7 +413,7 @@ TEST (uint256_union, account_transcode)
 
 	/*
 	 * Handle different offsets for the underscore separator
-	 * for "xrb_" prefixed and "nano_" prefixed accounts
+	 * for "xrb_" prefixed and "bcb_" prefixed accounts
 	 */
 	unsigned offset = (text.front () == 'x') ? 3 : 4;
 	ASSERT_EQ ('_', text[offset]);
@@ -431,7 +431,7 @@ TEST (uint256_union, account_encode_lex)
 	auto max_text (max.to_account ());
 
 	/*
-	 * Handle different lengths for "xrb_" prefixed and "nano_" prefixed accounts
+	 * Handle different lengths for "xrb_" prefixed and "bcb_" prefixed accounts
 	 */
 	unsigned length = (min_text.front () == 'x') ? 64 : 65;
 	ASSERT_EQ (length, min_text.size ());

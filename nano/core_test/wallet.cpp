@@ -318,7 +318,7 @@ TEST (account, encode_zero)
 	number0.encode_account (str0);
 
 	/*
-	 * Handle different lengths for "xrb_" prefixed and "nano_" prefixed accounts
+	 * Handle different lengths for "xrb_" prefixed and "bcb_" prefixed accounts
 	 */
 	ASSERT_EQ ((str0.front () == 'x') ? 64 : 65, str0.size ());
 	ASSERT_EQ (65, str0.size ());
@@ -335,7 +335,7 @@ TEST (account, encode_all)
 	number0.encode_account (str0);
 
 	/*
-	 * Handle different lengths for "xrb_" prefixed and "nano_" prefixed accounts
+	 * Handle different lengths for "xrb_" prefixed and "bcb_" prefixed accounts
 	 */
 	ASSERT_EQ ((str0.front () == 'x') ? 64 : 65, str0.size ());
 	nano::uint256_union number1;

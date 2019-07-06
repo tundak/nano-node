@@ -1,4 +1,4 @@
-FROM nanocurrency/nano-env:base
+FROM bitcoin-black/btcb-env:base
 
 ENV BOOST_ROOT=/usr/local
 ADD util/build_prep/bootstrap_boost.sh bootstrap_boost.sh

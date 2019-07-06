@@ -85,8 +85,8 @@ nano_live_account (live_public_key_data),
 nano_test_genesis (test_genesis_data),
 nano_beta_genesis (beta_genesis_data),
 nano_live_genesis (live_genesis_data),
-genesis_account (network_a == nano::nano_networks::nano_test_network ? nano_test_account : network_a == nano::nano_networks::nano_beta_network ? nano_beta_account : nano_live_account),
-genesis_block (network_a == nano::nano_networks::nano_test_network ? nano_test_genesis : network_a == nano::nano_networks::nano_beta_network ? nano_beta_genesis : nano_live_genesis),
+genesis_account (network_a == nano::nano_networks::btcb_test_network ? nano_test_account : network_a == nano::nano_networks::btcb_beta_network ? nano_beta_account : nano_live_account),
+genesis_block (network_a == nano::nano_networks::btcb_test_network ? nano_test_genesis : network_a == nano::nano_networks::btcb_beta_network ? nano_beta_genesis : nano_live_genesis),
 genesis_amount (std::numeric_limits<nano::uint128_t>::max ()),
 burn_account (0)
 {
@@ -133,7 +133,7 @@ nano::bootstrap_constants::bootstrap_constants (nano::network_constants & networ
 /* Convenience constants for core_test which is always on the test network */
 namespace
 {
-nano::ledger_constants test_constants (nano::nano_networks::nano_test_network);
+nano::ledger_constants test_constants (nano::nano_networks::btcb_test_network);
 }
 
 nano::keypair const & nano::zero_key (test_constants.zero_key);

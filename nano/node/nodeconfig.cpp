@@ -36,11 +36,11 @@ logging (logging_a)
 	epoch_block_signer = network_params.ledger.genesis_account;
 	switch (network_params.network.network ())
 	{
-		case nano::nano_networks::nano_test_network:
+		case nano::nano_networks::btcb_test_network:
 			enable_voting = true;
 			preconfigured_representatives.push_back (network_params.ledger.genesis_account);
 			break;
-		case nano::nano_networks::nano_beta_network:
+		case nano::nano_networks::btcb_beta_network:
 			preconfigured_peers.push_back (default_beta_peer_network);
 			preconfigured_representatives.emplace_back ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F");
 			preconfigured_representatives.emplace_back ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071");
@@ -48,7 +48,7 @@ logging (logging_a)
 			preconfigured_representatives.emplace_back ("259A40A92FA42E2240805DE8618EC4627F0BA41937160B4CFF7F5335FD1933DF");
 			preconfigured_representatives.emplace_back ("259A40FF3262E273EC451E873C4CDF8513330425B38860D882A16BCC74DA9B73");
 			break;
-		case nano::nano_networks::nano_live_network:
+		case nano::nano_networks::btcb_live_network:
 			preconfigured_peers.push_back (default_live_peer_network);
 			preconfigured_representatives.emplace_back ("A30E0A32ED41C8607AA9212843392E853FCBCB4E7CB194E35C94F07F91DE59EF");
 			preconfigured_representatives.emplace_back ("67556D31DDFC2A440BF6147501449B4CB9572278D034EE686A6BEE29851681DF");

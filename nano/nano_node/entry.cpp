@@ -116,14 +116,14 @@ int main (int argc, char * const * argv)
 		("debug_opencl", "OpenCL work generation")
 		("debug_profile_verify", "Profile work verification")
 		("debug_profile_kdf", "Profile kdf function")
-		("debug_output_last_backtrace_dump", "Displays the contents of the latest backtrace in the event of a nano_node crash")
+		("debug_output_last_backtrace_dump", "Displays the contents of the latest backtrace in the event of a btcb_node crash")
 		("debug_sys_logging", "Test the system logger")
 		("debug_verify_profile", "Profile signature verification")
 		("debug_verify_profile_batch", "Profile batch signature verification")
 		("debug_profile_bootstrap", "Profile bootstrap style blocks processing (at least 10GB of free storage space required)")
 		("debug_profile_sign", "Profile signature generation")
-		("debug_profile_process", "Profile active blocks processing (only for nano_test_network)")
-		("debug_profile_votes", "Profile votes processing (only for nano_test_network)")
+		("debug_profile_process", "Profile active blocks processing (only for btcb_test_network)")
+		("debug_profile_votes", "Profile votes processing (only for btcb_test_network)")
 		("debug_random_feed", "Generates output to RNG test suites")
 		("debug_rpc", "Read an RPC command from stdin and invoke it. Network operations will have no effect.")
 		("debug_validate_blocks", "Check all blocks for correct hash, signature, work value")
@@ -490,10 +490,10 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_output_last_backtrace_dump"))
 		{
-			if (boost::filesystem::exists ("nano_node_backtrace.dump"))
+			if (boost::filesystem::exists ("btcb_node_backtrace.dump"))
 			{
 				// There is a backtrace, so output the contents
-				std::ifstream ifs ("nano_node_backtrace.dump");
+				std::ifstream ifs ("btcb_node_backtrace.dump");
 
 				boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump (ifs);
 				std::cout << "Latest crash backtrace:\n"
@@ -550,7 +550,7 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_process"))
 		{
-			nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
+			nano::network_constants::set_active_network (nano::nano_networks::btcb_test_network);
 			nano::network_params test_params;
 			nano::block_builder builder;
 			size_t num_accounts (100000);
@@ -662,7 +662,7 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("debug_profile_votes"))
 		{
-			nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
+			nano::network_constants::set_active_network (nano::nano_networks::btcb_test_network);
 			nano::network_params test_params;
 			nano::block_builder builder;
 			size_t num_elections (40000);
@@ -778,7 +778,7 @@ int main (int argc, char * const * argv)
 			 *
 			 * Example, running the entire dieharder test suite:
 			 *
-			 *   ./nano_node --debug_random_feed | dieharder -a -g 200
+			 *   ./btcb_node --debug_random_feed | dieharder -a -g 200
 			 */
 			nano::raw_key seed;
 			for (;;)
@@ -1056,13 +1056,13 @@ int main (int argc, char * const * argv)
 		}
 		else if (vm.count ("version"))
 		{
-			if (NANO_VERSION_PATCH == 0)
+			if (BTCB_VERSION_PATCH == 0)
 			{
-				std::cout << "Version " << NANO_MAJOR_MINOR_VERSION << std::endl;
+				std::cout << "Version " << BTCB_MAJOR_MINOR_VERSION << std::endl;
 			}
 			else
 			{
-				std::cout << "Version " << NANO_MAJOR_MINOR_RC_VERSION << std::endl;
+				std::cout << "Version " << BTCB_MAJOR_MINOR_RC_VERSION << std::endl;
 			}
 		}
 		else

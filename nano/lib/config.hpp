@@ -15,8 +15,8 @@
 /**
 * Returns build version information
 */
-static const char * NANO_MAJOR_MINOR_VERSION = xstr (NANO_VERSION_MAJOR) "." xstr (NANO_VERSION_MINOR);
-static const char * NANO_MAJOR_MINOR_RC_VERSION = xstr (NANO_VERSION_MAJOR) "." xstr (NANO_VERSION_MINOR) "RC" xstr (NANO_VERSION_PATCH);
+static const char * BTCB_MAJOR_MINOR_VERSION = xstr (BTCB_VERSION_MAJOR) "." xstr (BTCB_VERSION_MINOR);
+static const char * BTCB_MAJOR_MINOR_RC_VERSION = xstr (BTCB_VERSION_MAJOR) "." xstr (BTCB_VERSION_MINOR) "RC" xstr (BTCB_VERSION_PATCH);
 /** Is TSAN/ASAN test build */
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
@@ -37,13 +37,13 @@ namespace nano
 enum class nano_networks
 {
 	// Low work parameters, publicly known genesis key, test IP ports
-	nano_test_network = 0,
+	btcb_test_network = 0,
 	rai_test_network = 0,
 	// Normal work parameters, secret beta genesis key, beta IP ports
-	nano_beta_network = 1,
+	btcb_beta_network = 1,
 	rai_beta_network = 1,
 	// Normal work parameters, secret live key, live IP ports
-	nano_live_network = 2,
+	btcb_live_network = 2,
 	rai_live_network = 2,
 };
 
@@ -105,15 +105,15 @@ public:
 		nano::error err;
 		if (network_a == "live")
 		{
-			active_network = nano::nano_networks::nano_live_network;
+			active_network = nano::nano_networks::btcb_live_network;
 		}
 		else if (network_a == "beta")
 		{
-			active_network = nano::nano_networks::nano_beta_network;
+			active_network = nano::nano_networks::btcb_beta_network;
 		}
 		else if (network_a == "test")
 		{
-			active_network = nano::nano_networks::nano_test_network;
+			active_network = nano::nano_networks::btcb_test_network;
 		}
 		else
 		{
@@ -129,15 +129,15 @@ public:
 
 	bool is_live_network () const
 	{
-		return current_network == nano_networks::nano_live_network;
+		return current_network == nano_networks::btcb_live_network;
 	}
 	bool is_beta_network () const
 	{
-		return current_network == nano_networks::nano_beta_network;
+		return current_network == nano_networks::btcb_beta_network;
 	}
 	bool is_test_network () const
 	{
-		return current_network == nano_networks::nano_test_network;
+		return current_network == nano_networks::btcb_test_network;
 	}
 
 	/** Initial value is ACTIVE_NETWORK compile flag, but can be overridden by a CLI flag */

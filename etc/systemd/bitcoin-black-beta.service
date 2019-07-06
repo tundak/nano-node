@@ -1,0 +1,13 @@
+[Unit]
+Description=Btcb Daemon beta network
+After=network.target
+
+[Service]
+Type=simple
+User=bitcoin-black
+WorkingDirectory=/var/bitcoin-black/BtcbBeta
+ExecStart=/usr/bin/btcb_node-beta --daemon
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

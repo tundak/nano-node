@@ -50,7 +50,7 @@ int output_memory_load_address (dl_phdr_info * info, size_t, void *)
 {
 	static int counter = 0;
 	std::ostringstream ss;
-	ss << "nano_node_crash_load_address_dump_" << counter << ".txt";
+	ss << "btcb_node_crash_load_address_dump_" << counter << ".txt";
 	std::ofstream file (ss.str ());
 	file << "Name: " << info->dlpi_name << "\n";
 
@@ -71,7 +71,7 @@ int output_memory_load_address (dl_phdr_info * info, size_t, void *)
 void my_abort_signal_handler (int signum)
 {
 	std::signal (signum, SIG_DFL);
-	boost::stacktrace::safe_dump_to ("nano_node_backtrace.dump");
+	boost::stacktrace::safe_dump_to ("btcb_node_backtrace.dump");
 
 #ifdef __linux__
 	dl_iterate_phdr (output_memory_load_address, nullptr);
@@ -110,7 +110,7 @@ void nano_daemon::daemon::run (boost::filesystem::path const & data_path, nano::
 			if (!init.error ())
 			{
 				auto network_label = node->network_params.network.get_current_network_as_string ();
-				auto version = (NANO_VERSION_PATCH == 0) ? NANO_MAJOR_MINOR_VERSION : NANO_MAJOR_MINOR_RC_VERSION;
+				auto version = (BTCB_VERSION_PATCH == 0) ? BTCB_MAJOR_MINOR_VERSION : BTCB_MAJOR_MINOR_RC_VERSION;
 				std::cout << "Network: " << network_label << ", version: " << version << std::endl
 				          << "Path: " << node->application_path.string () << std::endl;
 

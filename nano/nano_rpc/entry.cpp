@@ -133,13 +133,13 @@ int main (int argc, char * const * argv)
 	}
 	else if (vm.count ("version"))
 	{
-		if (NANO_VERSION_PATCH == 0)
+		if (BTCB_VERSION_PATCH == 0)
 		{
-			std::cout << "Version " << NANO_MAJOR_MINOR_VERSION << std::endl;
+			std::cout << "Version " << BTCB_MAJOR_MINOR_VERSION << std::endl;
 		}
 		else
 		{
-			std::cout << "Version " << NANO_MAJOR_MINOR_RC_VERSION << std::endl;
+			std::cout << "Version " << BTCB_MAJOR_MINOR_RC_VERSION << std::endl;
 		}
 	}
 	else

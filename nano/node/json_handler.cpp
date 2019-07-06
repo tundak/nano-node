@@ -3742,13 +3742,13 @@ void nano::json_handler::version ()
 	response_l.put ("rpc_version", "1");
 	response_l.put ("store_version", std::to_string (node.store_version ()));
 	response_l.put ("protocol_version", std::to_string (nano::protocol_version));
-	if (NANO_VERSION_PATCH == 0)
+	if (BTCB_VERSION_PATCH == 0)
 	{
-		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % NANO_MAJOR_MINOR_VERSION));
+		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % BTCB_MAJOR_MINOR_VERSION));
 	}
 	else
 	{
-		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % NANO_MAJOR_MINOR_RC_VERSION));
+		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % BTCB_MAJOR_MINOR_RC_VERSION));
 	}
 	response_errors ();
 }

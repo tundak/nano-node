@@ -8,12 +8,12 @@
 
 int main (int argc, char ** argv)
 {
-	nano::network_constants::set_active_network (nano::nano_networks::nano_test_network);
+	nano::network_constants::set_active_network (nano::nano_networks::btcb_test_network);
 	nano::node_singleton_memory_pool_purge_guard memory_pool_cleanup_guard;
 	QApplication application (argc, argv);
-	QCoreApplication::setOrganizationName ("Nano");
-	QCoreApplication::setOrganizationDomain ("nano.org");
-	QCoreApplication::setApplicationName ("Nano Wallet");
+	QCoreApplication::setOrganizationName ("Btcb");
+	QCoreApplication::setOrganizationDomain ("bitcoin.black");
+	QCoreApplication::setApplicationName ("Btcb Wallet");
 	nano_qt::eventloop_processor processor;
 	static int count (16);
 	nano::system system (24000, count);

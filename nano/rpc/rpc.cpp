@@ -4,7 +4,7 @@
 
 #include <boost/format.hpp>
 
-#ifdef NANO_SECURE_RPC
+#ifdef BTCB_SECURE_RPC
 #include <nano/rpc/rpc_secure.hpp>
 #endif
 
@@ -74,7 +74,7 @@ std::unique_ptr<nano::rpc> nano::get_rpc (boost::asio::io_context & io_ctx_a, na
 
 	if (config_a.secure.enable)
 	{
-#ifdef NANO_SECURE_RPC
+#ifdef BTCB_SECURE_RPC
 		impl = std::make_unique<rpc_secure> (io_ctx_a, config_a, rpc_handler_interface_a);
 #else
 		std::cerr << "RPC configured for TLS, but the node is not compiled with TLS support" << std::endl;
