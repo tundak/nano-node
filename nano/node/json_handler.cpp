@@ -84,19 +84,19 @@ void nano::json_handler::process_request (bool unsafe_a)
 			}
 			else if (action == "knano_from_raw" || action == "krai_from_raw")
 			{
-				mnano_from_raw (nano::kxrb_ratio);
+				mnano_from_raw (nano::kbcb_ratio);
 			}
 			else if (action == "knano_to_raw" || action == "krai_to_raw")
 			{
-				mnano_to_raw (nano::kxrb_ratio);
+				mnano_to_raw (nano::kbcb_ratio);
 			}
 			else if (action == "nano_from_raw" || action == "rai_from_raw")
 			{
-				mnano_from_raw (nano::xrb_ratio);
+				mnano_from_raw (nano::bcb_ratio);
 			}
 			else if (action == "nano_to_raw" || action == "rai_to_raw")
 			{
-				mnano_to_raw (nano::xrb_ratio);
+				mnano_to_raw (nano::bcb_ratio);
 			}
 			else if (action == "mnano_from_raw" || action == "mrai_from_raw")
 			{
@@ -3744,11 +3744,11 @@ void nano::json_handler::version ()
 	response_l.put ("protocol_version", std::to_string (nano::protocol_version));
 	if (BTCB_VERSION_PATCH == 0)
 	{
-		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % BTCB_MAJOR_MINOR_VERSION));
+		response_l.put ("node_vendor", boost::str (boost::format ("Btcb %1%") % BTCB_MAJOR_MINOR_VERSION));
 	}
 	else
 	{
-		response_l.put ("node_vendor", boost::str (boost::format ("Nano %1%") % BTCB_MAJOR_MINOR_RC_VERSION));
+		response_l.put ("node_vendor", boost::str (boost::format ("Btcb %1%") % BTCB_MAJOR_MINOR_RC_VERSION));
 	}
 	response_errors ();
 }

@@ -164,10 +164,10 @@ bool nano::node_config::upgrade_json (unsigned version_a, nano::jsonconfig & jso
 		}
 		case 3:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", nano::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", nano::bcb_ratio.convert_to<std::string> ());
 		case 4:
 			json.erase ("receive_minimum");
-			json.put ("receive_minimum", nano::xrb_ratio.convert_to<std::string> ());
+			json.put ("receive_minimum", nano::bcb_ratio.convert_to<std::string> ());
 		case 5:
 			json.put ("enable_voting", enable_voting);
 			json.erase ("packet_delay_microseconds");
