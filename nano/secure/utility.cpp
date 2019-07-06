@@ -11,7 +11,7 @@ boost::filesystem::path nano::working_path (bool legacy)
 	auto result (nano::app_path ());
 	switch (network_constants.network ())
 	{
-		case nano::nano_networks::nano_test_network:
+		case nano::nano_networks::btcb_test_network:
 			if (!legacy)
 			{
 				result /= "BtcbTest";

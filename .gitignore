@@ -17,6 +17,8 @@
 
 # Doxygen built HTML
 /doc-build
+bootstrap_weights_beta.cpp
+bootstrap_weights_live.cpp
 
 # Executables
 *.exe
