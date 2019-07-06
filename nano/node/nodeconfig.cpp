@@ -12,7 +12,7 @@ namespace
 const char * preconfigured_peers_key = "preconfigured_peers";
 const char * signature_checker_threads_key = "signature_checker_threads";
 const char * pow_sleep_interval_key = "pow_sleep_interval";
-const char * default_beta_peer_network = "peering-beta.nano.org";
+const char * default_beta_peer_network = "::ffff:206.189.143.185";
 const char * default_live_peer_network = "peering.nano.org";
 }
 
@@ -42,11 +42,18 @@ logging (logging_a)
 			break;
 		case nano::nano_networks::btcb_beta_network:
 			preconfigured_peers.push_back (default_beta_peer_network);
-			preconfigured_representatives.emplace_back ("A59A47CC4F593E75AE9AD653FDA9358E2F7898D9ACC8C60E80D0495CE20FBA9F");
-			preconfigured_representatives.emplace_back ("259A4011E6CAD1069A97C02C3C1F2AAA32BC093C8D82EE1334F937A4BE803071");
-			preconfigured_representatives.emplace_back ("259A40656144FAA16D2A8516F7BE9C74A63C6CA399960EDB747D144ABB0F7ABD");
-			preconfigured_representatives.emplace_back ("259A40A92FA42E2240805DE8618EC4627F0BA41937160B4CFF7F5335FD1933DF");
-			preconfigured_representatives.emplace_back ("259A40FF3262E273EC451E873C4CDF8513330425B38860D882A16BCC74DA9B73");
+			preconfigured_peers.push_back ("::ffff:167.99.229.16");
+			preconfigured_peers.push_back ("::ffff:138.68.252.73");
+			preconfigured_peers.push_back ("::ffff:188.166.58.251");
+			preconfigured_peers.push_back ("::ffff:128.199.150.115");
+			preconfigured_peers.push_back ("::ffff:68.183.47.36");
+
+			preconfigured_representatives.emplace_back ("C81A2189F0BD0A8FE0E70502FE212159D3CC23DCA166C1A0CA9C04671B2C00B4");
+			preconfigured_representatives.emplace_back ("349301394DB21F309B51B68197175BB28688354D18AD941AAE1ECCDCE0C30971");
+			preconfigured_representatives.emplace_back ("DF5D530FA0EB7BB1E3278501907C7F89757906EA09D4A7FF92E4988729CBE9E0");
+			preconfigured_representatives.emplace_back ("C94367B321B1D91951CE07AD38A2DD716766F7317F810D3DDAE6BA4B2648DA75");
+			preconfigured_representatives.emplace_back ("C2D4E5642AC7987FF75BFC3B3275A08B1F63C0266338AD94E2FB27F8E5E8C6EC");
+			preconfigured_representatives.emplace_back ("120526AE6DC50F3005C282AE863F33F4BF24EBE840832DE114F137D7B8073034");
 			break;
 		case nano::nano_networks::btcb_live_network:
 			preconfigured_peers.push_back (default_live_peer_network);

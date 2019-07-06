@@ -39,7 +39,7 @@ public:
 	nano::amount vote_minimum{ nano::Gbcb_ratio };
 	std::chrono::milliseconds vote_generator_delay{ std::chrono::milliseconds (50) };
 	unsigned vote_generator_threshold{ 3 };
-	nano::amount online_weight_minimum{ 60000 * nano::Gbcb_ratio };
+	nano::amount online_weight_minimum{ 60000 * nano::bcb_ratio };
 	unsigned online_weight_quorum{ 50 };
 	unsigned password_fanout{ 1024 };
 	unsigned io_threads{ std::max<unsigned> (4, boost::thread::hardware_concurrency ()) };

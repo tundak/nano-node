@@ -41,7 +41,7 @@ uint8_t account_decode (char value)
 void nano::uint256_union::encode_account (std::string & destination_a) const
 {
 	assert (destination_a.empty ());
-	destination_a.reserve (65);
+	destination_a.reserve (64);
 	uint64_t check (0);
 	blake2b_state hash;
 	blake2b_init (&hash, 5);
@@ -56,7 +56,7 @@ void nano::uint256_union::encode_account (std::string & destination_a) const
 		number_l >>= 5;
 		destination_a.push_back (account_encode (r));
 	}
-	destination_a.append ("_onan"); // nano_
+	destination_a.append ("_bcb"); // bcb_
 	std::reverse (destination_a.begin (), destination_a.end ());
 }
 
@@ -72,14 +72,14 @@ bool nano::uint256_union::decode_account (std::string const & source_a)
 	auto error (source_a.size () < 5);
 	if (!error)
 	{
-		auto xrb_prefix (source_a[0] == 'x' && source_a[1] == 'r' && source_a[2] == 'b' && (source_a[3] == '_' || source_a[3] == '-'));
-		auto nano_prefix (source_a[0] == 'n' && source_a[1] == 'a' && source_a[2] == 'n' && source_a[3] == 'o' && (source_a[4] == '_' || source_a[4] == '-'));
-		error = (xrb_prefix && source_a.size () != 64) || (nano_prefix && source_a.size () != 65);
+		auto bcb_prefix (source_a[0] == 'b' && source_a[1] == 'c' && source_a[2] == 'b' && (source_a[3] == '_' || source_a[3] == '-'));
+		auto btcb_prefix (source_a[0] == 'b' && source_a[1] == 't' && source_a[2] == 'c' && source_a[3] == 'b' && (source_a[4] == '_' || source_a[4] == '-'));
+		error = (bcb_prefix && source_a.size () != 64) || (btcb_prefix && source_a.size () != 65);
 		if (!error)
 		{
-			if (xrb_prefix || nano_prefix)
+			if (bcb_prefix || btcb_prefix)
 			{
-				auto i (source_a.begin () + (xrb_prefix ? 4 : 5));
+				auto i (source_a.begin () + (bcb_prefix ? 4 : 5));
 				if (*i == '1' || *i == '3')
 				{
 					nano::uint512_t number_l;
