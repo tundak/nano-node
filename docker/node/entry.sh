@@ -34,6 +34,7 @@ fi
 if [ ! -f "${btcbdir}/config.json" ]; then
         echo "Config File not found, adding default."
         cp "/usr/share/btcb/config/${network}.json" "${btcbdir}/config.json"
+        cp "/usr/share/btcb/config/${network}_rpc.json" "${btcbdir}/rpc_config.json"
 fi
 
 # Start watching the log file we are going to log output to
