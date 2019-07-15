@@ -56,7 +56,7 @@ int output_memory_load_address (dl_phdr_info * info, size_t, void *)
 	static int counter = 0;
 	assert (counter <= 99);
 	// Create filename
-	const char file_prefix[] = "btcb_node_crash_load_address_dump_";
+	const char file_prefix[] = "nano_node_crash_load_address_dump_";
 	// Holds the filename prefix, a unique (max 2 digits) number and extension (null terminator is included in file_prefix size)
 	char filename[sizeof (file_prefix) + 2 + 4];
 	snprintf (filename, sizeof (filename), "%s%d.txt", file_prefix, counter);
@@ -100,7 +100,7 @@ int output_memory_load_address (dl_phdr_info * info, size_t, void *)
 void my_abort_signal_handler (int signum)
 {
 	std::signal (signum, SIG_DFL);
-	boost::stacktrace::safe_dump_to ("btcb_node_backtrace.dump");
+	boost::stacktrace::safe_dump_to ("nano_node_backtrace.dump");
 
 #ifdef __linux__
 	dl_iterate_phdr (output_memory_load_address, nullptr);
