@@ -119,6 +119,7 @@ std::string get_default_rpc_filepath ()
 
 	// Construct the btcb_rpc excutable file path based on where the currently running executable is found.
 	auto rpc_filepath = running_executable_filepath.parent_path () / "btcb_rpc";
+
 	if (running_executable_filepath.has_extension ())
 	{
 		rpc_filepath.replace_extension (running_executable_filepath.extension ());

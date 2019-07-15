@@ -1,6 +1,7 @@
 #pragma once
 
-#include <boost/asio.hpp>
+#include <nano/boost/asio.hpp>
+
 #include <boost/filesystem.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/thread.hpp>
@@ -76,6 +77,16 @@ bool is_windows_elevated ();
  * Function to check if the Windows Event log registry key exists
  */
 bool event_log_reg_entry_exists ();
+
+/*
+ * Create the load memory addresses for the executable and shared libraries.
+ */
+void create_load_memory_address_files ();
+
+/*
+ * Dumps a stacktrace file which can be read using the --debug_output_last_backtrace_dump CLI command
+ */
+void dump_crash_stacktrace ();
 
 /*
  * Functions for understanding the role of the current thread
