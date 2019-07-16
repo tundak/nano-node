@@ -42,11 +42,11 @@ logging (logging_a)
 			break;
 		case nano::nano_networks::btcb_beta_network:
 			preconfigured_peers.push_back (default_beta_peer_network);
-			preconfigured_peers.push_back ("::ffff:167.99.229.16");
-			preconfigured_peers.push_back ("::ffff:138.68.252.73");
-			preconfigured_peers.push_back ("::ffff:188.166.58.251");
-			preconfigured_peers.push_back ("::ffff:128.199.150.115");
-			preconfigured_peers.push_back ("::ffff:68.183.47.36");
+			// preconfigured_peers.push_back ("::ffff:167.99.229.16");
+			// preconfigured_peers.push_back ("::ffff:138.68.252.73");
+			// preconfigured_peers.push_back ("::ffff:188.166.58.251");
+			// preconfigured_peers.push_back ("::ffff:128.199.150.115");
+			// preconfigured_peers.push_back ("::ffff:68.183.47.36");
 
 			preconfigured_representatives.emplace_back ("C81A2189F0BD0A8FE0E70502FE212159D3CC23DCA166C1A0CA9C04671B2C00B4");
 			preconfigured_representatives.emplace_back ("349301394DB21F309B51B68197175BB28688354D18AD941AAE1ECCDCE0C30971");
