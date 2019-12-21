@@ -101,7 +101,7 @@ burn_account (0)
 
 	nano::link epoch_link_v2;
 	auto nano_live_epoch_v2_signer = genesis_account;
-	auto epoch_v2_signer (network_a == nano::nano_networks::nano_test_network ? nano_test_account : network_a == nano::nano_networks::nano_beta_network ? nano_beta_account : nano_live_epoch_v2_signer);
+	auto epoch_v2_signer (network_a == nano::nano_networks::btcb_test_network ? nano_test_account : network_a == nano::nano_networks::btcb_beta_network ? nano_beta_account : nano_live_epoch_v2_signer);
 	const char * epoch_message_v2 ("epoch v2 block");
 	strncpy ((char *)epoch_link_v2.bytes.data (), epoch_message_v2, epoch_link_v2.bytes.size ());
 	epochs.add (nano::epoch::epoch_2, epoch_v2_signer, epoch_link_v2);
