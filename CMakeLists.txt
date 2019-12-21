@@ -198,7 +198,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
 find_package (Boost 1.67.0 REQUIRED COMPONENTS filesystem log log_setup thread program_options system)
 
-if (NANO_ROCKSDB)
+if (BTCB_ROCKSDB)
 	find_package (RocksDB REQUIRED)
 	find_package (ZLIB REQUIRED)
 	include_directories (${ROCKSDB_INCLUDE_DIRS})

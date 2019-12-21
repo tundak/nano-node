@@ -21,10 +21,10 @@ fi
 
 cmake \
     -G'Unix Makefiles' \
-    -DACTIVE_NETWORK=nano_${NETWORK_CFG}_network \
-    -DNANO_POW_SERVER=ON \
-    -DNANO_GUI=ON \
-    -DNANO_ROCKSDB=ON \
+    -DACTIVE_NETWORK=btcb_${NETWORK_CFG}_network \
+    -DBTCB_POW_SERVER=ON \
+    -DBTCB_GUI=ON \
+    -DBTCB_ROCKSDB=ON \
     -DROCKSDB_LIBRARIES=/tmp/rocksdb/lib/librocksdb.a \
     -DROCKSDB_INCLUDE_DIRS=/tmp/rocksdb/include \
     -DCMAKE_BUILD_TYPE=${CONFIGURATION} \
