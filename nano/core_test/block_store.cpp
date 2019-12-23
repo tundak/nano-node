@@ -894,7 +894,7 @@ TEST (mdb_block_store, upgrade_v4_v5)
 		ASSERT_TRUE (store.block_successor (transaction, genesis_hash).is_zero ());
 		modify_genesis_account_info_to_v5 (store, transaction);
 		// The pending send needs to be the correct version
-		auto status (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (key0.pub, block0.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gxrb_ratio, nano::epoch::epoch_0)), 0));
+		auto status (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (key0.pub, block0.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gbcb_ratio, nano::epoch::epoch_0)), 0));
 		ASSERT_EQ (status, MDB_SUCCESS);
 	}
 	nano::logger_mt logger;
@@ -1206,7 +1206,7 @@ TEST (mdb_block_store, upgrade_sideband_two_blocks)
 		write_sideband_v12 (store, transaction, *genesis.open, hash2, store.open_blocks);
 		write_sideband_v12 (store, transaction, block, 0, store.state_blocks_v0);
 		modify_account_info_to_v13 (store, transaction, nano::genesis_account, hash2);
-		auto status (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, block.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gxrb_ratio, nano::epoch::epoch_0)), 0));
+		auto status (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, block.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gbcb_ratio, nano::epoch::epoch_0)), 0));
 		ASSERT_EQ (status, MDB_SUCCESS);
 	}
 	nano::logger_mt logger;
@@ -1620,9 +1620,9 @@ TEST (mdb_block_store, upgrade_v14_v15)
 	nano::genesis genesis;
 	nano::network_params network_params;
 	nano::work_pool pool (std::numeric_limits<unsigned>::max ());
-	nano::send_block send (genesis.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gxrb_ratio, nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (genesis.hash ()));
-	nano::state_block epoch (nano::test_genesis_key.pub, send.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gxrb_ratio, network_params.ledger.epochs.link (nano::epoch::epoch_1), nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (send.hash ()));
-	nano::state_block state_send (nano::test_genesis_key.pub, epoch.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gxrb_ratio * 2, nano::test_genesis_key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (epoch.hash ()));
+	nano::send_block send (genesis.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gbcb_ratio, nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (genesis.hash ()));
+	nano::state_block epoch (nano::test_genesis_key.pub, send.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gbcb_ratio, network_params.ledger.epochs.link (nano::epoch::epoch_1), nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (send.hash ()));
+	nano::state_block state_send (nano::test_genesis_key.pub, epoch.hash (), nano::test_genesis_key.pub, nano::genesis_amount - nano::Gbcb_ratio * 2, nano::test_genesis_key.pub, nano::test_genesis_key.prv, nano::test_genesis_key.pub, *pool.generate (epoch.hash ()));
 	{
 		nano::logger_mt logger;
 		nano::mdb_store store (logger, path);
@@ -1657,8 +1657,8 @@ TEST (mdb_block_store, upgrade_v14_v15)
 		store.block_del (transaction, epoch.hash ());
 
 		// Turn pending into v14
-		ASSERT_FALSE (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, send.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gxrb_ratio, nano::epoch::epoch_0)), 0));
-		ASSERT_FALSE (mdb_put (store.env.tx (transaction), store.pending_v1, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, state_send.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gxrb_ratio, nano::epoch::epoch_1)), 0));
+		ASSERT_FALSE (mdb_put (store.env.tx (transaction), store.pending_v0, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, send.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gbcb_ratio, nano::epoch::epoch_0)), 0));
+		ASSERT_FALSE (mdb_put (store.env.tx (transaction), store.pending_v1, nano::mdb_val (nano::pending_key (nano::test_genesis_key.pub, state_send.hash ())), nano::mdb_val (nano::pending_info_v14 (nano::genesis_account, nano::Gbcb_ratio, nano::epoch::epoch_1)), 0));
 
 		// This should fail as sizes are no longer correct for account_info
 		nano::mdb_val value;
